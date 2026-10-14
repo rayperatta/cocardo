@@ -22,6 +22,9 @@ This is a fan-made match-3 game in the line of Candy Crush and Royal Match, base
 
 There are unlimited retries, no lives and no coins.
 
+**Full version (§17):** levels 1–10, the Reto Diario and the Álbum are free forever. Levels 11–30 are a one-time
+purchase (US$1,99), but only once selling is switched on (`docs/MONETIZACION.md`). Until then, all 30 levels are free.
+
 ## 2. Controls (P0)
 
 **Input setup:** Pointer Events on the board canvas, `touch-action:none`, the context menu suppressed, and `user-scalable=no` in the viewport tag.
@@ -407,6 +410,7 @@ Keys: **pre** shows before the first play, **post** after the first win, and **c
 - D = the local date as an integer, YYYYMMDD.
 - The board uses campaign level `6 + (D mod 20)` with its moves minus 2 and seed = D, so everyone gets the same board that day.
 - Boosters are off.
+- Always free, even when the board comes from a level of the full version.
 
 **Attempts and streak:**
 - Only the first finished attempt counts. Replays are marked «Práctica» and are not saved.
@@ -450,6 +454,7 @@ Boosters cost no move and do not advance villain counters. After use the board r
 2. **Mapa (P0):**
    - A vertical path of 30 nodes across 6 colored zones: Heladería, Mansión de Piña, Trastienda, Comisaría, Heladería de Cereza, Gran Congelador.
    - Each node shows its number, stars and lock. Boss nodes are larger and show the villain's face; ⚠ nodes get a red «¡Drama!» badge.
+   - Full-version nodes (`Cocardo.Store.isLocked(id)`) show a golden lock and the label «Versión completa» from the start. Tapping one opens the paywall (§17).
    - Top bar: total stars, Reto Diario (with flame, streak and a dot when available), Álbum and Ajustes.
    - Banner: «Próximo rescate: Lima · faltan 2 niveles», with an icy silhouette (P1).
    - Auto-scrolls to the current level.
@@ -470,6 +475,7 @@ Boosters cost no move and do not advance villain counters. After use the board r
 9. **Cliffhanger card:**
    - Three quick zooms on a face, a purple background and «CONTINUARÁ...».
    - Plays after the first win of each chapter finale.
+   - After cliff10, the paywall (§17) appears once if level 11 is locked.
 10. **Reto Diario (P1):**
     - Play button, today's result, Compartir, streak, and a countdown to the next challenge.
 11. **Álbum (P1):**
@@ -477,7 +483,8 @@ Boosters cost no move and do not advance villain counters. After use the board r
     - Victims show as icy silhouettes until rescued. Banana's card turns icy from L25 until L30.
 12. **Ajustes:**
     - Toggles: Sonido, Vibración, Movimiento reducido (defaults to the `prefers-reduced-motion` setting).
-    - «Borrar progreso» needs two taps: the label changes to «¿Seguro? Toca otra vez» for 3 s.
+    - «Borrar progreso» needs two taps: the label changes to «¿Seguro? Toca otra vez» for 3 s. It keeps the full version.
+    - «Versión completa» button: opens the Store status view (buy, redeem a code, copy my code, «Invítame un helado»).
 
 Never use `alert`, `confirm` or `prompt`.
 
@@ -556,7 +563,8 @@ Never use `alert`, `confirm` or `prompt`.
 {v:1, unlocked:1, stars:[30], best:[30],
  boosters:{cucharon,chorro,batido}, rescued:[],
  seen:{}, daily:{last, streak, bestStreak, results:{}},
- settings:{sound, vibra, motion, music}}
+ settings:{sound, vibra, motion, music},
+ license:null | {code, serial, product, at}}
 ```
 
 **Rules:**
@@ -615,9 +623,35 @@ tests/*.test.js (node --test), tools/sim.js
 ## 16. v1 cut-list (do NOT build)
 
 - **Modes:** Pedido Infinito (endless), extra modes, more than 30 levels, level editor.
-- **Monetization:** coins, shop, continues or «+5 movimientos», lives or energy, ads, in-app purchases.
+- **Monetization:** coins, shop, continues or «+5 movimientos», lives or energy, ads, loot boxes, timers or fake
+  offers, and paying for anything except the one-time full version of §17.
 - **Online:** accounts, leaderboards, analytics.
 - **Extra pieces and mechanics:** 2×2 square matches, the Hélice/propeller, a jelly floor layer, diagonal gravity, conveyors, portals, spreading chocolate, timed levels, pre-level boosters.
 - **Presentation:** animated cutscenes, voice acting, scoop-face rescue reward. Background music is P2 only.
 - **Platform:** PWA/offline install, languages other than Spanish.
 - **Characters:** any character outside the 9 listed.
+
+## 17. Full version (P0 once selling is on)
+
+The decision, the reasons and how to switch it on are in `docs/MONETIZACION.md`. The interfaces are in
+ARQUITECTURA §14.
+
+**Free and paid content:**
+- **Free:** levels 1–10 (Chapters 1–2: the Lima arc), the Reto Diario, the streak, sharing, the Álbum, and replays.
+- **Paid:** levels 11–30, plus a golden «Socio de la heladería» frame in the Álbum.
+- **Price:** US$1,99, one time. No ads, no other purchases, no advantages in play.
+
+**When the paywall appears:**
+- Once, after the first win of level 10: Victoria (with Compartir) → post10 → cliff10 → paywall.
+- After that, only when the player taps a locked node or «Siguiente» on level 10.
+- Never after a loss.
+
+**What the paywall says:**
+- «CONTINUARÁ... en la versión completa», the Don Piña hook and six bullets.
+- Buttons «Desbloquear todo · US$1,99», «Ya tengo un código» and «Ahora no». «Ahora no» is as clear as the buy button.
+- A footer with: fan game, ask an adult before paying, and the contact for refunds.
+
+**Unlocking:**
+- The store sends a signed code or a `#licencia=` link. It works offline and without an account, in any browser.
+- The success card says «¡Tenemos un trato, socio!» and offers «Copiar mi código».
+- All texts live in `js/store.js`. Preview them in `tools/store-preview.html`.

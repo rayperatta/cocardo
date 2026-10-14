@@ -1,0 +1,81 @@
+/* Cocardo: ¡Rescate Helado! — Pantallas de la versión completa (js/store.js). Usa los tokens de ARQUITECTURA §13. */
+.st-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(43, 22, 48, .62);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  animation: st-fade .18s ease-out;
+}
+.st-card {
+  width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--cream, #fff6ea); color: var(--ink, #2b1630);
+  border: 3px solid var(--ink, #2b1630); border-radius: 22px;
+  box-shadow: 0 6px 0 var(--ink, #2b1630), 0 18px 40px rgba(0, 0, 0, .35);
+  padding: 0 18px 16px;
+  font-family: var(--font-body, 'Nunito', system-ui, sans-serif);
+  animation: st-pop .26s cubic-bezier(.2, 1.4, .4, 1);
+}
+.st-head {
+  margin: 0 -18px 12px; padding: 16px 18px 14px; text-align: center;
+  background: radial-gradient(circle at 50% 0, var(--drama-2, #a1286a), var(--drama, #5b1e74) 70%);
+  color: #fff; border-radius: 19px 19px 0 0;
+}
+.st-portrait { width: 84px; height: 84px; margin: -4px auto 2px; }
+.st-portrait svg { width: 100%; height: 100%; display: block; }
+.st-kicker {
+  font-family: var(--font-script, 'Yellowtail', cursive); font-size: 34px; line-height: 1.1;
+  color: var(--gold, #ffc93c); text-shadow: 0 2px 0 rgba(0, 0, 0, .35);
+}
+.st-card .st-title {
+  margin: 2px 0 0; color: inherit; font-family: var(--font-display, 'Lilita One', system-ui, sans-serif); font-weight: 400;
+  font-size: 23px; line-height: 1.15; letter-spacing: .2px;
+}
+.st-lead { margin: 0 0 10px; font-size: 15px; font-weight: 700; line-height: 1.4; }
+.st-list { margin: 0 0 12px; padding: 0; list-style: none; }
+.st-list li {
+  position: relative; padding: 5px 0 5px 28px; font-size: 14.5px; font-weight: 700; line-height: 1.3;
+}
+.st-list li::before {
+  content: ''; position: absolute; left: 2px; top: 6px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ok, #33b679) no-repeat center / 12px 12px
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.3l2.6 2.5L10 3.4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.st-actions { display: flex; flex-direction: column; gap: 9px; margin: 6px 0 8px; }
+.st-btn {
+  display: block; width: 100%; min-height: 48px; padding: 11px 14px; text-align: center; text-decoration: none;
+  font: 800 16px/1.2 var(--font-body, 'Nunito', system-ui, sans-serif);
+  border: 3px solid var(--ink, #2b1630); border-radius: 16px; cursor: pointer;
+  box-shadow: 0 4px 0 var(--ink, #2b1630); transition: transform .06s, box-shadow .06s;
+  -webkit-tap-highlight-color: transparent;
+}
+.st-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink, #2b1630); }
+.st-btn:focus-visible { outline: 3px solid var(--ice-deep, #4aa8e0); outline-offset: 3px; }
+.st-btn[disabled] { opacity: .6; cursor: default; }
+/* «Ahora no» se ve tan claro como el botón de compra (sin trucos de diseño) */
+.st-primary { background: var(--pink, #ff6fa5); color: #fff; font-family: var(--font-display, 'Lilita One', system-ui, sans-serif);
+  font-weight: 400; font-size: 19px; letter-spacing: .3px; }
+.st-secondary { background: #fff; color: var(--ink, #2b1630); }
+.st-ghost {
+  min-height: 40px; padding: 8px 10px; font-size: 13.5px; background: transparent; box-shadow: none;
+  border-width: 2px; border-style: dashed;
+}
+.st-ghost:active { transform: none; }
+.st-copy { margin: 4px 0 6px; }
+.st-input {
+  display: block; width: 100%; box-sizing: border-box; margin: 0 0 6px; padding: 10px 12px; resize: none;
+  font: 600 14px/1.35 ui-monospace, Menlo, Consolas, monospace; word-break: break-all;
+  color: var(--ink, #2b1630); background: #fff; border: 3px solid var(--ink, #2b1630); border-radius: 14px;
+}
+.st-input:focus { outline: 3px solid var(--ice-deep, #4aa8e0); outline-offset: 1px; }
+.st-msg { min-height: 20px; margin: 0 0 4px; font-size: 14px; font-weight: 800; }
+.st-bad { color: var(--cherry, #d61f4b); }
+.st-note { min-height: 0; margin: 4px 0 0; font-size: 13px; font-weight: 800; color: var(--ok, #33b679); text-align: center; }
+.st-fine { margin: 10px 0 0; font-size: 12px; line-height: 1.4; opacity: .75; text-align: center; }
+.st-win .st-head { background: radial-gradient(circle at 50% 0, #ffe27a, var(--gold, #ffc93c) 45%, #f39a1e); color: var(--ink, #2b1630); }
+.st-win .st-kicker { color: var(--drama, #5b1e74); text-shadow: none; }
+
+@keyframes st-fade { from { opacity: 0; } }
+@keyframes st-pop { from { transform: scale(.86); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .st-overlay, .st-card { animation: none; } }
+body.reduced-motion .st-overlay, body.reduced-motion .st-card { animation: none; }

@@ -17,15 +17,17 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
   `if (typeof module !== 'undefined' && module.exports) module.exports = <ModuleObject>;` and must not touch
   `window`, `document`, `localStorage`, `Date.now()` or `Math.random()` (randomness only via the seeded RNG).
   In Node they `require()` each other with relative paths when needed (e.g. engine requires rng).
-- Never use `alert`, `confirm`, `prompt`, `window.open`, `<a download>`, `window.print`.
+- Never use `alert`, `confirm`, `prompt`, `window.open`, `<a download>`, `window.print`. The only way out of the game
+  is a plain `<a href target="_blank" rel="noopener">` to the store or donation page (`Cocardo.Store`, §14).
 - `localStorage` access only through `Cocardo.Save` (all wrapped in try/catch with in-memory fallback).
 - Audio only after the first user gesture (`Cocardo.Audio.unlock()` is called from the first tap).
 - Code style: identifiers in English, short comments in Spanish, 2-space indent, semicolons, `'use strict'` inside
   each file's IIFE. No transpilation: target evergreen browsers (ES2019 is fine: arrow functions, classes, const/let,
   template strings, spread; avoid `?.`/`??` only if you want old Safari 13 — they are allowed).
 - Script load order in `index.html`:
-  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/story.js, js/art.js, js/art-characters.js,
-  js/audio.js, js/save.js, js/fx.js, js/render.js, js/game.js, js/ui.js, js/main.js`.
+  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/core/license.js, js/story.js, js/art.js,
+  js/art-characters.js, js/audio.js, js/save.js, js/store.js, js/fx.js, js/render.js, js/game.js, js/ui.js, js/main.js`.
+  Stylesheets: `css/style.css, css/game.css, css/store.css`.
 
 ## 1. File ownership
 
@@ -40,6 +42,7 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
 | `css/game.css`, `js/fx.js`, `js/render.js`, `js/game.js` | Board | browser |
 | `tools/sim.js` | Balance | node |
 | `tests/e2e.cjs` | QA | node + playwright |
+| `js/core/license.js`, `js/store.js`, `css/store.css`, `tests/license.test.js`, `tools/license.cjs`, `tools/store-preview.html` | Store (done) | pure + browser; see `docs/MONETIZACION.md` |
 
 Do not edit files you do not own during the parallel build; if you need something from another module, code against
 this contract.
@@ -302,7 +305,11 @@ Cocardo.Save = {
 ```
 `data = { v:1, unlocked:1, stars:Array(30).fill(0), best:Array(30).fill(0), boosters:{cucharon:0, chorro:0, batido:0},
 boostersUnlocked:{cucharon:false, chorro:false, batido:false}, rescued:[], seen:{}, daily:{ last:0, streak:0,
-bestStreak:0, results:{} }, settings:{ sound:true, vibra:true, motion:'auto'|'on'|'off', music:false } }`.
+bestStreak:0, results:{} }, settings:{ sound:true, vibra:true, motion:'auto'|'on'|'off', music:false },
+license:null }`.
+
+`license` is `null | { code, serial, product, at }` and is written only by `Cocardo.Store` (§14). It is part of `v:1`
+(no migration: `load()` fills it with `null` when missing). `reset()` («Borrar progreso») keeps `license`.
 
 ## 11. `Cocardo.Game` (js/game.js + render.js + fx.js) — the board screen
 
@@ -325,7 +332,8 @@ Cliffhanger, Reto Diario, Álbum, Ajustes) and the save/unlock/stars/rescue book
 ## 12. Debug hooks
 
 When `location.hash === '#debug'` (or `Cocardo.debugEnabled = true` before boot), `window.Cocardo.debug` exposes:
-`{ unlockAll(), go(levelId), win(), lose(), state(), swap(a,b), screen() }` so automated tests can drive the game.
+`{ unlockAll(), go(levelId), win(), lose(), state(), swap(a,b), screen(), setFull(bool) }` so automated tests can drive
+the game (`setFull` calls `Cocardo.Store.setFull`).
 `Cocardo.Game` must expose `_state()` (current engine state) and `_busy()` (true while animating) for tests.
 
 ## 13. Visual identity (shared tokens)
@@ -358,3 +366,51 @@ Google Fonts link: `https://fonts.googleapis.com/css2?family=Lilita+One&family=N
 Layout: `html, body { height: 100% }` (never `100vh` for the app frame), app frame `#app` fills the viewport, respects
 safe-area insets, no horizontal scroll at 320–430 px wide, board square = `min(100vw - 24px, available height, 600px)`.
 Respect `prefers-reduced-motion` and the in-game "Movimiento reducido" setting (`body.reduced-motion`).
+
+## 14. `Cocardo.License` and `Cocardo.Store` — full version (done)
+
+Business decision, texts and how to switch selling on: `docs/MONETIZACION.md`. Levels 1–10, the Reto Diario and the
+Álbum are always free; levels 11–30 need the full version **only while selling is on** (`License.PUBLIC_KEY` and
+`Store.config.buyUrl` both set). With either missing, nothing is locked.
+
+```js
+Cocardo.License = {            // js/core/license.js — pure; WebCrypto `subtle` is passed in
+  FREE_LEVELS: 10, PRODUCT_FULL: 1, CODE_LEN: 94,
+  PUBLIC_KEY: null | { kty:'EC', crv:'P-256', x, y },   // printed by `node tools/license.cjs keygen`
+  REVOKED: [serial, ...],
+  normalize(text) -> code | null,      // bare code, full link or '#licencia=…' (other hash params, whitespace ok)
+  decode(text) -> { code, format, product, serial, payload, sig } | null,
+  verify(text, subtle, jwk = PUBLIC_KEY) -> Promise<{ ok, reason, code?, serial?, product? }>,
+      // reason: 'ok'|'format'|'product'|'revoked'|'signature'|'nokey'|'nocrypto'
+  isLevelLocked(levelId, full) -> boolean,
+};
+
+Cocardo.Store = {              // js/store.js + css/store.css — browser; uses License, Save and Audio (optional)
+  config: { buyUrl:'', donateUrl:'', price:'', contact:'' },
+  init({ show = true }) -> Promise<{ redeemed, result? }>,   // main.js, right after Save.load(): redeems '#licencia=…'
+      // (then strips it from the URL with history.replaceState), re-checks the saved code (REVOKED), and with show
+      // opens the success or error view
+  selling() -> boolean,        // PUBLIC_KEY && buyUrl
+  isFull() -> boolean,
+  isLocked(levelId) -> boolean,           // selling() && License.isLevelLocked(levelId, isFull())
+  code() -> string | null,
+  canVerify() -> boolean,
+  redeem(text) -> Promise<result>,        // same result as License.verify; on ok writes Save.license and calls save()
+  onChange(fn(full)) -> unsubscribe,
+  open(view, { reason:'cliff'|'lock'|'settings', onClose(full) }),   // view: 'paywall'|'redeem'|'success'|'status'
+  close(), isOpen() -> boolean,
+  setFull(bool),               // debug only
+};
+```
+
+The Store owns its overlay (`.st-overlay`, appended to `#app` or `body`, `role="dialog"`, Esc closes, focus kept
+inside). The Shell only calls it:
+- Mapa: lock badge on nodes where `Store.isLocked(id)`; tapping one → `Store.open('paywall', {reason:'lock'})`.
+- After the first win of L10 and its cliff10 card: if `Store.isLocked(11)` and `!seen.paywall10`, set it and call
+  `Store.open('paywall', {reason:'cliff', onClose})`, then go to the Mapa.
+- «Siguiente» on a locked level and `debug.go(id)` respect `isLocked` the same way.
+- Ajustes: a «Versión completa» button → `Store.open('status')` (shows buy/redeem, or the code to copy, and the donation
+  link).
+- Álbum: the «Socio de la heladería» golden frame when `Store.isFull()`.
+- `Store.onChange(redrawMap)`.
+- The Reto Diario ignores `isLocked` (its boards come from campaign levels 6–25 and it is always free).
