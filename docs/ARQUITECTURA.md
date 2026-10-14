@@ -24,17 +24,18 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
   each file's IIFE. No transpilation: target evergreen browsers (ES2019 is fine: arrow functions, classes, const/let,
   template strings, spread; avoid `?.`/`??` only if you want old Safari 13 — they are allowed).
 - Script load order in `index.html`:
-  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/story.js, js/art.js, js/audio.js,
-  js/save.js, js/fx.js, js/render.js, js/game.js, js/ui.js, js/main.js`.
+  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/story.js, js/art.js, js/art-characters.js,
+  js/audio.js, js/save.js, js/fx.js, js/render.js, js/game.js, js/ui.js, js/main.js`.
 
 ## 1. File ownership
 
 | File | Owner (build step) | Kind |
 |---|---|---|
-| `js/core/rng.js`, `js/core/engine.js`, `tests/engine.test.js` | Engine | pure |
+| `js/core/rng.js`, `js/core/engine.js`, `js/core/replay.js`, `tests/engine.test.js`, `tests/fuzz.test.js`, `tests/helpers.js` | Engine (done) | pure |
 | `js/core/levels.js`, `js/core/daily.js`, `js/story.js`, `tests/levels.test.js`, `tests/daily.test.js` | Content | pure data/logic |
-| `js/art.js`, `tools/art-preview.html` | Art | browser (strings only, no DOM needed) |
-| `js/audio.js`, `tools/audio-preview.html` | Audio | browser |
+| `js/art.js`, `tools/art-preview.html` | Art (board) | browser (strings only, no DOM needed) |
+| `js/art-characters.js`, `tools/portraits-preview.html` | Art (characters) | browser (strings only); adds `Cocardo.Art.characters` and `Cocardo.Art.portrait` |
+| `js/audio.js`, `tools/audio-preview.html` | Audio (done) | browser |
 | `index.html`, `css/style.css`, `js/save.js`, `js/ui.js`, `js/main.js` | Shell | browser |
 | `css/game.css`, `js/fx.js`, `js/render.js`, `js/game.js` | Board | browser |
 | `tools/sim.js` | Balance | node |
@@ -56,8 +57,15 @@ Colors (tile flavors = the six freezer victims), index order matters (ties, RNG 
 | 4 | `N` | `naranja` | Naranja |
 | 5 | `D` | `durazna` | Durazna |
 
-Character ids (exactly these, see `docs/PERSONAJES.md`): `cocardo, lima, cereza, pina, banana, fresa, durazna, uva, naranja`.
-Display names: Cocardo, Lima, Cereza, Piña, Banana, Fresa, Durazna, Uva, Naranja.
+Character ids (exactly these, see `docs/PERSONAJES.md`, which is binding for looks and names):
+- main cast (10): `cocardo, lima, cereza, pina, banano, banana, fresa, durazna, uva, naranja`
+- secondary (6): `limon, policia_fresa, policia_sandia, guardaespaldas, brocoli, reportera`
+
+Display names: Cocardo, Lima, Cherry (id `cereza`; the press calls her Cereza), Don Piña, Banano, Banana, Fresa,
+Durazna, Uva, Naranja, Limón, La oficial, El oficial Sandía, El guardaespaldas, El repartidor, La reportera.
+Note: **Banano** (male, bearded investigator) and **Banana** (his sister, a victim and a tile color) are different
+characters. `docs/DISENO.md` §6 and §8 predate the research: where they disagree with `docs/PERSONAJES.md`
+(looks, who is the detective, dialogue), PERSONAJES wins.
 
 Cell coordinates are `{r, c}` with `r` = row from top (0) and `c` = column from left (0).
 
@@ -234,9 +242,11 @@ Cocardo.Story = {
   tips: { 1:'…', … },                           // short tip line for the level intro (optional)
   taunts: { cocardo:{ start:[…], low:[…], act:[…] }, cereza:{ start:[…], low:[…], act:[…] } },
   cascadeText: ['', '', '¡Rico!', '¡Delicioso!', '¡Escandaloso!', '¡DRAMÁTICO!', '¡¡TELENOVELA!!'],  // index = c (6+ uses last)
-  album: [ { id:'cocardo', name:'Cocardo', role:'…', quote:'…', unlock:'start'|'rescue' }, ... 9 ],
-  villainFor(levelId) -> 'cocardo'|'cereza',   // HUD villain
-  helperFor(levelId) -> 'cereza'|'banana'|'cocardo',  // tip giver / hint peeker
+  album: [ { id:'cocardo', name:'Cocardo', role:'…', quote:'…' (a canonical line), unlock:{ type:'start'|'level'|'rescue', level?:n, who?:id } }, ... 16 ],
+  villainFor(levelId) -> 'cocardo'|'cereza',        // main HUD villain (taunts); the HUD shows every villain of level.villains / level.freezer
+  helperFor(levelId) -> character id,               // who gives the level-intro tip (e.g. 'lima' in chapter 1, rescued victims later, 'banano' from chapter 5)
+  hintPeeker(levelId) -> 'limon'|'banano',          // the head that peeks from the board edge with the hint
+  chapterTitles: [ 'Parte …', … ],                  // optional subtitles shown on the map per chapter
 };
 ```
 
@@ -250,8 +260,8 @@ only internal references (unique gradient ids per call: use a counter suffix). N
 
 ```js
 Cocardo.Art = {
-  characters: { cocardo:{ name:'Cocardo', fruit:'coco', color:'#…' }, ... },   // 9 entries
-  portrait(id, mood='normal', opts={}) -> svg,     // viewBox 0 0 200 200, bust/full character, transparent bg; opts.frozen (icy overlay), opts.silhouette (dark icy silhouette for album locks)
+  characters: { cocardo:{ name:'Cocardo', fruit:'coco', color:'#…' }, ... },   // 16 entries (10 main + 6 secondary)
+  portrait(id, mood='normal', opts={}) -> svg,     // viewBox 0 0 200 200, head-and-shoulders bust, transparent bg; opts.frozen (icy overlay + frost, blank eyes), opts.silhouette (dark icy silhouette for album locks), opts.variant ('carcel' for jailed Cocardo, 'huida' for Cherry's escape look, 'tubo' for Durazna with the pipe, 'panecitos' for Naranja with the bag)
   tile(color, opts={}) -> svg,                     // viewBox 0 0 100 100; color = 'L'|'F'|'B'|'U'|'N'|'D'; opts.type = 'n'|'ph'|'pv'|'bomba'; opts.face = 'normal'|'blink'|'scared'|'happy'
   copa(opts={}) -> svg,                            // Copa Arcoíris, viewBox 0 0 100 100
   token(skin) -> svg,                              // 'uva' (Uva fugitiva) | 'prueba' (evidence folder/bag), 100x100

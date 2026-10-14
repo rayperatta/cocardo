@@ -1,5 +1,7 @@
 # Cocardo: ¡Rescate Helado! (GDD v1, final)
 
+> **Nota:** este documento se escribió antes de terminar la investigación. Para el aspecto, los nombres y los papeles de los personajes, y para los diálogos, manda `docs/PERSONAJES.md` (fiel a la serie original). En particular: el detective es **Banano** (hermano de Banana); Cherry (Cereza) es una mujer de piel roja con un tallo en la cabeza; Don Piña viste traje vino; las cajas son **cajas del inventario** de Cherry, no pruebas plantadas; las pruebas las reúne Banano. El guion final de historia está en `js/story.js`.
+
 This is a fan-made match-3 game in the line of Candy Crush and Royal Match, based on the viral frutinovela *Cocardo y sus helados* ("La nieve de Lima"). The tone is telenovela but family-friendly: fruits get trapped in ice and are always rescued, and Cocardo and Cereza are comic villains. All in-game text is Latin-American Spanish. The title and settings screens show the footer «Juego de fans, no oficial. Inspirado en la frutinovela viral.»
 
 **Priority labels:**
