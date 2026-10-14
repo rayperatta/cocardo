@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cocardo: ¡Rescate Helado! · Juego gratis de puzzle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Juega gratis a Cocardo: ¡Rescate Helado!, un puzzle de «junta 3» inspirado en la frutinovela La Nieve de Lima. 30 niveles, 16 personajes y un Reto Diario. Funciona en teléfono y computadora, sin instalar nada.">
+<meta name="theme-color" content="#ff6fa5">
+<meta name="color-scheme" content="light">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cocardo: ¡Rescate Helado!">
+<meta property="og:description" content="Descongela a las frutas de la heladería de Cocardo antes de que se conviertan en el nuevo sabor del mes. Gratis, en tu teléfono o computadora.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%A6%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&family=Yellowtail&display=swap">
+<link rel="stylesheet" href="landing.css">
+</head>
+<body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<!-- ============ Navegación ============ -->
+<header class="nav" id="nav">
+  <div class="wrap nav__inner">
+    <a class="nav__brand" href="#inicio" aria-label="Cocardo, inicio">
+      <span class="nav__logo" data-art="logo"></span>
+    </a>
+    <nav class="nav__links" id="menu" aria-label="Secciones">
+      <a href="#historia">Historia</a>
+      <a href="#como-jugar">Cómo se juega</a>
+      <a href="#personajes">Personajes</a>
+      <a href="#reto">Reto Diario</a>
+      <a href="#preguntas">Preguntas</a>
+      <a class="btn btn--sm btn--pink nav__cta-mobile" href="../index.html">¡Jugar gratis!</a>
+    </nav>
+    <a class="btn btn--sm btn--pink nav__cta" href="../index.html">¡Jugar gratis!</a>
+    <button class="nav__burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="contenido">
+
+<!-- ============ Héroe ============ -->
+<section class="hero" id="inicio">
+  <div class="hero__bg" aria-hidden="true">
+    <span class="blob blob--1"></span><span class="blob blob--2"></span><span class="blob blob--3"></span>
+    <div class="flakes"></div>
+  </div>
+  <div class="wrap hero__grid">
+    <div class="hero__copy reveal">
+      <p class="eyebrow"><span class="dot"></span> Juego de fans · gratis · sin instalar</p>
+      <h1 class="hero__title">
+        <span class="sr-only">Cocardo: ¡Rescate Helado!</span>
+        <span class="hero__logo" data-art="logo" aria-hidden="true"></span>
+      </h1>
+      <p class="hero__lead">
+        Cocardo descubrió que su congelador viejo hace el helado más rico del mundo…
+        <strong>con frutas adentro</strong>. Junta 3 sabores, rompe el hielo y descongela a sus víctimas
+        antes de que terminen en el menú.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--lg btn--pink" href="../index.html">
+          <span class="btn__icon" data-art="icon:play" aria-hidden="true"></span> Jugar ahora
+        </a>
+        <a class="btn btn--lg btn--ghost" href="#como-jugar">Cómo se juega</a>
+      </div>
+      <ul class="hero__badges" aria-label="Disponible en">
+        <li><span aria-hidden="true">📱</span> Teléfono</li>
+        <li><span aria-hidden="true">💻</span> Computadora</li>
+        <li><span aria-hidden="true">⚡</span> Abre al instante</li>
+      </ul>
+    </div>
+
+    <div class="hero__visual reveal" aria-label="Vista previa del tablero">
+      <div class="phone">
+        <div class="phone__notch" aria-hidden="true"></div>
+        <div class="phone__screen">
+          <div class="phone__hud">
+            <div class="hud__pill"><span class="hud__label">Nivel</span><b>5</b></div>
+            <div class="hud__goal"><span class="hud__tile" data-art="tile:L"></span><b id="goalCount">20</b></div>
+            <div class="hud__pill"><span class="hud__label">Movs</span><b id="movesCount">24</b></div>
+          </div>
+          <div class="board" id="board" aria-hidden="true"></div>
+          <div class="phone__bubble">
+            <span class="phone__face" data-art="portrait:cocardo:burlon"></span>
+            <p>«Perdóname, amor… solo un poquito.»</p>
+          </div>
+        </div>
+      </div>
+      <div class="float float--lima" data-art="portrait:lima:asustado" aria-hidden="true"></div>
+      <div class="float float--cherry" data-art="portrait:cereza:coqueta" aria-hidden="true"></div>
+      <div class="float float--copa" data-art="tile:copa" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none"><path d="M0 60 Q 60 110 120 60 T 240 60 T 360 60 T 480 60 T 600 60 T 720 60 T 840 60 T 960 60 T 1080 60 T 1200 60 T 1320 60 T 1440 60 V120 H0Z" fill="currentColor"/></svg>
+  </div>
+</section>
+
+<!-- ============ Cifras ============ -->
+<section class="stats" aria-label="El juego en números">
+  <div class="wrap stats__grid">
+    <div class="stat reveal"><b data-count="30">30</b><span>niveles</span></div>
+    <div class="stat reveal"><b data-count="6">6</b><span>capítulos</span></div>
+    <div class="stat reveal"><b data-count="16">16</b><span>personajes</span></div>
+    <div class="stat reveal"><b>1</b><span>reto nuevo cada día</span></div>
+  </div>
+</section>
+
+<!-- ============ Historia ============ -->
+<section class="section story" id="historia">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="kicker">La frutinovela</p>
+      <h2>Una telenovela de frutas… <em>bien helada</em></h2>
+      <p class="section__lead">
+        La historia avanza igual que en la serie viral <strong>La Nieve de Lima</strong>: frases reales,
+        cliffhangers de «CONTINUARÁ…» y un final de temporada que no vas a olvidar.
+      </p>
+    </header>
+
+    <ol class="chapters" id="chapters"></ol>
+
+    <div class="tv reveal">
+      <div class="tv__screen">
+        <p class="tv__script">Continuará…</p>
+        <blockquote class="tv__quote" id="tvQuote">
+          <p>«Necesito 500 litros para empezar… 500 por sabor. Consígueme 5 y tenemos un trato.»</p>
+          <footer>— Don Piña</footer>
+        </blockquote>
+      </div>
+      <div class="tv__cast" id="tvCast"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Cómo se juega ============ -->
+<section class="section how" id="como-jugar">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="kicker">Cómo se juega</p>
+      <h2>Fácil de aprender, <em>difícil de soltar</em></h2>
+      <p class="section__lead">Si alguna vez jugaste a juntar dulces, ya sabes jugar. Lo nuevo: aquí cada jugada salva a alguien.</p>
+    </header>
+
+    <div class="steps">
+      <article class="step reveal">
+        <span class="step__num">1</span>
+        <div class="step__art step__art--swap">
+          <span data-art="tile:F"></span><span class="step__arrow" aria-hidden="true">⇄</span><span data-art="tile:L"></span>
+        </div>
+        <h3>Desliza</h3>
+        <p>Mueve una fruta hacia su vecina —o toca una y luego la otra— para juntar 3 o más iguales.</p>
+      </article>
+      <article class="step reveal">
+        <span class="step__num">2</span>
+        <div class="step__art"><span data-art="ice"></span></div>
+        <h3>Rompe el hielo</h3>
+        <p>Cumple las metas antes de quedarte sin movimientos: hielo, cajas de Cherry y congeladores enteros.</p>
+      </article>
+      <article class="step reveal">
+        <span class="step__num">3</span>
+        <div class="step__art"><span data-art="friend"></span></div>
+        <h3>Rescata</h3>
+        <p>Libera a Lima, Fresa, Durazna, Uva y compañía, y desbloquéalos en tu álbum de personajes.</p>
+      </article>
+    </div>
+
+    <div class="specials reveal">
+      <h3 class="specials__title">Combina para crear especiales</h3>
+      <div class="specials__grid">
+        <div class="special">
+          <span class="special__art" data-art="tile:F:ph"></span>
+          <div><b>Paleta</b><p>4 en línea. Limpia toda una fila o columna.</p></div>
+        </div>
+        <div class="special">
+          <span class="special__art" data-art="tile:N:bomba"></span>
+          <div><b>Bomba de Coco</b><p>Forma una L o una T. Explota un área de 3×3.</p></div>
+        </div>
+        <div class="special">
+          <span class="special__art" data-art="tile:copa"></span>
+          <div><b>Copa Arcoíris</b><p>5 en línea. Se lleva todas las fichas de un sabor.</p></div>
+        </div>
+      </div>
+      <p class="specials__tip"><span aria-hidden="true">💡</span> Cambia dos especiales entre sí para un combo gigante.</p>
+    </div>
+
+    <div class="villains">
+      <article class="villain reveal">
+        <span class="villain__art" data-art="portrait:cocardo:furioso"></span>
+        <div>
+          <h3>Cocardo congela</h3>
+          <p>Cada pocos turnos cubre fichas con escarcha. ¡Muévete rápido!</p>
+        </div>
+      </article>
+      <article class="villain villain--cherry reveal">
+        <span class="villain__art" data-art="portrait:cereza:burlon"></span>
+        <div>
+          <h3>Cherry encierra</h3>
+          <p>Convierte fichas en cajas de su inventario. Vigila su cuenta regresiva.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Personajes ============ -->
+<section class="section cast" id="personajes">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="kicker">El reparto</p>
+      <h2>16 personajes, <em>todos con drama</em></h2>
+      <p class="section__lead">Toca a una víctima congelada para descongelarla. En el juego, eso cuesta un poco más de trabajo.</p>
+    </header>
+    <div class="cast__grid" id="castGrid"></div>
+    <p class="cast__more reveal">…y más personajes que conocerás en el camino: la oficial, el oficial Sandía, el repartidor y la reportera.</p>
+  </div>
+</section>
+
+<!-- ============ Reto Diario ============ -->
+<section class="section daily" id="reto">
+  <div class="wrap daily__grid">
+    <div class="daily__copy reveal">
+      <p class="kicker kicker--light">Reto Diario</p>
+      <h2>El mismo tablero <em>para todos</em>, cada día</h2>
+      <p>Un nivel nuevo cada 24 horas, idéntico para cualquier jugador del mundo. Mantén tu racha y presume tu
+        resultado con emojis, sin spoilers.</p>
+      <ul class="checks">
+        <li>Racha de días seguidos</li>
+        <li>Resultado para compartir en un toque</li>
+        <li>Nada que descargar ni registrarse</li>
+      </ul>
+      <a class="btn btn--lg btn--gold" href="../index.html">Jugar el reto de hoy</a>
+    </div>
+    <div class="daily__card reveal" aria-label="Ejemplo de resultado compartido">
+      <div class="chat">
+        <div class="chat__msg chat__msg--in">¿Ya hiciste el de hoy? 👀</div>
+        <div class="chat__msg chat__msg--out">
+          <pre>Cocardo · Reto #<span id="dailyNum">128</span>
+⭐⭐⭐ 17/22 movs · Combo x4
+🟩🟩💥🟩🟩🟩🍦🟩🟩🟩
+🟩🟩💥🟩🟩🟩🟩
+🔥 Racha: 9</pre>
+        </div>
+        <div class="chat__msg chat__msg--in">¿¡Combo x4!? 😱 Voy por la revancha</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Características ============ -->
+<section class="section features" aria-labelledby="features-title">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="kicker">Hecho con cariño</p>
+      <h2 id="features-title">Pensado para <em>todo público</em></h2>
+    </header>
+    <div class="features__grid">
+      <article class="feature reveal"><span class="feature__ico" aria-hidden="true">📱</span><h3>Teléfono y computadora</h3><p>Se adapta a cualquier pantalla. Juega con el dedo, el mouse o el teclado.</p></article>
+      <article class="feature reveal"><span class="feature__ico" aria-hidden="true">🚀</span><h3>Sin instalar nada</h3><p>Abre el enlace y listo. Ni tiendas de apps ni cuentas.</p></article>
+      <article class="feature reveal"><span class="feature__ico" aria-hidden="true">💾</span><h3>Guarda tu progreso</h3><p>Tus estrellas y rescates se guardan solos en tu navegador.</p></article>
+      <article class="feature reveal"><span class="feature__ico" aria-hidden="true">🎵</span><h3>Música original</h3><p>Efectos y melodías creados para el juego. Silencia con un toque o la tecla M.</p></article>
+      <article class="feature reveal"><span class="feature__ico" aria-hidden="true">🎨</span><h3>Arte dibujado a mano</h3><p>Cada personaje redibujado en vectores, con 12 estados de ánimo.</p></article>
+      <article class="feature reveal"><span class="feature__ico" aria-hidden="true">🍭</span><h3>Gratis y sin anuncios</h3><p>Un proyecto de fans para fans. Sin compras dentro del juego.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Preguntas ============ -->
+<section class="section faq" id="preguntas">
+  <div class="wrap wrap--narrow">
+    <header class="section__head reveal">
+      <p class="kicker">Preguntas frecuentes</p>
+      <h2>¿Dudas? <em>Te las descongelamos</em></h2>
+    </header>
+    <div class="faq__list">
+      <details class="reveal" open>
+        <summary>¿Cuánto cuesta?</summary>
+        <p>Nada. El juego es gratis, no tiene anuncios ni compras dentro de la app.</p>
+      </details>
+      <details class="reveal">
+        <summary>¿Necesito descargar algo?</summary>
+        <p>No. Funciona directo en el navegador de tu teléfono, tableta o computadora. Si quieres, puedes agregarlo a tu pantalla de inicio desde el menú del navegador.</p>
+      </details>
+      <details class="reveal">
+        <summary>¿Es apto para niños?</summary>
+        <p>Sí. Es un puzzle de colores con humor de telenovela: los personajes quedan congelados y tú los rescatas. Sin violencia gráfica ni chats con desconocidos.</p>
+      </details>
+      <details class="reveal">
+        <summary>¿Se guarda mi progreso?</summary>
+        <p>Sí, en tu navegador. Si usas modo incógnito o borras los datos del sitio, el progreso se pierde.</p>
+      </details>
+      <details class="reveal">
+        <summary>¿Es el juego oficial de la serie?</summary>
+        <p>No. Es un juego de fans, no oficial, inspirado en la frutinovela <em>La Nieve de Lima</em> de @frutitaenlatada. Todo el arte está redibujado y no usa imágenes ni audio de los videos.</p>
+      </details>
+      <details class="reveal">
+        <summary>¿Puedo jugar con teclado?</summary>
+        <p>Claro: flechas para mover el cursor, Espacio o Enter para elegir, Esc para pausar y M para silenciar.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Llamado final ============ -->
+<section class="cta">
+  <div class="wrap cta__inner reveal">
+    <div class="cta__art" aria-hidden="true">
+      <span data-art="tile:L:happy"></span><span data-art="tile:F:happy"></span><span data-art="tile:B:happy"></span><span data-art="tile:U:happy"></span><span data-art="tile:N:happy"></span>
+    </div>
+    <h2>Lima te está esperando<br>en el congelador.</h2>
+    <p>Son solo tres frutas iguales. ¿Qué tan difícil puede ser?</p>
+    <a class="btn btn--xl btn--pink" href="../index.html">
+      <span class="btn__icon" data-art="icon:play" aria-hidden="true"></span> Empezar el rescate
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <div class="footer__brand">
+      <span class="footer__logo" data-art="logo" aria-hidden="true"></span>
+      <p>Juego de fans, no oficial. Historia y personajes originales de la frutinovela <em>La Nieve de Lima</em>, de @frutitaenlatada.</p>
+    </div>
+    <nav class="footer__links" aria-label="Enlaces">
+      <a href="../index.html">Jugar</a>
+      <a href="#historia">Historia</a>
+      <a href="#como-jugar">Cómo se juega</a>
+      <a href="#personajes">Personajes</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+  </div>
+  <p class="footer__note">Arte vectorial, música y código: proyecto de fans, hecho con Claude Code.</p>
+</footer>
+
+<!-- Botón flotante en teléfonos -->
+<a class="fab btn btn--pink" id="fab" href="../index.html" aria-label="Jugar gratis">¡Jugar gratis!</a>
+
+<script src="../js/core/rng.js"></script>
+<script src="../js/core/levels.js"></script>
+<script src="../js/core/daily.js"></script>
+<script src="../js/story.js"></script>
+<script src="../js/art.js"></script>
+<script src="../js/art-characters.js"></script>
+<script src="landing.js"></script>
+</body>
+</html>

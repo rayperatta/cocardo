@@ -40,6 +40,8 @@ que descongela a las víctimas mientras la historia avanza igual que en la serie
 ## Jugar
 
 - **Local:** abre `index.html` con doble clic. No necesita servidor.
+- **Página de presentación:** `landing/index.html` es la landing del juego (historia, cómo se juega, personajes,
+  Reto Diario y preguntas frecuentes). Reutiliza el arte de `js/` y sus botones llevan a `index.html`.
 - **Un solo archivo:** `node tools/build-single.cjs` genera `dist/cocardo.html` con todo adentro, para
   compartirlo o subirlo a cualquier hosting.
 - **GitHub Pages:** en el repositorio, ve a *Settings → Pages*. En *Build and deployment* elige
