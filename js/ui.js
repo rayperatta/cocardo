@@ -130,7 +130,7 @@
   // Respaldo por si Cocardo.Levels no cargó: mismos nombres, zonas y colores que js/core/levels.js
   var DEFAULT_CHAPTERS = [
     { id: 1, name: 'La nieve de Lima', zone: "Coco's Scoops", color: '#ff6fa5' },
-    { id: 2, name: 'Necesitamos un nuevo sabor', zone: 'La oficina de Don Piña', color: '#a1286a' },
+    { id: 2, name: 'Necesitamos un nuevo sabor', zone: "Coco's Scoops", color: '#a1286a' },
     { id: 3, name: 'Voy a ampliar el menú', zone: 'La trastienda', color: '#4aa8e0' },
     { id: 4, name: 'Cherry conoce el negocio', zone: 'El vecindario de Cherry', color: '#d61f4b' },
     { id: 5, name: 'La fuga', zone: 'La noche de la tormenta', color: '#5b1e74' },
@@ -368,6 +368,119 @@
       }
     } catch (e) { /* sigue con el portapapeles */ }
     return copyFallback();
+  }
+
+  /* ---------- imagen para compartir (tarjeta 1080x1920 para historias / TikTok) ---------- */
+
+  var SHARE_W = 1080, SHARE_H = 1920;
+  // ¿El navegador puede compartir archivos? (Web Share nivel 2, permitido en este marco)
+  function canShareFiles() {
+    try {
+      if (!navigator.share || !navigator.canShare || typeof File !== 'function' || !policyAllows('web-share')) return false;
+      return !!navigator.canShare({ files: [new File([new Uint8Array(8)], 'x.png', { type: 'image/png' })] });
+    } catch (e) { return false; }
+  }
+  // Cambia el tamaño del <svg> raíz (se rasteriza nítido al tamaño final)
+  function svgSized(svg, w, h) {
+    return String(svg).replace(/<svg\b([^>]*)>/, function (m, attrs) {
+      return '<svg' + attrs.replace(/\s(width|height)="[^"]*"/g, '') + ' width="' + w + '" height="' + h + '">';
+    });
+  }
+  function svgImage(svg, w, h) {
+    return new Promise(function (resolve) {
+      if (!svg) { resolve(null); return; }
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgSized(svg, w, h));
+    });
+  }
+  function wrapLines(g, text, maxW) {
+    var words = String(text).split(/\s+/), lines = [], cur = '';
+    words.forEach(function (w) {
+      var t = cur ? cur + ' ' + w : w;
+      if (cur && g.measureText(t).width > maxW) { lines.push(cur); cur = w; } else cur = t;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function roundRect(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  // o: { id, stars, who, mood, line, zone, title, name }. Devuelve Promise<File|null>; nunca lanza.
+  function buildShareImage(o) {
+    var FONT = '"Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif';
+    var BODY = '"Nunito", system-ui, sans-serif';
+    var fontsReady = (doc.fonts && doc.fonts.load) ? Promise.all([doc.fonts.load('80px "Lilita One"'), doc.fonts.load('900 40px "Nunito"')]).catch(function () { return null; }) : Promise.resolve();
+    var starOn = art('icon', 'star', { size: 24 });
+    var starOff = String(art('icon', 'starEmpty', { size: 24 })).replace(/currentColor/g, '#2b1630');
+    return Promise.all([
+      // sin letreros de texto del fondo (el neón de la heladería quedaría detrás del retrato)
+      svgImage(String(zoneBg(o.zone) || '').replace(/<text[\s\S]*?<\/text>/g, ''), SHARE_W, SHARE_H),
+      svgImage(art('logo'), 720, 360), svgImage(portrait(o.who, o.mood), 700, 700),
+      svgImage(starOn, 200, 200), svgImage(starOff, 200, 200), fontsReady,
+    ]).then(function (im) {
+      var cv = doc.createElement('canvas');
+      cv.width = SHARE_W; cv.height = SHARE_H;
+      var g = cv.getContext('2d');
+      if (!g) return null;
+      // fondo de la zona + velo de telenovela
+      g.fillStyle = '#ffd3e3'; g.fillRect(0, 0, SHARE_W, SHARE_H);
+      if (im[0]) g.drawImage(im[0], 0, 0, SHARE_W, SHARE_H);
+      var veil = g.createLinearGradient(0, 0, 0, SHARE_H);
+      veil.addColorStop(0, 'rgba(43,22,48,.15)'); veil.addColorStop(0.55, 'rgba(91,30,116,.35)'); veil.addColorStop(1, 'rgba(43,22,48,.85)');
+      g.fillStyle = veil; g.fillRect(0, 0, SHARE_W, SHARE_H);
+      if (im[1]) g.drawImage(im[1], (SHARE_W - 720) / 2, 60, 720, 360);
+      // tarjeta crema
+      roundRect(g, 70, 1060, SHARE_W - 140, 580, 60);
+      g.fillStyle = '#fff6ea'; g.fill();
+      g.lineWidth = 12; g.strokeStyle = '#2b1630'; g.stroke();
+      // retrato grande que asoma sobre la tarjeta
+      if (im[2]) g.drawImage(im[2], (SHARE_W - 700) / 2, 436, 700, 700);
+      // estrellas
+      for (var k = 0; k < 3; k++) {
+        var sz = k === 1 ? 220 : 180;
+        var sx = SHARE_W / 2 + (k - 1) * 230 - sz / 2, sy = 1040 - (k === 1 ? 40 : 0);
+        var si = k < o.stars ? im[3] : im[4];
+        if (si) g.drawImage(si, sx, sy, sz, sz);
+      }
+      g.textAlign = 'center';
+      g.textBaseline = 'alphabetic';
+      g.fillStyle = '#5b1e74';
+      g.font = '84px ' + FONT;
+      g.fillText(o.title, SHARE_W / 2, 1340);
+      g.fillStyle = '#a1286a';
+      g.font = '52px ' + FONT;
+      g.fillText('«' + o.name + '»', SHARE_W / 2, 1420, SHARE_W - 200);
+      // frase del personaje
+      g.fillStyle = '#2b1630';
+      g.font = '800 46px ' + BODY;
+      wrapLines(g, o.line, SHARE_W - 260).slice(0, 2).forEach(function (ln, i) { g.fillText(ln, SHARE_W / 2, 1510 + i * 60); });
+      g.fillStyle = '#fff6ea';
+      g.font = '60px ' + FONT;
+      g.fillText('¿Puedes tú?', SHARE_W / 2, 1770);
+      g.font = '700 32px ' + BODY;
+      g.fillText('Juego de fans · Cocardo: ¡Rescate Helado!', SHARE_W / 2, 1860);
+      return new Promise(function (res) {
+        try { cv.toBlob(function (b) { res(b); }, 'image/png'); } catch (e) { res(null); }
+      });
+    }).then(function (blob) {
+      return blob ? new File([blob], 'cocardo-nivel-' + o.id + '.png', { type: 'image/png' }) : null;
+    }).catch(function () { return null; });
+  }
+  // Comparte la imagen (si se puede) con el texto; si no, false y se usa el flujo de texto
+  function shareImage(file, text) {
+    try {
+      if (!file || !navigator.canShare || !navigator.canShare({ files: [file] })) return false;
+      var url = shareUrl();
+      navigator.share({ files: [file], text: url ? text + '\n' + url : text }).then(null, function (err) {
+        if (err && err.name === 'AbortError') return;
+        share(text);
+      });
+      return true;
+    } catch (e) { return false; }
   }
 
   function showCopyBox(text) {
@@ -745,13 +858,15 @@
       var first = ch.levels && ch.levels[0];
       var locked = first > d.unlocked;
       var sub = (story().chapterTitles && story().chapterTitles[z.idx]) || '';
-      html += '<div class="zone zone-ch' + esc(ch.id) + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
+      html += '<div class="zone zone-ch' + esc(ch.id) + (isShopZone(ch.zone) ? ' zone-shop' : '') + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
         '<div class="zone-bg">' + zoneBg(ch.zone || ch.id) + '</div>' +
         '<div class="zone-head" style="top:' + (z.headTop + 34) + 'px"><span class="zone-num">Capítulo ' + ch.id + '</span><b class="zone-name">' + esc(ch.name) + '</b>' +
         (sub ? '<small class="zone-sub">' + esc(sub) + '</small>' : '') + (locked ? '<span class="zone-lock">' + icon('lock', 18) + '</span>' : '') + '</div>' +
         '</div>';
     });
-    html += mapNeonHtml(geo);
+    geo.zones.forEach(function (z) {
+      if (isShopZone(z.ch.zone)) html += mapNeonHtml(geo, z.idx, (z.ch.levels && z.ch.levels[0]) > d.unlocked);
+    });
     html += '<svg class="map-road" aria-hidden="true"></svg>';
     geo.nodes.forEach(function (n) {
       var lv = getLevel(n.id) || {};
@@ -819,18 +934,25 @@
   }
   renderers.map = renderMap;
 
-  // Letrero de neón «Coco's Scoops»: el fondo de la heladería lo trae justo detrás del nodo jefe del capítulo 1
-  // (el retrato lo tapa). En el mapa se oculta el del fondo (css: .zone-ch1 .zone-bg text) y se pinta aquí, en
-  // el hueco libre entre los nodos 4 y 5, del lado contrario al nodo 4.
-  function mapNeonHtml(geo) {
-    var mine = geo.nodes.filter(function (n) { return n.chIdx === 0; });
+  // ¿La zona usa el fondo de la heladería? (mismo criterio que Art.background: es el fondo por defecto)
+  function isShopZone(zone) {
+    var s = String(zone == null ? '' : zone).toLowerCase();
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) { /* sin normalize */ }
+    if (/^[2-6]$/.test(s)) return false;
+    return !/cherry|cereza|congela|freez|frio|mansion|pina|oficina|trastienda|callejon|bodega|noche|calle|comisaria|lluvia|policia/.test(s);
+  }
+  // Letrero de neón «Coco's Scoops»: el fondo de la heladería lo trae justo detrás del nodo jefe del capítulo
+  // (el retrato lo tapa). En el mapa se oculta el del fondo (css: .zone-shop .zone-bg text) y se pinta aquí, en
+  // el hueco libre entre los nodos 4 y 5 del capítulo, del lado contrario al nodo 4.
+  function mapNeonHtml(geo, chIdx, locked) {
+    var mine = geo.nodes.filter(function (n) { return n.chIdx === chIdx; });
     if (mine.length < 5) return '';
     var a = mine[3], b = mine[4];
     var x = a.xf <= 0.5 ? 0.73 : 0.27;
     var y = (a.y + b.y) / 2 + 30;
     var t = '<text x="110" y="47" textLength="196" lengthAdjust="spacingAndGlyphs"';
     var word = "Coco's Scoops";
-    return '<div class="map-neon" style="left:' + (x * 100) + '%;top:' + Math.round(y) + 'px" aria-hidden="true">' +
+    return '<div class="map-neon' + (locked ? ' locked' : '') + '" style="left:' + (x * 100) + '%;top:' + Math.round(y) + 'px" aria-hidden="true">' +
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 66"><g font-family="Yellowtail, Brush Script MT, Segoe Script, cursive" font-size="42" text-anchor="middle" fill="none" stroke-linejoin="round">' +
       t + ' stroke="#ff6fa5" stroke-width="10" opacity=".25">' + word + '</text>' +
       t + ' stroke="#ff6fa5" stroke-width="4" opacity=".9">' + word + '</text>' +
@@ -1646,12 +1768,27 @@
     if (rescued.length) later(function () { play('rescue'); }, base + stars * gap + 150);
     if ((sum.rewards || []).length) later(function () { play('booster'); }, base + stars * gap + 450);
     countUp($('.js-score', o), result.score | 0, rm ? 0 : 550, base);
+    // imagen para compartir: se prepara después de los sellos (para no trabar la animación) y solo si el
+    // navegador puede compartir archivos; al tocar «Compartir» ya está lista (el gesto del usuario sigue vivo)
+    var shareFile = null;
+    if (!daily && canShareFiles()) {
+      var hero = rescued.length ? { who: rescued[0], mood: 'feliz', line: rescueLine(rescued[0]) } : { who: villain, mood: 'llorando', line: cry };
+      later(function () {
+        if (!o.isConnected) return;
+        buildShareImage({ id: id, stars: stars, who: hero.who, mood: hero.mood, line: hero.line, zone: (chapterOf(id) || {}).zone || 'heladeria',
+          title: '¡Nivel ' + id + ' superado!', name: (sess.level && sess.level.name) || '' }).then(function (f) { shareFile = f; });
+      }, base + stars * gap + 600);
+    }
 
     o.addEventListener('click', function (ev) {
       var t = ev.target.closest('[data-act]');
       if (!t) return;
       var act = t.getAttribute('data-act');
-      if (act === 'share') { share(campaignShareText(id, stars, rescued)); return; }
+      if (act === 'share') {
+        var txt = campaignShareText(id, stars, rescued);
+        if (!shareImage(shareFile, txt)) share(txt);
+        return;
+      }
       if (act === 'share-daily') { shareDailyResult(sum.key); return; }
       closeOverlay(o, true);
       if (act === 'replay') { replay(); return; }
@@ -1777,6 +1914,11 @@
       leaveGame();
       show(act === 'daily' ? 'daily' : 'map');
     });
+  }
+
+  function rescueLine(who) {
+    var r = story().rescueLines;
+    return (r && r[who]) || '¡Libre! ¡Gracias, ayudante!';
   }
 
   // Avance de los objetivos al terminar: result.goals si el tablero lo trae; si no, el estado final del motor
@@ -2307,6 +2449,7 @@
     toast: toast,
     makeDebug: makeDebug,
     _session: function () { return session; },
+    _shareImage: buildShareImage,
     _recordCampaignWin: recordCampaignWin,
   };
 })();

@@ -619,7 +619,8 @@ svg { display: block; }
 .zone-lock { position: absolute; top: -12px; right: -12px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--ice); border: 2px solid var(--cream); }
 .map-road { position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none; overflow: visible; }
 /* el letrero de neón del fondo de la heladería quedaba detrás del nodo jefe: en el mapa lo pinta ui.js aparte */
-.zone-ch1 .zone-bg svg text { display: none; }
+.zone-shop .zone-bg svg text { display: none; }
+.map-neon.locked { opacity: .6; filter: saturate(.35) brightness(.9); }
 .map-neon {
   position: absolute;
   z-index: 1;
