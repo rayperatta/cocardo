@@ -1273,7 +1273,7 @@
         '<h3 class="sec-title">Objetivos</h3>' + goalsHtml(lv) +
         '<div class="moves-pill">' + icon('moves', 22) + '<b>' + (lv.moves | 0) + '</b> movimientos</div>' +
         (tip ? '<div class="tip"><span class="tip-face">' + portrait(helper, 'feliz', helperFrozen(id) ? { frozen: true } : {}) + '</span><p class="tip-bubble"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '') +
-        '<h3 class="sec-title">Potenciadores</h3>' + boostersHtml(false, fresh) +
+        '<h3 class="sec-title sec-boost">Potenciadores</h3>' + boostersHtml(false, fresh) +
         '<div class="btn-row"><button class="btn btn-pink btn-big" data-act="play" data-autofocus>' + icon('play', 26) + ' ¡A jugar!</button></div>' +
       '</div>',
     { label: 'Nivel ' + id, guard: true, onEsc: function () { closeOverlay('intro'); } });

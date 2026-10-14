@@ -121,15 +121,15 @@
   var PAL = {
     L: { skin: '#b4f03c', light: '#f6ffc8', dark: '#5fb514', hair: '#3cb53a', hairL: '#8ae45c', hairD: '#1e7f24',
       iris: '#e0a020', brow: '#2c7020', lips: '#3c8a2a', blush: '#ff9a7a', main: '#8fd63a' },
-    F: { skin: '#ff3650', light: '#ff9aa0', dark: '#bc0c2c', hair: '#3daa45', hairL: '#7fd65a', hairD: '#1d7a2c',
+    F: { skin: '#f6243e', light: '#ff8a94', dark: '#a80620', hair: '#3daa45', hairL: '#7fd65a', hairD: '#1d7a2c',
       iris: '#2fa84f', brow: '#2f8a3a', lips: '#a3123a', blush: '#ffb3c0', main: '#ff3b55' },
     B: { skin: '#ffe96e', light: '#fffbd8', dark: '#e8b818', hair: '#ffd81a', hairL: '#fff3a8', hairD: '#d29c08',
       iris: '#7d8b2a', brow: '#7d7a2a', lips: '#ff4f93', blush: '#ff9ab5', main: '#ffe266' },
-    U: { skin: '#a852fa', light: '#d8a4ff', dark: '#5c12c0', hair: '#86b98c', hairL: '#cdeccb', hairD: '#4c7f62',
+    U: { skin: '#a852fa', light: '#d8a4ff', dark: '#5c12c0', hair: '#8cc09a', hairL: '#d6eed2', hairD: '#5a8a80',
       iris: '#7a4a26', brow: '#46306a', lips: '#ff9ce0', blush: '#ff8ae6', main: '#9a4ed6' },
-    N: { skin: '#ffa444', light: '#ffd496', dark: '#e85e0e', hair: '#ff8a1a', hairL: '#ffc25a', hairD: '#c45306',
+    N: { skin: '#ffa030', light: '#ffd080', dark: '#ea6400', hair: '#ff8e0e', hairL: '#ffc84a', hairD: '#cc5800',
       iris: '#8f9a36', brow: '#b0601e', lips: '#ff6f5a', blush: '#ff7a6a', main: '#ff8c1f' },
-    D: { skin: '#ffb08a', light: '#fff0cc', dark: '#f2607a', hair: '#24573a', hairL: '#3f8a5c', hairD: '#123522',
+    D: { skin: '#ffb08a', light: '#fff0cc', dark: '#f2607a', hair: '#2a6a44', hairL: '#4a9a68', hairD: '#174a2c',
       iris: '#2e9a52', brow: '#1f4d2e', lips: '#c0507f', blush: '#ff3a64', main: '#ffa07a' }
   };
   function normColor(c) {
@@ -220,7 +220,7 @@
   HEADS.L = function (ctx, p, mood) {
     var hf = hairFill(ctx, p), out = '';
     // mechones ondulados que asoman a los lados (pelo largo)
-    out += '<path d="M21 48C11 58 19 68 11 78C8 84 12 90 18 89C17 82 24 76 23 67C22 59 27 54 28 50ZM79 48C89 58 81 68 89 78C92 84 88 90 82 89C83 82 76 76 77 67C78 59 73 54 72 50Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/>';
+    out += leaf(22, 46, 22, 112, p.hair, 2.4) + leaf(78, 46, 22, 68, p.hair, 2.4);
     out += '<circle cx="50" cy="57" r="34" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
     // poros de cáscara
     out += '<g fill="#eaff8a" opacity=".85"><circle cx="30" cy="76" r="1.1"/><circle cx="70" cy="77" r="1.1"/><circle cx="24" cy="63" r="1"/><circle cx="76" cy="63" r="1"/><circle cx="42" cy="84" r="1"/><circle cx="58" cy="85" r="1.1"/></g>';
@@ -233,7 +233,7 @@
       var a = a0 + i * st;
       d += 'Q' + pt(a + st * 0.15, R2 - 3) + ' ' + pt(a + st * 0.62, R2) + 'Q' + pt(a + st * 0.8, R1 + 4) + ' ' + pt(a + st, R1);
     }
-    d += 'Q79 37 72 41Q66 45 61 39Q55 33 50 39Q45 33 39 39Q34 45 28 41Q21 37 ' + pt(a0, R1) + 'Z';
+    d += 'Q79 37 71 40Q67 48 61 40Q56 47 50 39Q44 47 39 40Q33 48 29 40Q21 37 ' + pt(a0, R1) + 'Z';
     out += '<path d="' + d + '" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
     // nervaduras / brillos de las hojas
     out += '<path d="M30 32q6-6 13-7M57 25q8 0 13 5M22 40q1-4 4-7" fill="none" stroke="' + p.hairL + '" stroke-width="2.2" stroke-linecap="round"/>';
@@ -300,16 +300,16 @@
     var out = '', hf = hairFill(ctx, p);
     // zarcillos rizados a los lados (detrás)
     out += '<path d="M18 58c-9 4-10 14-4 18c4 3 9-1 6-5c-2-2-5 0-4 2M82 60c9 4 10 14 4 18c-4 3-9-1-6-5c2-2 5 0 4 2" fill="none" stroke="' + INK + '" stroke-width="4.6" stroke-linecap="round"/>' +
-      '<path d="M18 58c-9 4-10 14-4 18c4 3 9-1 6-5c-2-2-5 0-4 2M82 60c9 4 10 14 4 18c-4 3-9-1-6-5c2-2 5 0 4 2" fill="none" stroke="#9fe07a" stroke-width="2.2" stroke-linecap="round"/>';
+      '<path d="M18 58c-9 4-10 14-4 18c4 3 9-1 6-5c-2-2-5 0-4 2M82 60c9 4 10 14 4 18c-4 3-9-1-6-5c2-2 5 0 4 2" fill="none" stroke="#9fe07a" stroke-width="2" stroke-linecap="round"/>';
     out += '<circle cx="50" cy="57" r="34" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
     // moteado morado
     out += '<g fill="#6a22b8" opacity=".3"><circle cx="27" cy="74" r="2.6"/><circle cx="73" cy="76" r="2.2"/><circle cx="62" cy="86" r="1.8"/><circle cx="38" cy="86" r="2"/><circle cx="22" cy="62" r="1.6"/></g>';
     out += gloss(31, 52, 6, 3.4, -30, 0.55);
     // fleco de lado (verde claro con brillo)
-    out += '<path d="M18 53C15 36 28 25 46 24C60 23 72 28 79 37C68 33 58 34 48 38C38 42 28 46 18 53Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
-    out += '<path d="M26 35q9-7 21-7" fill="none" stroke="' + p.hairL + '" stroke-width="2.4" stroke-linecap="round"/>';
+    out += '<path d="M17 55C13 35 28 23 47 23C62 23 74 29 80 39C73 35 67 35 61 38L62 33C56 37 50 39 44 42L45 37C36 41 26 47 17 55Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    out += '<path d="M24 38q9-8 22-9M52 29q10 0 18 5" fill="none" stroke="#e4d0ff" stroke-width="2.2" stroke-linecap="round"/>';
     // hoja de parra grande
-    out += g('translate(24 22) rotate(-24) scale(1.12)',
+    out += g('translate(24 22) rotate(-24)',
       '<path d="M0 10C-6 8 -14 6 -16 -1C-11 -1 -9 -3 -10 -7C-6 -6 -4 -9 -5 -14C-1 -11 2 -12 3 -16C6 -12 9 -11 12 -13C12 -8 14 -6 18 -5C16 0 13 3 10 4C12 7 8 9 0 10Z" fill="#6cc84a" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/>' +
       '<path d="M0 9L-9 -2M0 9L-2 -9M0 9L5 -10M0 9L11 -6" stroke="#2f6e22" stroke-width="1.1" fill="none" opacity=".7"/>');
     // racimo grande (arriba a la derecha)
@@ -352,11 +352,11 @@
   var PEACH = 'M50 28C57 15 79 13 88 31C97 49 90 73 74 86C66 92 58 95 50 95C42 95 34 92 26 86C10 73 3 49 12 31C21 13 43 15 50 28Z';
   HEADS.D = function (ctx, p, mood) {
     var out = '', hf = hairFill(ctx, p);
-    var pf = rg(ctx, [[0, '#ffefc4'], [0.38, '#ffc088'], [0.72, '#ff9474'], [1, '#f04e6e']], 0.36, 0.3, 0.8);
+    var pf = rg(ctx, [[0, '#ffe8b4'], [0.38, '#ffb87c'], [0.72, '#ff9070'], [1, '#ee4a6e']], 0.36, 0.3, 0.8);
     out += '<path d="' + PEACH + '" fill="' + pf + '"/>';
     // lado rojizo del durazno
-    var bl = rg(ctx, [[0, '#ff2a5c', 0.6], [1, '#ff2a5c', 0]], 0.5, 0.5, 0.5);
-    out += '<g clip-path="' + clip(ctx, '<path d="' + PEACH + '"/>') + '"><ellipse cx="80" cy="70" rx="26" ry="30" fill="' + bl + '"/></g>';
+    var bl = rg(ctx, [[0, '#ff2a5c', 0.75], [1, '#ff2a5c', 0]], 0.5, 0.5, 0.5);
+    out += '<g clip-path="' + clip(ctx, '<path d="' + PEACH + '"/>') + '"><ellipse cx="80" cy="70" rx="28" ry="32" fill="' + bl + '"/></g>';
     out += '<path d="' + PEACH + '" fill="none" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
     // línea del durazno
     out += '<path d="M50 29C44 36 44 43 48 49" fill="none" stroke="#e8505a" stroke-width="2.6" stroke-linecap="round"/><path d="M45 32C41 37 41 42 43 46" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>';
@@ -540,22 +540,22 @@
 
   // Paleta: helado de palito con franjas gruesas y flechas en la dirección que limpia (pv = columna, ph = fila).
   // Se dibuja vertical y se gira -90° para la horizontal (el palito queda a la derecha); la cara no se gira.
-  var POPSICLE = 'M19 32Q19 4 50 4Q81 4 81 32V64Q81 73 72 73H28Q19 73 19 64Z';
+  var POPSICLE = 'M13 35Q13 5 50 5Q87 5 87 35V67Q87 76 78 76H22Q13 76 13 67Z';
   function paletaBody(ctx, col, p, mood, horiz) {
     var c = POP[col], v = '', i, st = '';
     var out = halo(ctx, 50, 48, 50);
-    v += '<rect x="42.5" y="62" width="15" height="34" rx="7.5" fill="#f6d69c" stroke="' + INK + '" stroke-width="2.8"/>' +
-      '<path d="M47 76V90M53 80V87" stroke="#c48c48" stroke-width="1.6" stroke-linecap="round"/>';
-    v += '<path d="' + POPSICLE + '" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>';
+    v += '<rect x="42" y="66" width="16" height="31" rx="8" fill="#f6d69c" stroke="' + INK + '" stroke-width="2.8"/>' +
+      '<path d="M47 80V92M53 83V89" stroke="#c48c48" stroke-width="1.6" stroke-linecap="round"/>';
+    v += '<path d="' + POPSICLE + '" fill="none" stroke="#fff" stroke-width="8.5" stroke-linejoin="round"/>';
     v += '<path d="' + POPSICLE + '" fill="' + lg(ctx, [[0, c[0]], [0.3, c[1]], [0.75, c[1]], [1, c[2]]], 0, 0, 1, 0) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    for (i = 0; i < 3; i++) st += '<rect x="' + (24.5 + i * 19) + '" y="0" width="9" height="100"/>';
+    for (i = 0; i < 4; i++) st += '<rect x="' + (17 + i * 19) + '" y="0" width="9.5" height="100"/>';
     v += '<g clip-path="' + clip(ctx, '<path d="' + POPSICLE + '"/>') + '"><g fill="#fff" opacity=".9">' + st + '</g>' +
-      '<path d="M19 66H81" stroke="' + c[2] + '" stroke-width="5" opacity=".5"/></g>';
-    v += '<path d="M26 28Q27 13 40 9" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>';
-    v += arrow(50, 5, -90) + arrow(26, 88, 90) + arrow(74, 88, 90);
+      '<path d="M13 69H87" stroke="' + c[2] + '" stroke-width="5" opacity=".5"/></g>';
+    v += '<path d="M20 30Q21 12 36 8" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>';
+    v += arrow(50, 10, -90) + arrow(23, 89, 90) + arrow(77, 89, 90);
     out += horiz ? g('rotate(-90 50 50)', v) : v;
-    out += g(horiz ? 'translate(18 23) scale(.46)' : 'translate(27 13) scale(.46)', headStr(ctx, col, mood));
-    out += sparkle(horiz ? 86 : 89, horiz ? 14 : 13, 6, '#fff');
+    out += g(horiz ? 'translate(12 21) scale(.52)' : 'translate(24 9) scale(.52)', headStr(ctx, col, mood));
+    out += sparkle(horiz ? 9 : 91, 10, 6, '#fff');
     return out;
   }
   function arrow(x, y, rot) {
@@ -606,8 +606,8 @@
     var gf = lg(ctx, [[0, '#ffffff', 0.9], [0.5, '#d8f4ff', 0.8], [1, '#9fdcff', 0.9]], 0, 0, 1, 0);
     // arcoíris detrás de las bolas
     var rb = ['#ff3355', '#ff8a10', '#ffd414', '#2ed060', '#2f8cff', '#9a44f0'], arc = '';
-    rb.forEach(function (c, i) { var r = 45 - i * 4.2; arc += '<path d="M' + f(50 - r) + ' 50A' + r + ' ' + r + ' 0 0 1 ' + f(50 + r) + ' 50" stroke="' + c + '"/>'; });
-    out += '<path d="M3 50A47 47 0 0 1 97 50" fill="none" stroke="#fff" stroke-width="9"/>';
+    rb.forEach(function (c, i) { var r = 43 - i * 4; arc += '<path d="M' + f(50 - r) + ' 50A' + r + ' ' + r + ' 0 0 1 ' + f(50 + r) + ' 50" stroke="' + c + '"/>'; });
+    out += '<path d="M5 50A45 45 0 0 1 95 50" fill="none" stroke="#fff" stroke-width="8"/>';
     out += '<g fill="none" stroke-width="4.6">' + arc + '</g>';
     // bolas
     out += '<circle cx="34" cy="44" r="15" fill="#ff5fa8" stroke="' + INK + '" stroke-width="2.6"/>';
@@ -772,53 +772,47 @@
 
   // ---------- amigo congelado (bloque de hielo grueso con el personaje dentro, cadena y candado) ----------
   // Etapas: 0 = intacto (ojos cerrados), 1 = agrietado (asustado), 2 = último golpe (feliz, candado abierto).
-  function linkChain(x0, x1, y) {
-    var s = '';
-    for (var x = x0, i = 0; x <= x1; x += 7, i++) s += i % 2 ? '<rect x="' + f(x - 2.4) + '" y="' + f(y - 1.6) + '" width="4.8" height="3.2" rx="1.6"/>' : '<rect x="' + f(x - 4.4) + '" y="' + f(y - 3.2) + '" width="8.8" height="6.4" rx="3.2"/>';
-    return '<g fill="none" stroke="' + INK + '" stroke-width="4.4">' + s + '</g><g fill="none" stroke="#c9d4de" stroke-width="2">' + s + '</g>';
-  }
   function friend(who, hp, maxHp) {
     hp = Math.max(1, Math.round(hp || 1)); maxHp = Math.max(hp, Math.round(maxHp || hp));
     var ctx = newCtx(), out = '', lost = maxHp - hp;
     var stage = lost === 0 ? 0 : (hp === 1 ? 2 : 1);
     var mood = stage === 0 ? 'blink' : (stage === 2 ? 'happy' : 'scared');
-    var W = '<rect x="15" y="16" width="70" height="60" rx="7"/>';
+    var W = '<rect x="15" y="17" width="70" height="59" rx="7"/>';
     out += shadow(50, 96, 42, 3.5, 0.25);
     // bloque con bisel grueso
     out += '<rect x="2" y="2" width="96" height="94" rx="14" fill="' + lg(ctx, [[0, '#f2fbff'], [0.55, '#a9dcf6'], [1, '#5aa6dc']], 0, 0, 0.6, 1) + '" stroke="' + INK + '" stroke-width="3.4"/>';
-    out += '<path d="M4 16Q4 4 16 4H84Q96 4 96 16L85 16H15Z" fill="#fff" opacity=".9"/>';
-    out += '<path d="M4 16L15 16V76L4 84Z" fill="#fff" opacity=".55"/>';
-    out += '<path d="M96 16L85 16V76L96 84Z" fill="#1f6aa8" opacity=".3"/>';
-    out += '<path d="M4 84L15 76H85L96 84Q96 94 84 94H16Q4 94 4 84Z" fill="#1f6aa8" opacity=".42"/>';
-    // ventana de hielo con el personaje dentro (más chico y detrás del vidrio escarchado)
-    out += W.replace('/>', ' fill="' + lg(ctx, [[0, '#d6f1ff'], [1, '#7cc4ee']], 0, 0, 0, 1) + '"/>');
-    out += '<g clip-path="' + clip(ctx, W) + '">' + g('translate(23 17) scale(.54)', charHead(ctx, who || 'lima', mood)) +
-      W.replace('/>', ' fill="' + lg(ctx, [[0, '#ffffff', 0.72], [0.45, '#d8f2ff', 0.38], [1, '#5ab0e6', 0.55]], 0, 0, 0.5, 1) + '"/>') +
-      '<path d="M10 70L48 12M34 84L80 16" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".38"/>' +
-      flake(23, 24, 6, 1.8, '#fff', 0.9) + flake(78, 68, 5, 1.6, '#fff', 0.8) + '</g>';
+    out += '<path d="M4 16Q4 4 16 4H84Q96 4 96 16L85 17H15Z" fill="#fff" opacity=".9"/><path d="M4 16L15 17V76L4 84Z" fill="#fff" opacity=".55"/>' +
+      '<path d="M96 16L85 17V76L96 84Z" fill="#1f6aa8" opacity=".3"/><path d="M4 84L15 76H85L96 84Q96 94 84 94H16Q4 94 4 84Z" fill="#1f6aa8" opacity=".42"/>';
+    // ventana con el personaje dentro, más chico y detrás del vidrio escarchado
+    out += W.replace('/>', ' fill="#bfe6fb"/>');
+    out += '<g clip-path="' + clip(ctx, W) + '">' + g('translate(23 18) scale(.54)', charHead(ctx, who || 'lima', mood)) +
+      W.replace('/>', ' fill="' + lg(ctx, [[0, '#fff', 0.62], [0.45, '#d8f2ff', 0.3], [1, '#4aa8e0', 0.5]], 0, 0, 0.5, 1) + '"/>') +
+      '<path d="M10 70L48 12M34 84L80 16" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".38"/>' + flake(24, 26, 6, 1.8, '#fff', 0.9) + '</g>';
     out += W.replace('/>', ' fill="none" stroke="' + INK + '" stroke-width="2.6"/>');
-    out += '<path d="M18 40V24Q18 19 23 19H50" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>';
-    // grietas según el daño
-    var CR = ['M62 4L57 22L66 30L54 44', 'M96 52L80 50L74 62L62 58', 'M4 60L20 56L26 68L38 64L42 76', 'M40 4L44 18L36 30', 'M96 30L86 36L88 46'];
+    out += '<path d="M19 40V25Q19 21 23 21H48" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>';
+    // grietas según el daño (sin tapar las píldoras de vida)
+    var CR = ['M96 30L80 36L84 48L70 54', 'M4 44L20 50L16 62L30 66', 'M96 62L82 60L76 70L64 66', 'M24 17L30 30L22 40', 'M76 17L70 28L76 36'];
     var nc = stage === 0 ? 0 : (stage === 1 ? 2 : 5), cr = '';
-    for (var i = 0; i < nc; i++) cr += '<path d="' + CR[i] + '"/>';
-    if (cr) out += '<g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#fff" stroke-width="4.4">' + cr + '</g><g stroke="#1d5f8f" stroke-width="2.2">' + cr + '</g></g>';
-    if (stage === 2) out += '<path d="M84 4H96V16Z" fill="' + INK + '" opacity=".2"/><path d="M4 92L4 82L12 92Z" fill="' + INK + '" opacity=".2"/>';
-    // cadena y candado
-    out += linkChain(7, 93, 82);
-    var open = stage === 2;
-    out += '<path d="' + (open ? 'M44 79V70Q44 62 51 62Q58 62 58 70' : 'M44 79V71Q44 64 50 64Q56 64 56 71V79') + '" fill="none" stroke="' + INK + '" stroke-width="7" stroke-linecap="round"/>' +
-      '<path d="' + (open ? 'M44 79V70Q44 62 51 62Q58 62 58 70' : 'M44 79V71Q44 64 50 64Q56 64 56 71V79') + '" fill="none" stroke="#c9d4de" stroke-width="3" stroke-linecap="round"/>';
-    out += '<rect x="38" y="74" width="24" height="19" rx="4.5" fill="' + lg(ctx, [[0, '#ffe680'], [1, '#e09a10']], 0, 0, 0, 1) + '" stroke="' + INK + '" stroke-width="2.8"/>';
-    out += '<circle cx="50" cy="81.5" r="2.6" fill="' + INK + '"/><path d="M50 82V88" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round"/><path d="M41 77H52" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>';
+    for (var i = 0; i < nc; i++) cr += CR[i];
+    if (cr) out += '<path d="' + cr + '" fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/><path d="' + cr + '" fill="none" stroke="#1d5f8f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (stage === 2) out += '<path d="M85 4H96V15Z" fill="' + INK + '" opacity=".22"/>';
+    // cadena: eslabones (guiones redondeados) sobre el bisel inferior
+    var ch = 'M8 82H92';
+    out += '<path d="' + ch + '" stroke="' + INK + '" stroke-width="2"/><g fill="none" stroke-linecap="round" stroke-dasharray="4 9">' +
+      '<path d="' + ch + '" stroke="' + INK + '" stroke-width="7.4"/><path d="' + ch + '" stroke="#d6dee6" stroke-width="4.4"/><path d="' + ch + '" stroke="#5a6a7a" stroke-width="1.4"/></g>';
+    // candado (se abre en el último golpe)
+    var sh = stage === 2 ? 'M44 77V64Q44 56 51 56Q58 56 58 64V68' : 'M44 79V71Q44 64 50 64Q56 64 56 71V79';
+    out += '<path d="' + sh + '" fill="none" stroke="' + INK + '" stroke-width="7" stroke-linecap="round"/><path d="' + sh + '" fill="none" stroke="#d6dee6" stroke-width="3" stroke-linecap="round"/>';
+    out += '<rect x="38" y="74" width="24" height="19" rx="4.5" fill="' + lg(ctx, [[0, '#ffe680'], [1, '#e09a10']], 0, 0, 0, 1) + '" stroke="' + INK + '" stroke-width="2.8"/>' +
+      '<circle cx="50" cy="81.5" r="2.6" fill="' + INK + '"/><path d="M50 82V88" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round"/><path d="M41 77H52" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>';
     // destellos de escarcha
-    out += sparkle(10, 10, 5, '#fff') + sparkle(91, 62, 4.5, '#fff') + sparkle(90, 10, 3.5, '#fff');
+    out += sparkle(10, 10, 5, '#fff') + sparkle(91, 66, 4.5, '#fff') + sparkle(90, 10, 3.5, '#fff');
     // vida: píldoras grandes arriba
-    var w = 14, gap = 4, tot = maxHp * w + (maxHp - 1) * gap, x0 = 50 - tot / 2;
+    var w = 14, gap = 4, x0 = 50 - (maxHp * w + (maxHp - 1) * gap) / 2;
     for (var k = 0; k < maxHp; k++) {
-      var on = k < hp;
-      out += '<rect x="' + f(x0 + k * (w + gap)) + '" y="5" width="' + w + '" height="8" rx="4" fill="' + (on ? '#fff' : '#2a5f86') + '" stroke="' + INK + '" stroke-width="2"' + (on ? '' : ' opacity=".7"') + '/>';
-      if (on) out += '<rect x="' + f(x0 + k * (w + gap) + 3) + '" y="7.4" width="' + (w - 6) + '" height="3.2" rx="1.6" fill="#5fd0ff"/>';
+      var on = k < hp, x = f(x0 + k * (w + gap));
+      out += '<rect x="' + x + '" y="5" width="' + w + '" height="8.4" rx="4.2" fill="' + (on ? '#fff' : '#2a5f86') + '" stroke="' + INK + '" stroke-width="2"' + (on ? '' : ' opacity=".7"') + '/>';
+      if (on) out += '<rect x="' + f(x + 3) + '" y="7.6" width="' + (w - 6) + '" height="3.2" rx="1.6" fill="#4cc4ff"/>';
     }
     return wrap(ctx, 100, 100, out);
   }

@@ -195,6 +195,18 @@
 .cg-goal.cg-done .cg-goal-ok { display: block; animation: cg-pop-in 0.35s cubic-bezier(0.3, 1.7, 0.5, 1) both; }
 .cg-goal.cg-done .cg-goal-ic { opacity: 0.75; }
 .cg-goal.cg-bump .cg-goal-ic { animation: cg-bump 0.32s ease-out; }
+.cg-goal.cg-bump .cg-goal-n { animation: cg-bump 0.32s ease-out; }
+/* golpe al congelador: el contador tiembla y se pone rojo un instante */
+.cg-goal.cg-hit .cg-goal-ic { animation: cg-hit 0.36s ease-out; }
+.cg-goal.cg-hit .cg-goal-n { animation: cg-hit-n 0.42s ease-out; }
+/* rescate con varios amigos: una carita por cada uno que falta */
+.cg-goal.cg-multi { width: auto; min-width: 50px; }
+.cg-goal.cg-multi .cg-goal-ic { width: auto; display: flex; justify-content: center; }
+.cg-faces { display: flex; align-items: flex-end; height: 100%; }
+.cg-face { flex: none; width: 34px; height: 34px; }
+.cg-face + .cg-face { margin-left: -9px; }
+.cg-faces[data-n="3"] .cg-face, .cg-faces[data-n="4"] .cg-face { width: 28px; height: 28px; }
+.cg-face svg { width: 100%; height: 100%; }
 .cg-goals[data-n="1"] .cg-goal { width: 62px; height: 66px; }
 .cg-goals[data-n="1"] .cg-goal-ic { width: 54px; height: 54px; }
 .cg-goals.cg-many .cg-goal { width: 44px; }
@@ -341,7 +353,9 @@
   background: rgba(43, 22, 48, 0.55);
 }
 .cg-boost-lock svg { width: 24px; height: 24px; color: #fff; }
-.cg-boost.cg-locked .cg-boost-lock { display: grid; }
+.cg-boost.cg-locked .cg-boost-lock { display: grid; align-content: center; justify-items: center; gap: 1px; }
+.cg-boost-at { display: block; color: #fff; font-size: 10px; font-weight: 900; line-height: 1; white-space: nowrap; }
+.cg-root.cg-noboost .cg-boosters { display: none; }
 .cg-boost.cg-locked .cg-boost-n { display: none; }
 .cg-boost.cg-locked .cg-boost-ic, .cg-boost.cg-locked .cg-boost-name { opacity: 0.55; }
 .cg-boost.cg-empty .cg-boost-ic { filter: grayscale(0.8); opacity: 0.6; }
@@ -409,7 +423,12 @@
 }
 .cg-banner-hf .cg-banner-t { background: linear-gradient(180deg, #fff3b0 0%, #ffd23c 40%, #ff8fbf 100%); color: #fff; }
 .cg-banner-win .cg-banner-t { background: linear-gradient(180deg, #a7f0d4 0%, var(--ok, #33b679) 55%, #1f8a57 100%); }
-.cg-banner-lose .cg-banner-t { background: linear-gradient(180deg, #8fd0f2 0%, var(--ice-deep, #4aa8e0) 50%, #1d5f8f 100%); transform: rotate(2deg); }
+.cg-banner-lose .cg-banner-t { background: linear-gradient(180deg, #8fd0f2 0%, var(--ice-deep, #4aa8e0) 50%, #1d5f8f 100%); transform: rotate(2deg); animation-name: cg-banner-in-lose; }
+/* «¡Casi! Te faltan 3 [ícono] y 2 [ícono]» */
+.cg-nm { display: inline-flex; align-items: center; gap: 2px; vertical-align: middle; }
+.cg-nm b { font-family: var(--font-display, 'Lilita One', sans-serif); font-weight: normal; font-size: 16px; }
+.cg-nm-ic { display: inline-block; width: 24px; height: 24px; }
+.cg-nm-ic svg { width: 100%; height: 100%; }
 .cg-banner-shuffle .cg-banner-t { font-size: clamp(20px, 6vw, 36px); }
 .cg-banner.cg-out { animation: cg-fade-out 0.3s ease-in forwards; }
 
@@ -440,7 +459,7 @@
   color: #fff;
   font-size: 14px; font-weight: 900;
   white-space: nowrap;
-  animation: cg-pop-in 0.22s ease-out both;
+  animation: cg-toast-in 0.22s ease-out both;
 }
 .cg-toast-armed { border: 3px solid var(--ink, #2b1630); background: linear-gradient(180deg, #fff3b0, var(--gold, #ffc93c)); color: var(--ink, #2b1630); }
 
@@ -487,6 +506,9 @@
 .cg-tip.cg-tip-above { margin-top: 0; transform: translateY(-100%); animation-name: cg-fade-in; }
 .cg-tip.cg-tip-mid { transform: translateY(-50%); animation-name: cg-fade-in; }
 .cg-tip.cg-bump .cg-tip-face { animation: cg-wobble 0.45s ease-in-out; }
+.cg-tip.cg-ok { border-color: var(--ok, #33b679); }
+.cg-tip.cg-ok .cg-tip-text span { color: #1f8a57; font-size: 17px; }
+.cg-tip.cg-ok .cg-tip-face { animation: cg-bump 0.35s ease-out; }
 .cg-tip-face {
   flex: none;
   width: 48px; height: 48px;
@@ -586,11 +608,18 @@
 .cg-wide .cg-moves-n { font-size: 46px; }
 .cg-wide .cg-moves-l { font-size: 14px; }
 .cg-wide .cg-goals { order: 2; flex-wrap: wrap; gap: 10px; }
-.cg-wide .cg-goal { width: 64px; height: 72px; }
-.cg-wide .cg-goal-ic { width: 54px; height: 54px; }
-.cg-wide .cg-goal-n { font-size: 18px; line-height: 22px; }
-.cg-wide .cg-ticket .cg-goal { width: 54px; height: 62px; }
-.cg-wide .cg-ticket .cg-goal-ic { width: 46px; height: 46px; }
+/* la meta es lo más importante de la tarjeta: íconos al menos del alto del contador de movimientos */
+.cg-root.cg-wide .cg-goals .cg-goal { width: 80px; height: 90px; }
+.cg-root.cg-wide .cg-goals .cg-goal-ic { width: 72px; height: 72px; }
+.cg-root.cg-wide .cg-goals[data-n="1"] .cg-goal { width: 96px; height: 104px; }
+.cg-root.cg-wide .cg-goals[data-n="1"] .cg-goal-ic { width: 86px; height: 86px; }
+.cg-root.cg-wide .cg-goals .cg-goal.cg-multi { width: auto; }
+.cg-root.cg-wide .cg-goals .cg-goal.cg-multi .cg-goal-ic { width: auto; }
+.cg-wide .cg-face { width: 58px; height: 58px; }
+.cg-wide .cg-face + .cg-face { margin-left: -14px; }
+.cg-wide .cg-goal-n { font-size: 20px; line-height: 24px; min-width: 38px; margin-top: -11px; }
+.cg-root.cg-wide .cg-ticket .cg-goal { width: 64px; height: 74px; }
+.cg-root.cg-wide .cg-ticket .cg-goal-ic { width: 60px; height: 60px; }
 .cg-wide .cg-ticket-title { font-size: 20px; }
 .cg-wide .cg-boosters { flex-direction: column; gap: 22px; padding: 18px 18px 18px 0; }
 .cg-wide .cg-boost { width: 96px; height: 86px; border-radius: 22px; }
@@ -607,10 +636,14 @@
 .cg-wide.cg-short .cg-vname { font-size: 11px; margin-top: -9px; }
 .cg-wide.cg-short .cg-moves { width: auto; height: auto; padding: 4px 10px; }
 .cg-wide.cg-short .cg-moves-n { font-size: 34px; }
-.cg-wide.cg-short .cg-goal { width: 50px; height: 56px; }
-.cg-wide.cg-short .cg-goal-ic { width: 42px; height: 42px; }
-.cg-wide.cg-short .cg-ticket .cg-goal { width: 42px; height: 48px; }
-.cg-wide.cg-short .cg-ticket .cg-goal-ic { width: 34px; height: 34px; }
+.cg-root.cg-wide.cg-short .cg-goals .cg-goal { width: 60px; height: 66px; }
+.cg-root.cg-wide.cg-short .cg-goals .cg-goal-ic { width: 54px; height: 54px; }
+.cg-root.cg-wide.cg-short .cg-goals[data-n="1"] .cg-goal { width: 64px; height: 70px; }
+.cg-root.cg-wide.cg-short .cg-goals[data-n="1"] .cg-goal-ic { width: 58px; height: 58px; }
+.cg-wide.cg-short .cg-face { width: 42px; height: 42px; }
+.cg-wide.cg-short .cg-goal-n { font-size: 16px; line-height: 19px; min-width: 30px; margin-top: -9px; }
+.cg-root.cg-wide.cg-short .cg-ticket .cg-goal { width: 44px; height: 52px; }
+.cg-root.cg-wide.cg-short .cg-ticket .cg-goal-ic { width: 40px; height: 40px; }
 .cg-wide.cg-short .cg-boosters { gap: 12px; padding: 10px 10px 10px 0; }
 .cg-wide.cg-short .cg-boost { width: 78px; height: 64px; border-radius: 18px; }
 .cg-wide.cg-short .cg-boost-ic { width: 32px; height: 32px; }
@@ -623,10 +656,15 @@
 }
 @keyframes cg-bump { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
 @keyframes cg-pop-in { 0% { opacity: 0; transform: scale(0.6); } 100% { opacity: 1; transform: scale(1); } }
+/* los avisos se centran con translate: su entrada lo conserva (si no, quedaban corridos a la derecha y cortados) */
+@keyframes cg-toast-in { 0% { opacity: 0; transform: translate(-50%, -100%) scale(0.6); } 100% { opacity: 1; transform: translate(-50%, -100%) scale(1); } }
+@keyframes cg-hit { 0%, 100% { transform: translateX(0) scale(1); } 20% { transform: translateX(-3px) scale(1.12); } 45% { transform: translateX(3px) scale(1.08); } 70% { transform: translateX(-2px) scale(1.03); } }
+@keyframes cg-hit-n { 0% { transform: scale(1); background: var(--ink, #2b1630); } 30% { transform: scale(1.35); background: var(--cherry, #d61f4b); } 100% { transform: scale(1); background: var(--ink, #2b1630); } }
 @keyframes cg-fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
 @keyframes cg-fade-out { 0% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes cg-say-in { 0% { opacity: 0; transform: translateX(calc(-50% + var(--shift, 0px))) scale(0.6); } 100% { opacity: 1; transform: translateX(calc(-50% + var(--shift, 0px))) scale(1); } }
 @keyframes cg-banner-in { 0% { opacity: 0; transform: rotate(-3deg) scale(2.2); } 60% { opacity: 1; } 100% { opacity: 1; transform: rotate(-3deg) scale(1); } }
+@keyframes cg-banner-in-lose { 0% { opacity: 0; transform: rotate(2deg) scale(2.2); } 60% { opacity: 1; } 100% { opacity: 1; transform: rotate(2deg) scale(1); } }
 @keyframes cg-cascade {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
   25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(-4deg); }
@@ -672,9 +710,11 @@ body.reduced-motion .cg-board-wrap.cg-target::before,
 body.reduced-motion .cg-root.cg-danger::after,
 body.reduced-motion .cg-boost.cg-armed .cg-boost-ic { animation: none; }
 body.reduced-motion .cg-cascade { animation-name: cg-fade-out; animation-timing-function: ease-in; }
-body.reduced-motion .cg-banner-t { animation-name: cg-fade-in; }
+body.reduced-motion .cg-banner-t, body.reduced-motion .cg-banner-lose .cg-banner-t { animation-name: cg-fade-in; }
+body.reduced-motion .cg-goal.cg-hit .cg-goal-ic { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .cg-moves.cg-low, .cg-badge.cg-urgent, .cg-board-wrap.cg-target::before, .cg-root.cg-danger::after, .cg-boost.cg-armed .cg-boost-ic { animation: none; }
   .cg-cascade { animation-name: cg-fade-out; animation-timing-function: ease-in; }
-  .cg-banner-t { animation-name: cg-fade-in; }
+  .cg-banner-t, .cg-banner-lose .cg-banner-t { animation-name: cg-fade-in; }
+  .cg-goal.cg-hit .cg-goal-ic { animation: none; }
 }

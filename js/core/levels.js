@@ -221,7 +221,7 @@
         '##....##',
         '##....##',
       ] }),
-    L({ id: 15, name: 'El congelador grande', boss: true, colors: 'LFBND', moves: 27,
+    L({ id: 15, name: 'El congelador grande', boss: true, colors: 'LFBND', moves: 26,
       goals: [boss(), rescue()],
       // Durazna encajada junto al congelador, tras hielo grueso: se rescata al final
       freezer: { who: 'cocardo', hp: 21, label: 'El congelador grande' },
@@ -440,7 +440,7 @@
         'K......K',
         'KKKKKKKK',
       ] }),
-    L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 32,
+    L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 31,
       goals: [boss(), rescue()],
       freezer: { who: 'cocardo', hp: 20, label: 'El gran congelador' },
       rescue: ['uva', 'banana'], friendHP: 3,

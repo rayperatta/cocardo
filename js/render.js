@@ -18,6 +18,8 @@
     outBack: function (t) { var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
   };
   var TILE = 0.98;          // tamaño de la ficha respecto a la celda
+  var SPECIAL_SCALE = 1.08; // los especiales se dibujan un poco más grandes, con contorno blanco brillante
+  var SPECIAL = { ph: 1, pv: 1, bomba: 1, copa: 1 };
   var RASTER = 1.15;        // sobre-muestreo de sprites (para los "pop" que agrandan la ficha)
   var FLAVOR = { L: '#8fd63a', F: '#ff3b55', B: '#ffd23c', U: '#9a4ed6', N: '#ff8c1f', D: '#ff9a6a' };
 
@@ -31,7 +33,7 @@
       canvas: canvas, ctx: ctx, fx: fx, EASE: EASE,
       rows: 8, cols: 8, side: 300, cell: 30, pad: 6, ox: 6, oy: 6, dpr: 1,
       cells: [], pieces: {}, dying: [], dyingB: [], fz: null, fzDying: null, colTop: [],
-      sel: null, cursor: null, hint: null, spotlight: null, fzBadge: null, nudges: {},
+      sel: null, cursor: null, hint: null, spotlight: null, guide: null, exits: false, fzBadge: null, nudges: {},
       onFrame: null,
     };
     var scared = {};
@@ -93,7 +95,7 @@
     function cancelAll() { tweens = []; timers = []; freezeLeft = 0; R.dying = []; R.dyingB = []; R.fzDying = null; }
     function report(e) { if (typeof console !== 'undefined') console.error(e); }
 
-    function continuous() { return !!(R.sel || R.hint || R.spotlight || freezeLeft > 0 || (R.fzBadge && R.fzBadge.n === 1)); }
+    function continuous() { return !!(R.sel || R.hint || R.spotlight || R.guide || freezeLeft > 0 || (R.fzBadge && R.fzBadge.n === 1)); }
     function active() {
       if (clock.paused) return false;
       return tweens.length > 0 || timers.length > 0 || (fx && fx.alive()) || continuous();
@@ -159,7 +161,7 @@
     // ---------- modelo ----------
     function mkPiece(p, r, c) {
       return { id: p.id, type: p.type, color: p.color, frost: !!p.frost, skin: p.skin || null, r: r, c: c, x: c, y: r,
-        s: 1, sx: 1, sy: 1, a: 1, rot: 0, z: 0, frostA: p.frost ? 1 : 0, flash: 0, face: null, blinkUntil: 0, ox: 0, oy: 0 };
+        s: 1, sx: 1, sy: 1, a: 1, rot: 0, z: 0, frostA: p.frost ? 1 : 0, flash: 0, shine: 0, face: null, blinkUntil: 0, ox: 0, oy: 0 };
     }
     function mkBlock(b) { return { kind: b.kind, hp: b.hp, maxHp: b.maxHp, who: b.who || null, s: 1, a: 1, ox: 0, oy: 0, flash: 0 }; }
 
@@ -357,10 +359,59 @@
     // Vuelve a rasterizar todo lo que hay en caché al nuevo tamaño; mientras, se dibujan los viejos escalados
     function rerasterize() {
       genN++;
+      glows = {};
       spriteBase = spritePx(1);
       return ensure(Object.keys(sprites).concat(Object.keys(pending)));
     }
     function sprite(key) { return sprites[key] || null; }
+
+    // Contorno blanco con brillo de un especial: silueta dilatada (8 copias corridas, rellena de blanco) con
+    // sombra difusa. Se arma una vez por sprite y se guarda; se dibuja detrás de la ficha.
+    var glows = {};
+    function glowFor(img, key) {
+      var gk = key + '|' + (img.width || 0);
+      if (glows[gk] !== undefined) return glows[gk];
+      if (typeof document === 'undefined' || !img.width) return null;
+      var S = img.width, padPx = Math.ceil(S * 0.14), W = S + padPx * 2, out = null;
+      try {
+        var sil = document.createElement('canvas'); sil.width = sil.height = W;
+        var g = sil.getContext('2d'), d = Math.max(1, S * 0.035);
+        for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4; g.drawImage(img, padPx + Math.cos(a) * d, padPx + Math.sin(a) * d, S, S); }
+        g.globalCompositeOperation = 'source-in';
+        g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, W);
+        out = document.createElement('canvas'); out.width = out.height = W;
+        var o = out.getContext('2d');
+        o.shadowColor = 'rgba(255,255,255,0.95)'; o.shadowBlur = S * 0.09;
+        o.drawImage(sil, 0, 0); o.drawImage(sil, 0, 0);
+        out.padK = W / S;
+      } catch (e) { out = null; }
+      glows[gk] = out;
+      return out;
+    }
+    // Destello que barre la ficha en diagonal (brillo ocioso de los especiales); k = 0..1
+    var scratch = null;
+    function drawShine(img, cx, cy, w, h, k, alpha) {
+      if (typeof document === 'undefined') return;
+      var sw = Math.max(2, Math.ceil(w * R.dpr)), sh = Math.max(2, Math.ceil(h * R.dpr));
+      if (!scratch) scratch = document.createElement('canvas');
+      if (scratch.width < sw || scratch.height < sh) { scratch.width = Math.max(scratch.width, sw); scratch.height = Math.max(scratch.height, sh); }
+      var g = scratch.getContext('2d');
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalCompositeOperation = 'source-over';
+      g.clearRect(0, 0, sw, sh);
+      g.drawImage(img, 0, 0, sw, sh);
+      g.globalCompositeOperation = 'source-in';
+      var bw = sw * 0.55, x0 = -bw + k * (sw + bw * 1.4);
+      var gr = g.createLinearGradient(x0, 0, x0 + bw, bw * 0.55);
+      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, sw, sh);
+      g.globalCompositeOperation = 'source-over';
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = alpha * Math.sin(Math.PI * Math.max(0, Math.min(1, k)));
+      ctx.drawImage(scratch, 0, 0, sw, sh, cx - w / 2, cy - h / 2, w, h);
+      ctx.restore();
+    }
 
     function faceFor(p) {
       if (p.face) return p.face;
@@ -519,7 +570,8 @@
       if (p.a <= 0.01 || p.s <= 0.01) return;
       var img = pieceSprite(p);
       if (!img) return;
-      var cs = R.cell, size = cs * TILE * p.s, w = size * p.sx, h = size * p.sy;
+      var sp = !!SPECIAL[p.type];
+      var cs = R.cell, size = cs * TILE * p.s * (sp ? SPECIAL_SCALE : 1), w = size * p.sx, h = size * p.sy;
       var cx = X(p.x) + cs / 2 + p.ox * cs, cy = Y(p.y) + cs / 2 + p.oy * cs + (size - h) / 2;
       var nd = R.nudges[p.id];
       if (nd) { cx += nd.x * cs; cy += nd.y * cs; }
@@ -529,7 +581,12 @@
         ctx.save();
         ctx.beginPath(); ctx.rect(X(p.c) - cs, Y(top), cs * 3, R.side); ctx.clip();
       }
+      if (sp) {
+        var gl = glowFor(img, pieceKey(p));
+        if (gl) drawImg(gl, cx, cy, w * gl.padK, h * gl.padK, rot, p.a * 0.95);
+      }
       drawImg(img, cx, cy, w, h, rot, p.a);
+      if (sp && p.shine > 0.001 && p.shine < 0.999 && !rot) drawShine(img, cx, cy, w, h, p.shine, p.a);
       if (p.frostA > 0.01) drawImg(sprites.frost, cx, cy, w * 1.02, h * 1.02, rot, p.a * p.frostA);
       if (p.flash > 0.01) {
         ctx.save();
@@ -636,6 +693,7 @@
       if (R.fz) drawFreezer(R.fz);
       if (R.fzDying) drawFreezer(R.fzDying);
       top.forEach(drawPiece);
+      if (R.exits) drawExits();
       // foco del tutorial
       if (R.spotlight && R.spotlight.length) {
         ctx.beginPath();
@@ -650,6 +708,7 @@
         ctx.fill('evenodd');
         R.spotlight.forEach(function (q) { ringAt(q.r, q.c, '#ffc93c', 3, 1.5, 0.6 + 0.4 * Math.sin(clock.t / 160)); });
       }
+      if (R.guide) drawGuide(R.guide);
       // selección y cursor
       if (R.sel) {
         var pulse = 0.75 + 0.25 * Math.sin(clock.t / 130);
@@ -665,6 +724,54 @@
       }
     }
     function requestDraw() { kick(); }
+
+    // Fila de la casilla más baja de una columna en el modelo visual (donde sale una ficha); -1 si no hay
+    function lowestSlotV(c) {
+      for (var r = R.rows - 1; r >= 0; r--) {
+        var v = cellV(r, c);
+        if (!v || v.b || v.fzPart) continue;
+        var p = v.pid != null ? R.pieces[v.pid] : null;
+        if (p && p.frost) continue;
+        return r;
+      }
+      return -1;
+    }
+    // Marcas de salida (niveles con fichas): un chevrón dorado bajo la casilla más baja de cada columna
+    function chevron(x, y, w, h, fill, alpha) {
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(x - w / 2, y - h / 2); ctx.lineTo(x, y + h / 2); ctx.lineTo(x + w / 2, y - h / 2);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.lineWidth = Math.max(4, h * 0.95); ctx.strokeStyle = '#2b1630'; ctx.stroke();
+      ctx.lineWidth = Math.max(2, h * 0.5); ctx.strokeStyle = fill; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    function drawExits() {
+      var cs = R.cell, w = cs * 0.34, h = cs * 0.13;
+      for (var c = 0; c < R.cols; c++) {
+        var r = lowestSlotV(c);
+        if (r < 0) continue;
+        var x = X(c) + cs / 2, y = Y(r + 1) - h * 0.15;
+        chevron(x, y, w, h, '#ffc93c', 0.95);
+      }
+    }
+    // Flecha punteada del tutorial de fichas: de la ficha hasta la salida de su columna
+    function drawGuide(gd) {
+      var cs = R.cell, x = X(gd.c) + cs / 2, y0 = Y(gd.r0) + cs * 0.92, y1 = Y(gd.r1 + 1) - cs * 0.12;
+      if (y1 <= y0) return;
+      var t = (clock.t / 40) % 14;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.setLineDash([cs * 0.16, cs * 0.14]);
+      ctx.lineDashOffset = -t;
+      ctx.lineWidth = Math.max(5, cs * 0.13); ctx.strokeStyle = '#2b1630';
+      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1 - cs * 0.12); ctx.stroke();
+      ctx.lineWidth = Math.max(3, cs * 0.075); ctx.strokeStyle = '#ffe680';
+      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1 - cs * 0.12); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+      chevron(x, y1, cs * 0.42, cs * 0.17, '#ffe680', 1);
+    }
 
     // Parpadeo ocioso de una ficha al azar
     function blinkRandom() {

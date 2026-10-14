@@ -758,6 +758,7 @@ svg { display: block; }
   animation: floaty 3s ease-in-out infinite;
 }
 .rescue-bubble svg { width: 118%; height: 118%; margin: -4% 0 0 -9%; }
+.rescue-bubble.unknown { background: radial-gradient(circle at 35% 30%, #6a7f9a 0 15%, #3a4f6a 70%, #22324a 100%); }
 .rescue-bubble.freed { background: radial-gradient(circle at 35% 30%, #fff 0 15%, #ffe08a 45%, var(--gold) 100%); box-shadow: 0 3px 0 var(--ink), 0 0 14px rgba(255, 201, 60, .9); }
 .rescue-bubble::after {
   content: '';
@@ -871,11 +872,13 @@ svg { display: block; }
 .intro-card { --zc: var(--pink); padding-top: 34px; }
 .intro-card .ribbon { --rb: var(--zc); --rb2: var(--zc); }
 .intro-card .ribbon span { background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(0, 0, 0, .15)), var(--zc); }
-.intro-name { margin: 6px 40px 0; font-family: var(--font-display); font-weight: 400; font-size: 27px; line-height: 1.05; }
-.intro-chapter { margin: 4px 0 6px; font-size: 13px; opacity: .7; }
-.intro-stars { display: flex; align-items: center; justify-content: center; gap: 2px; margin: 4px 0; }
+.intro-name { margin: 4px 40px 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.05; }
+.intro-chapter { margin: 2px 0 4px; font-size: 13px; opacity: .7; }
+.intro-stars { display: flex; align-items: center; justify-content: center; gap: 2px; margin: 0 0 2px; }
+.intro-card .sec-title { margin-top: 10px; }
+.intro-card .badges { margin: 2px 0 4px; }
 .intro-stars small { margin-left: 8px; font-size: 13px; opacity: .7; }
-.mid-star { width: 30px; height: 30px; color: var(--ink); opacity: .35; }
+.mid-star { width: 26px; height: 26px; color: var(--ink); opacity: .35; }
 .mid-star.on { opacity: 1; }
 .mid-star svg { width: 100%; height: 100%; }
 .moves-pill {
@@ -938,6 +941,72 @@ svg { display: block; }
   font-size: 15px;
 }
 .b-lock { background: var(--ink); color: var(--ice); }
+.booster.fresh { background: linear-gradient(180deg, #fff8d6, #ffe08a); box-shadow: 0 3px 0 var(--ink), 0 0 0 3px var(--gold); }
+.b-new {
+  position: absolute;
+  z-index: 1;
+  left: -8px; top: -11px;
+  padding: 2px 6px 3px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  transform: rotate(-8deg);
+}
+
+/* ---------- ¡Nuevo potenciador! (ventana propia, encima de la intro) ---------- */
+
+.overlay-unlock { justify-content: center; }
+.unlock-card { max-width: 340px; padding-top: 40px; }
+.unlock-title { margin: 0 0 6px; font-family: var(--font-display); font-size: 24px; line-height: 1.1; color: var(--drama); }
+.unlock-item { display: flex; flex-direction: column; align-items: center; }
+.unlock-item + .unlock-item { margin-top: 14px; padding-top: 12px; border-top: 2px dashed rgba(43, 22, 48, .2); }
+.unlock-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  margin: 4px 0 6px;
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 32%, #fff 0 18%, #fff3c4 45%, var(--gold) 100%);
+  box-shadow: 0 5px 0 var(--ink), 0 0 26px rgba(255, 201, 60, .85);
+  color: var(--pink-dark);
+  animation: unlockIn .6s cubic-bezier(.2, 1.6, .4, 1) .15s both;
+}
+.unlock-icon > svg { position: relative; z-index: 1; width: 72px; height: 72px; filter: drop-shadow(0 3px 0 rgba(43, 22, 48, .35)); }
+.unlock-rays { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 0; animation: spin 14s linear infinite; }
+.unlock-rays i {
+  position: absolute;
+  left: -9px; top: -112px;
+  width: 18px; height: 112px;
+  transform-origin: 50% 100%;
+  transform: rotate(var(--r));
+  background: linear-gradient(0deg, rgba(255, 201, 60, .55), rgba(255, 201, 60, 0));
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+.unlock-count {
+  position: absolute;
+  z-index: 2;
+  right: -10px; bottom: 2px;
+  padding: 2px 9px 4px;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: var(--cherry);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1;
+}
+.unlock-name { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.05; }
+.unlock-desc { margin: 4px 0 0; font-size: 15px; font-weight: 700; line-height: 1.3; }
+@keyframes unlockIn { 0% { opacity: 0; transform: scale(.3) rotate(-25deg); } 100% { opacity: 1; transform: none; } }
 .intro-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0 0; font-size: 13px; opacity: .75; }
 
 .reward {
@@ -992,7 +1061,7 @@ svg { display: block; }
 .v-star svg { width: 100%; height: 100%; }
 .v-empty { position: absolute; inset: 0; opacity: .25; }
 .v-full { position: absolute; inset: 0; transform: scale(0); opacity: 0; filter: drop-shadow(0 4px 0 rgba(43, 22, 48, .4)); }
-.v-star.on .v-full { animation: stamp .45s cubic-bezier(.3, 1.7, .5, 1) both; }
+.v-star.on .v-full { animation: stamp .3s cubic-bezier(.3, 1.7, .5, 1) both; }
 .v-star.on::after {
   content: '';
   position: absolute;
@@ -1007,6 +1076,23 @@ svg { display: block; }
 .v-score { margin: 4px 0 2px; }
 .v-score small { display: block; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; opacity: .65; }
 .v-score b { font-family: var(--font-display); font-weight: 400; font-size: 38px; line-height: 1; color: var(--drama); }
+.v-hero { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; }
+.v-hero-face { flex: 0 0 auto; width: 96px; height: 96px; margin: -6px 0 -8px; animation: sob .5s ease-in-out infinite alternate; }
+.v-hero-face svg { width: 100%; height: 100%; }
+.v-hero-bubble {
+  position: relative;
+  max-width: 190px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 16px 16px 16px 4px;
+  background: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.25;
+  text-align: left;
+}
+@keyframes sob { from { transform: rotate(-3deg) translateY(0); } to { transform: rotate(3deg) translateY(3px); } }
 .rescue-row {
   position: relative;
   display: flex;
@@ -1095,6 +1181,29 @@ svg { display: block; }
 .d-near b { font-weight: 400; font-size: 32px; }
 .d-icon { display: inline-block; width: 42px; height: 42px; }
 .d-icon svg { width: 100%; height: 100%; }
+.d-goals { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 8px; margin: 8px 0 0; }
+.d-goal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 4px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 0 var(--ink);
+}
+.d-goal.done { background: #e6fff3; }
+.dg-icon { flex: 0 0 auto; width: 34px; height: 34px; }
+.dg-icon svg { width: 100%; height: 100%; }
+.dg-n { font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 1; }
+.dg-n small { font-size: 15px; opacity: .6; }
+.dg-ok { position: absolute; top: -8px; right: -8px; display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--ink); border-radius: 50%; background: var(--ok); color: #fff; }
+.d-tip { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; text-align: left; }
+.d-tip-face { flex: 0 0 52px; width: 52px; height: 52px; }
+.d-tip-face svg { width: 100%; height: 100%; }
+.d-tip-text { flex: 1; margin: 0; padding: 7px 10px; border: 3px solid var(--ink); border-radius: 16px 16px 16px 4px; background: #fff; font-weight: 700; font-size: 13.5px; line-height: 1.3; }
+.d-tip-text b { color: var(--drama-2); }
 
 /* ---------- copiar / compartir ---------- */
 
@@ -1577,16 +1686,45 @@ svg { display: block; }
   .story-text { font-size: 17px; }
   .card { padding-left: 14px; padding-right: 14px; }
 }
+/* teléfonos bajos (375x667 y menores): la tarjeta de intro cabe entera sin desplazar */
+@media (max-height: 760px) {
+  .intro-chapter { display: none; }
+  .intro-card { padding-top: 30px; padding-bottom: 14px; }
+  .intro-name { font-size: 23px; margin-top: 2px; }
+  .intro-card .sec-title { margin: 8px 0 4px; font-size: 14px; }
+  .intro-card .sec-boost { display: none; }
+  .intro-card .goals { gap: 6px 12px; }
+  .intro-card .goal-icon { width: 48px; height: 48px; border-radius: 15px; }
+  .intro-card .goal-n { font-size: 19px; }
+  .intro-card .goal-label { font-size: 11px; }
+  .intro-card .ticket { padding: 6px 10px 10px; }
+  .intro-card .ticket-head { font-size: 22px; margin-bottom: 6px; }
+  .intro-card .ticket-face { width: 38px; height: 38px; margin-top: -12px; }
+  .intro-card .moves-pill { margin-top: 10px; padding: 4px 14px 5px 10px; }
+  .intro-card .tip { margin-top: 8px; }
+  .intro-card .tip-face { flex-basis: 54px; width: 54px; height: 54px; margin-bottom: -4px; }
+  .intro-card .tip-bubble { font-size: 13px; padding: 7px 10px; }
+  .intro-card .boosters { margin-top: 10px; gap: 8px; }
+  .intro-card .booster { width: 60px; padding: 4px; border-radius: 14px; }
+  .intro-card .booster small { display: none; }
+  .intro-card .booster svg { width: 26px; height: 26px; }
+  .intro-card .b-new { top: auto; bottom: -11px; left: 50%; transform: translateX(-50%) rotate(-4deg); }
+  .intro-card > .btn-row:last-child { padding: 8px 6px 14px; margin-top: 8px; }
+  .intro-card .btn-big { min-height: 56px; }
+}
 @media (max-height: 640px) {
   .intro-chapter { display: none; }
-  .intro-name { font-size: 23px; }
-  .intro-card .sec-title { margin: 8px 0 4px; }
-  .intro-card .goal-icon { width: 46px; height: 46px; border-radius: 14px; }
+  .intro-name { font-size: 21px; }
+  .intro-card .sec-title { margin: 6px 0 3px; }
+  .intro-card .goal-icon { width: 44px; height: 44px; border-radius: 14px; }
+  .intro-card .goal-n { font-size: 18px; }
   .intro-card .moves-pill { margin-top: 8px; }
-  .intro-card .tip { margin-top: 8px; }
-  .intro-card .tip-bubble { font-size: 13px; padding: 7px 10px; }
-  .intro-card .booster { padding: 4px 4px 4px; }
-  .intro-card .booster small { display: none; }
+  .intro-card .tip { margin-top: 6px; }
+  .intro-card .tip-face { flex-basis: 46px; width: 46px; height: 46px; }
+  .intro-card .tip-bubble { font-size: 12.5px; padding: 6px 9px; line-height: 1.25; }
+  .intro-card .boosters { margin-top: 8px; }
+  .intro-card > .btn-row:last-child { padding-bottom: 10px; }
+  .intro-card .btn-big { min-height: 52px; }
   .title-hero { width: min(56vw, 210px, 32vh); }
   .title-tag { font-size: 24px; margin-top: 12px; }
   .overlay { padding-top: calc(32px + var(--sat)); }

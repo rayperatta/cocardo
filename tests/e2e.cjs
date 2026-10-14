@@ -269,15 +269,11 @@ async function runCombo(browser, combo) {
   await wait(300);
   const tut = await ev(`(() => { const t = document.querySelector('.cg-tip'); return t ? { who: t.querySelector('b').textContent, text: t.querySelector('.cg-tip-text span').textContent, move: Cocardo.Game._tutorialMove() } : null; })()`);
   ok(tut && tut.who === 'Lima' && tut.move, `(b) tutorial L1 con mano guía, en voz de Lima («${tut && tut.text}»)`);
-  const bar1 = await ev(`[...document.querySelectorAll('.cg-boost')].map(b => b.classList.contains('cg-locked'))`);
-  ok(bar1.length === 3 && bar1.every(Boolean), '(a) barra de potenciadores bloqueada en L1');
+  // sin ningún potenciador desbloqueado la barra no se muestra (los botones siguen en el DOM, bloqueados)
+  const bar1 = await ev(`(() => { const f = document.querySelector('.cg-boosters'); return { locked: [...document.querySelectorAll('.cg-boost')].map(b => b.classList.contains('cg-locked')), hidden: !f || getComputedStyle(f).display === 'none' }; })()`);
+  ok(bar1.locked.length === 3 && bar1.locked.every(Boolean) && bar1.hidden, '(a) barra de potenciadores bloqueada y oculta en L1');
   await boardCheck('L1');
   await shot('tablero-L1-tutorial');
-  // tocar un potenciador bloqueado explica cuándo se desbloquea
-  await tap('.cg-boost-cucharon');
-  await wait(250);
-  const lockToast = await ev(`(document.querySelector('.cg-toast') || {}).textContent || ''`);
-  ok(/nivel 7/.test(lockToast), `(a) Cucharón bloqueado: «${lockToast}»`);
 
   /* ---------------- Nivel 1: jugar de verdad ---------------- */
   const moves1 = await play(QUICK ? 3 : 99, 'L1');

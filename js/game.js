@@ -195,7 +195,22 @@
       G.ro = new ResizeObserver(function () { if (G.phase !== 'idle') resize(); });
       G.ro.observe(root);
     }
+    watchDpr();
     G.mounted = true;
+  }
+  // Un cambio de devicePixelRatio sin cambio de tamaño (ventana a otro monitor, zoom del navegador) no dispara
+  // resize ni el ResizeObserver: se vigila con matchMedia y la consulta se vuelve a armar con el valor nuevo.
+  function watchDpr() {
+    try {
+      if (typeof window === 'undefined' || !window.matchMedia) return;
+      var mq = window.matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)');
+      var fn = function () {
+        if (mq.removeEventListener) mq.removeEventListener('change', fn); else if (mq.removeListener) mq.removeListener(fn);
+        if (G.phase !== 'idle') resize();
+        watchDpr();
+      };
+      if (mq.addEventListener) mq.addEventListener('change', fn); else if (mq.addListener) mq.addListener(fn);
+    } catch (e) { /* nada */ }
   }
 
   // =====================================================================
@@ -1055,7 +1070,25 @@
     G.blinkTimer = setInterval(function () {
       if (G.paused || G.phase === 'idle' || G.phase === 'done') return;
       if (Math.random() < 0.55) G.R.blinkRandom();
+      if (G.phase === 'play') shimmerSpecials();
     }, 420);
+  }
+  // Brillo ocioso de los especiales cada 2-3 s (destello que barre la ficha + chispitas), solo con el tablero quieto
+  function shimmerSpecials() {
+    var t = Date.now();
+    if (!G.lastShimmer) { G.lastShimmer = t; G.shimmerGap = 2000 + Math.random() * 1000; return; }
+    if (t - G.lastShimmer < G.shimmerGap || reducedMotion()) return;
+    G.lastShimmer = t; G.shimmerGap = 2000 + Math.random() * 1000;
+    var R = G.R, k = 0;
+    Object.keys(R.pieces).forEach(function (id) {
+      var p = R.pieces[id];
+      if (!p || p.type === 'n' || p.type === 'token' || p.frost || p.a < 0.99) return;
+      var dl = (k++ % 6) * 90;
+      p.shine = 0;
+      R.tween(p, { shine: 1 }, 520, 'inOut', dl, function () { p.shine = 0; });
+      var q = cellPt(p.r, p.c);
+      (function (x, y, dd) { R.after(dd + 160, function () { G.fx.sparkle(x + R.cell * 0.22, y - R.cell * 0.22, R.cell * 0.45, 3); }); })(q.x, q.y, dl);
+    });
   }
 
   // =====================================================================
@@ -1256,12 +1289,28 @@
           if (e.kind === 'freezer') {
             var fz = R.fz;
             if (fz) {
+              var dmg = Math.max(1, (fz.hp | 0) - e.hp);
               fz.hp = e.hp;
+              // golpe: destello blanco + sacudida de 3-4 px del congelador (no de toda la pantalla), «-1» flotante
+              // y salto del contador de la meta; las grietas salen del sprite (Art.freezer por etapas de PV)
+              var px = 3.5 / Math.max(1, cs);
               R.tween(fz, { hpShown: e.hp }, D(260), 'out', d);
-              R.tween(fz, { s: 1.06, flash: 0.7, ox: 0.04 }, D(60), 'out', d);
-              R.tween(fz, { s: 1, flash: 0, ox: 0 }, D(200), 'outBack', d + D(60));
+              R.tween(fz, { s: 1.05, flash: 1 }, D(50), 'out', d);
+              R.tween(fz, { s: 1, flash: 0 }, D(240), 'out', d + D(50));
+              R.tween(fz, { ox: px }, D(35), 'out', d);
+              R.tween(fz, { ox: -px }, D(50), 'inOut', d + D(35));
+              R.tween(fz, { ox: px * 0.6 }, D(45), 'inOut', d + D(85));
+              R.tween(fz, { ox: -px * 0.3 }, D(40), 'inOut', d + D(130));
+              R.tween(fz, { ox: 0 }, D(40), 'out', d + D(170));
               pt = rootC(fz.r + 0.5, fz.c + 0.5);
-              (function (x, y, dd, who) { R.after(dd, function () { fx.shards(x, y, cs * 1.6, { count: 8 }); fx.shake(2, 140); }); })(pt.x, pt.y, d, fz.who);
+              (function (x, y, dd, n, pink) {
+                R.after(dd, function () {
+                  fx.shards(x, y, cs * 1.6, { count: 8 });
+                  fx.glow(x, y, cs * 1.5, 'rgba(255,255,255,0.95)', 220);
+                  fx.text(x + cs * 0.35, y - cs * 0.55, '-' + n, { size: Math.round(Math.max(18, Math.min(34, cs * 0.6))), color: pink ? '#ffb0cc' : '#bfe9ff', dur: 820, rise: 42 });
+                  goalHit('boss');
+                });
+              })(pt.x, pt.y, d, dmg, fz.who === 'cereza');
               tempMood(fz.who, 'furioso', 1500);
             }
             playOnce('freezerHit');
@@ -1678,15 +1727,27 @@
   // =====================================================================
   //  Fin de nivel
   // =====================================================================
+  // Victoria: el momento ganador tiene su propio golpe (cartel «¡Nivel superado!», jingle, confeti y el villano
+  // llorando) y DESPUÉS viene el Helado Final como bono corto: si con su velocidad no termina en HF_CAP ms, el
+  // resto se completa al instante. Un toque salta todo en cualquier momento.
+  var HF_CAP = 2600;
   function winSeq() {
     var gen = G.gen, R = G.R, s = G.state;
+    var hasHF = s.movesLeft > 0;
     G.phase = 'hf';
     G.root.classList.remove('cg-danger');
-    refreshMoods();
+    G.root.classList.add('cg-won', 'cg-ended');
     clearHint();
-    taunt('win');
-    var p = Promise.resolve();
+    refreshMoods();   // con status 'won' el villano queda «llorando»
+    G.villains.forEach(function (v) { v.box.classList.remove('cg-shake'); void v.box.offsetWidth; v.box.classList.add('cg-shake'); });
     G.hfSkip = false; G.player = null;
+    G.fx.confetti(150);
+    var c0 = boardPt(G.R.side / 2, G.R.side / 2);
+    G.fx.sparkle(c0.x, c0.y, G.R.cell * 4, 20);
+    sfx('win');
+    vibrate(40);
+    banner(G.daily ? '¡Reto superado!' : '¡Nivel superado!', '', 'cg-banner-win', hasHF ? 1050 : 1500);
+    taunt('win');
     // espera que se corta si el jugador toca para saltar
     function waitSkip(ms) {
       return new Promise(function (res) {
@@ -1696,31 +1757,42 @@
         R.wait(ms).then(go);
       });
     }
-    if (s.movesLeft > 0) {
-      p = waitSkip(300).then(function () {
+    var p = Promise.resolve();
+    if (hasHF) {
+      p = waitSkip(1150).then(function () {
         if (gen !== G.gen || G.hfSkip) return;
-        banner('¡Helado Final!', 'Toca para saltar', 'cg-banner-hf', 1500);
+        banner('¡Helado Final!', 'Toca para saltar', 'cg-banner-hf', 1000);
         sfx('special');
-        return waitSkip(950);
+        return waitSkip(350);
       }).then(function () {
         if (gen !== G.gen) return;
         var hf = Engine().heladoFinal(G.state);
-        // velocidad adaptable: con muchos movimientos sobrantes el Helado Final no debe pasar de ~7 s
-        var hfSpeed = Math.min(0.75, Math.max(0.22, 6000 / (Math.max(1, G.state.movesLeft) * 1800)));
+        // velocidad adaptable (~1.8 s por movimiento a velocidad 1) y tope duro de HF_CAP
+        var n = Math.max(1, G.state.movesLeft);
+        var hfSpeed = Math.min(0.6, Math.max(0.2, (HF_CAP - 200) / (n * 1800)));
         var pc = { prev: G.state, speed: hfSpeed, hf: true, cancelled: false };
         G.state = hf.state;
         if (G.hfSkip) { applyInstant(); return; }
         G.player = pc;
-        return playSteps(hf.steps || [], pc).then(function () {
-          if (gen !== G.gen) return;
-          if (!pc.cancelled) syncCheck();
+        return new Promise(function (res) {
+          var done = false;
+          function go() { if (!done) { done = true; res(); } }
+          playSteps(hf.steps || [], pc).then(function () {
+            if (gen === G.gen && !pc.cancelled) syncCheck();
+            go();
+          }, go);
+          R.wait(HF_CAP).then(function () {
+            if (done || gen !== G.gen) return;
+            if (!pc.cancelled) { pc.cancelled = true; applyInstant(); }
+            go();
+          });
         });
       });
     }
     p.then(function () {
       if (gen !== G.gen) return;
       G.player = null;
-      celebrate(gen);
+      winEnd(gen, hasHF);
     });
   }
   function skipHF() {
@@ -1739,19 +1811,19 @@
     setScore(G.state.score);
     G.els.overlay.querySelectorAll('.cg-banner, .cg-cascade').forEach(function (b) { b.remove(); });
   }
-  function celebrate(gen) {
+  // Cierre corto tras el Helado Final (el marcador termina de subir) y entrega del resultado
+  function winEnd(gen, hasHF) {
     var s = G.state;
     G.phase = 'end';
     G.root.classList.add('cg-ended', 'cg-won');
     setMoves(s.movesLeft, true);
     setScore(s.score);
     refreshMoods();
-    G.fx.confetti(150);
-    var c0 = boardPt(G.R.side / 2, G.R.side / 2);
-    G.fx.sparkle(c0.x, c0.y, G.R.cell * 4, 20);
-    sfx('win');
-    banner(G.daily ? '¡Reto superado!' : '¡Nivel superado!', '', 'cg-banner-win', 1700);
-    endAfter(gen, 1800, true);
+    if (hasHF) {
+      var c0 = boardPt(G.R.side / 2, G.R.side / 2);
+      G.fx.sparkle(c0.x, c0.y, G.R.cell * 3, 12);
+    }
+    endAfter(gen, hasHF ? 700 : 1500, true);
   }
   function loseSeq() {
     var gen = G.gen;
@@ -1763,9 +1835,17 @@
     var nm = nearMiss();
     sfx('laugh', { who: mainVillain() });
     sfx('lose');
-    banner('¡Sin movimientos!', nm ? '¡Casi! Te faltan ' + nm.remaining : '', 'cg-banner-lose', 1700);
+    banner('¡Sin movimientos!', nm ? { html: nearMissHtml(nm) } : '', 'cg-banner-lose', 1700);
     taunt('lose');
     endAfter(gen, 1800, false);
+  }
+  // «¡Casi! Te falta 1 🍈» / «¡Casi! Te faltan 3 🍈 y 2 🧊»: cada meta pendiente con su número y su ícono
+  function nearMissHtml(nm) {
+    var list = nm.goals && nm.goals.length ? nm.goals : [{ remaining: nm.remaining, icon: nm.icon }];
+    var verb = list.length === 1 && list[0].remaining === 1 ? 'falta' : 'faltan';
+    return '¡Casi! Te ' + verb + ' ' + list.map(function (g) {
+      return '<span class="cg-nm"><b>' + (g.remaining | 0) + '</b><span class="cg-nm-ic">' + (g.icon || '') + '</span></span>';
+    }).join(' y ');
   }
   function endAfter(gen, ms, won) {
     var done = false;
@@ -1783,9 +1863,15 @@
     var s = G.state;
     var u = safe(function () { return Engine().goalUnits(s); }, null);
     if (!u || !u.start || u.remaining <= 0 || u.remaining > 0.2 * u.start) return null;
-    var g = s.goals.filter(function (x) { return x.remaining > 0; }).sort(function (a, b) { return b.remaining - a.remaining; })[0];
+    var left = s.goals.filter(function (x) { return x.remaining > 0; });
+    var g = left.slice().sort(function (a, b) { return b.remaining - a.remaining; })[0];
     if (!g) return null;
-    var o = { remaining: u.remaining, icon: goalIconSvg(g), goal: { type: g.type, remaining: g.remaining } };
+    // remaining/icon: la meta con más pendientes, con SU número (no la suma de todas las metas);
+    // goals: todas las metas pendientes en orden, para mostrarlas completas; total: la suma (dato)
+    var o = {
+      remaining: g.remaining, icon: goalIconSvg(g), goal: { type: g.type, remaining: g.remaining }, total: u.remaining,
+      goals: left.map(function (x) { var e = { type: x.type, remaining: x.remaining, icon: goalIconSvg(x), title: goalTitle(x) }; if (x.color) e.color = x.color; return e; }),
+    };
     if (g.color) o.goal.color = g.color;
     return o;
   }
@@ -1807,12 +1893,38 @@
       nearMiss: won ? null : nearMiss(),
     };
   }
-  function finish(won) {
+  // Entrega el resultado: una sola vez por partida (G.endDelivered). Deja el tablero quieto detrás de
+  // Victoria/Derrota (sin selección, pista, foco ni globito del congelador que mantengan vivo el dibujo).
+  function finish(won, interrupted) {
+    if (G.endDelivered) return;
+    G.endDelivered = true;
     G.phase = 'done';
     clearHint();
+    clearTimeout(G.endTimer); G.endSkip = null;
+    if (G.tutorial) endTutorial();
+    G.pendingSpecial = null;
+    setSel(null); setCursor(null);
+    if (G.R) { G.R.fzBadge = null; G.R.hint = null; G.R.spotlight = null; G.R.guide = null; G.R.kick(); }
     var res = buildResult(won);
+    if (interrupted) res.interrupted = true;
     G.lastResult = res;
     if (G.opts.onEnd) { try { G.opts.onEnd(res); } catch (e) { if (typeof console !== 'undefined') console.error(e); } }
+  }
+  // Contrato de fin (ARQUITECTURA §11): si el motor ya decidió (won/lost) pero onEnd todavía no salió —la
+  // jugada decisiva aún se anima, corre el Helado Final o la celebración, o se pausó justo antes— y llega
+  // stop(), restart() o start(), el resultado se entrega AHORA, antes de desmontar la partida, con
+  // result.interrupted = true (la Shell guarda igual; puede omitir la pantalla de Victoria/Derrota). Si hay
+  // Helado Final pendiente, su bono se suma al instante. Así nunca se pierde una victoria ni un intento
+  // oficial del Reto Diario. Se eligió entregar (y no solo guardar aquí) porque la contabilidad es de la Shell.
+  function deliverPending() {
+    if (G.endDelivered || !G.level || !G.state || G.phase === 'idle') return;
+    var s = G.state;
+    if (s.status !== 'won' && s.status !== 'lost') return;
+    if (s.status === 'won' && s.movesLeft > 0) {
+      var hf = safe(function () { return Engine().heladoFinal(s); }, null);
+      if (hf && hf.state) G.state = hf.state;
+    }
+    finish(s.status === 'won', true);
   }
 
   // =====================================================================
@@ -1872,13 +1984,26 @@
     var hint = safe(function () { return E.hint(s); }, null);
     if (!score) return hint;
     var moves = safe(function () { return E.validMoves(s); }, []), best = null, bs = 0;
+    var types = SPECIAL_TEACH[teach];
     moves.forEach(function (m) {
       var res = safe(function () { return E.applySwap(s, m.a, m.b); }, null);
       if (!res || !res.turnInfo.valid) return;
       var v = score(res.steps);
+      // lección de especial: mejor si el especial creado queda listo para usarse en la jugada siguiente (paso 2).
+      // El motor es determinista: con el estado real esto es exactamente lo que va a pasar.
+      if (v > 0 && types && res.state.status === 'playing' && usableAfter(res, types)) v += 100;
       if (v > bs) { bs = v; best = m; }
     });
     return best || hint;
+  }
+  function usableAfter(res, types) {
+    var ids = {};
+    res.steps.forEach(function (st) { (st.events || []).forEach(function (e) { if (e.t === 'create' && types[e.type]) ids[e.id] = 1; }); });
+    var cells = [], g = res.state.grid;
+    g.forEach(function (row, r) { row.forEach(function (cl, c) { if (cl && cl.p && ids[cl.p.id] && !cl.p.frost) cells.push({ r: r, c: c }); }); });
+    if (!cells.length) return false;
+    var mv = safe(function () { return Engine().validMoves(res.state); }, []);
+    return mv.some(function (m) { return cells.some(function (q) { return same(q, m.a) || same(q, m.b); }); });
   }
   // Lecciones de especiales en dos pasos: 1) crear el especial, 2) usarlo (si no, muchos nunca lo disparan)
   var SPECIAL_TEACH = { paleta: { ph: 1, pv: 1 }, bomba: { bomba: 1 }, copa: { copa: 1 } };
@@ -2018,7 +2143,7 @@
         markSeen(t.key);
         var sm = specialMove(t.teach);
         if (sm && sm.move) { specialStep(t, sm); return; }
-        if (sm && sm.wait) G.pendingSpecial = { teach: t.teach, key: t.key, tries: 3 };
+        if (sm && sm.wait) G.pendingSpecial = { teach: t.teach, key: t.key, tries: 5 };
       }
       endTutorial();
       return;
@@ -2127,6 +2252,9 @@
     var dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
     var rows = G.state ? G.state.rows : 8, cols = G.state ? G.state.cols : 8;
     var stale = G.R.layout(side, rows, cols, dpr);
+    // cada llamada vuelve a leer el devicePixelRatio: si cambió, los sprites se rasterizan otra vez a la nueva nitidez
+    if (G.lastDpr && G.lastDpr !== dpr) stale = true;
+    G.lastDpr = dpr;
     if (w >= 10 && h >= 10) G.laidOut = true;
     if (stale && G.state && G.phase !== 'idle') G.R.rerasterize();
     // la capa de efectos cubre toda la pantalla: con 1.5x basta y cuesta casi la mitad de píxeles
@@ -2142,6 +2270,8 @@
   // =====================================================================
   function pause() {
     if (G.paused || G.phase === 'idle') return;
+    // resultado ya decidido: no se congela (el reloj del tablero se detendría antes de entregar onEnd)
+    if (G.state && G.state.status !== 'playing' && G.phase !== 'done') return;
     G.paused = true;
     G.R.setPaused(true);
     clearHint();
@@ -2161,6 +2291,7 @@
     start(G.level, G.opts);
   }
   function stopInternal() {
+    deliverPending();
     G.gen++;
     G.phase = 'idle';
     G.paused = false;
@@ -2170,9 +2301,10 @@
     clearInterval(G.blinkTimer);
     G.endSkip = null;
     G.villains.forEach(function (v) { clearTimeout(v.tempTimer); });
-    if (G.R) { G.R.cancelAll(); G.R.setPaused(false); G.R.hint = null; G.R.sel = null; G.R.cursor = null; G.R.spotlight = null; G.R.fzBadge = null; }
+    if (G.R) { G.R.cancelAll(); G.R.setPaused(false); G.R.hint = null; G.R.sel = null; G.R.cursor = null; G.R.spotlight = null; G.R.guide = null; G.R.fzBadge = null; }
     if (G.fx) G.fx.clear();
-    G.tutorial = null; G.armed = null; G.sel = null; G.cursor = null; G.press = null; G.pressed = null;
+    G.tutorial = null; G.armed = null; G.sel = null; G.cursor = null; G.press = null; G.pressed = null; G.pendingSpecial = null;
+    G.hintCache = null; G.lastShimmer = 0;
     if (G.els.overlay) G.els.overlay.innerHTML = '';
     if (G.els.wrap) { G.els.wrap.classList.remove('cg-target'); G.els.wrap.removeAttribute('data-armed'); G.els.wrap.style.transform = ''; G.lastShake = ''; }
     hidePeeker();
@@ -2240,6 +2372,7 @@
     restart: restart,
     stop: stop,
     resize: resize,
+    canPause: pausable,   // la Shell no abre la Pausa si es false (nivel ya decidido o pantalla de juego inactiva)
     // pruebas / depuración
     _state: function () { return G.state; },
     _busy: _busyFn,

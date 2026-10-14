@@ -14,6 +14,14 @@
   .row { display:flex; flex-wrap:wrap; gap:6px; align-items:flex-end; }
   .board { background:repeating-conic-gradient(var(--board) 0 25%, var(--board2) 0 50%) 0 0/96px 96px; padding:8px; border-radius:14px; display:inline-flex; flex-wrap:wrap; gap:0; }
   .board.s48 { background-size:48px 48px; }
+  .board.light { background:repeating-conic-gradient(#fff6ea 0 25%, #e3f3fb 0 50%) 0 0/96px 96px; box-shadow:0 0 0 3px #eaf8ff, 0 0 0 5px rgba(43,22,48,.62); }
+  .board.light.s48 { background-size:48px 48px; }
+  .board.s32.light { background-size:32px 32px; }
+  .blur { filter:blur(3px); }
+  table.m { border-collapse:collapse; font-size:12px; margin:4px 0 0; }
+  table.m td, table.m th { border:1px solid #e5d6c8; padding:2px 6px; text-align:right; }
+  table.m .sw { width:22px; padding:0; }
+  .ok { color:#1f8a3a; font-weight:800; }
   .cell { display:inline-block; line-height:0; }
   .s96 .cell, .s96 .cell svg { width:96px; height:96px; }
   .s48 .cell, .s48 .cell svg { width:48px; height:48px; }
@@ -37,6 +45,7 @@
 <body>
 <h1>Cocardo · Arte del tablero</h1>
 <div id="sizes"></div>
+<div id="metrics"></div>
 <div id="out"></div>
 <script src="../js/art.js"></script>
 <script>
@@ -56,14 +65,18 @@
 
   // fichas por cara
   ['normal', 'blink', 'scared', 'happy'].forEach(function (face) {
-    sec('Fichas · ' + face + ' (96 / 48)', '<div class="row">' +
+    sec('Fichas · ' + face + ' (96 oscuro / 96 claro como en el juego / 48)', '<div class="row">' +
       board('s96', COLS.map(function (c) { return cell(track('tile ' + c + ' ' + face, A.tile(c, { face: face }))); })) +
-      board('s48', COLS.map(function (c) { return cell(A.tile(c, { face: face })); })) + '</div>');
+      board('s96 light', COLS.map(function (c) { return cell(A.tile(c, { face: face })); })) +
+      board('s48', COLS.map(function (c) { return cell(A.tile(c, { face: face })); })) +
+      board('s48 light', COLS.map(function (c) { return cell(A.tile(c, { face: face })); })) + '</div>');
   });
   ['ph', 'pv', 'bomba'].forEach(function (t) {
-    sec('Especiales · ' + t, '<div class="row">' +
+    sec('Especiales · ' + t + ' (junto a una ficha normal del mismo sabor)', '<div class="row">' +
       board('s96', COLS.map(function (c) { return cell(track(t + ' ' + c, A.tile(c, { type: t }))); })) +
-      board('s48', COLS.map(function (c) { return cell(A.tile(c, { type: t })); })) + '</div>');
+      board('s96 light', COLS.map(function (c) { return cell(A.tile(c, { type: t })); })) + '</div><div class="row" style="margin-top:6px">' +
+      board('s48', COLS.map(function (c) { return cell(A.tile(c, { type: t })) + cell(A.tile(c, {})); })) +
+      board('s48 light', COLS.map(function (c) { return cell(A.tile(c, { type: t })) + cell(A.tile(c, {})); })) + '</div>');
   });
   // tablero mezclado a 48 px
   function mixBoard() {
@@ -74,14 +87,17 @@
     if (i === 9) s = A.tile(c, { type: 'ph' }); else if (i === 20) s = A.tile(c, { type: 'pv' });
     else if (i === 27) s = A.tile(c, { type: 'bomba' }); else if (i === 36) s = A.copa();
     else if (i === 44) s = A.ice(2, 2); else if (i === 45) s = A.ice(1, 2); else if (i === 52) s = A.crate();
-    else if (i === 53) s = A.friend('lima', 2, 2); else if (i === 59) s = A.token('uva'); else if (i === 61) s = A.token('prueba');
+    else if (i === 53) s = A.friend('lima', 3, 3); else if (i === 30) s = A.friend('uva', 2, 3); else if (i === 59) s = A.token('uva'); else if (i === 61) s = A.token('prueba');
     else s = A.tile(c, { face: i % 11 === 0 ? 'blink' : 'normal' });
     mix.push(cell(s));
   }
   return mix.join('');
   }
-  sec('Tablero 8×8 de prueba (48 px y 32 px)', '<div class="row"><div class="board s48" style="width:400px">' + mixBoard() + '</div>' +
-    '<div class="board s32" style="width:272px;background-size:32px 32px">' + mixBoard() + '</div></div>');
+  sec('Tablero 8×8 de prueba (48 px oscuro / claro, 32 px)', '<div class="row"><div class="board s48" style="width:400px">' + mixBoard() + '</div>' +
+    '<div class="board s48 light" style="width:400px">' + mixBoard() + '</div>' +
+    '<div class="board s32 light" style="width:272px">' + mixBoard() + '</div></div>');
+  sec('Vistazo: el mismo tablero desenfocado (cada sabor debe seguir siendo una mancha de color distinta)', '<div class="row"><div class="board s48 blur" style="width:400px">' + mixBoard() + '</div>' +
+    '<div class="board s48 light blur" style="width:400px">' + mixBoard() + '</div></div>');
 
   sec('Copa, fichas y escarcha', '<div class="row">' + board('s96', [cell(track('copa', A.copa())), cell(track('token uva', A.token('uva'))), cell(track('token prueba', A.token('prueba')))]) +
     board('s48', [cell(A.copa()), cell(A.token('uva')), cell(A.token('prueba'))]) +
@@ -91,9 +107,12 @@
     board('s48', [[1, 1], [2, 2], [1, 2], [3, 3], [2, 3], [1, 3]].map(function (h) { return cell(A.ice(h[0], h[1])); }).concat([cell(A.crate())])) + '</div>');
 
   var WHO = ['lima', 'fresa', 'banana', 'uva', 'naranja', 'durazna', 'cocardo', 'cereza', 'pina', 'banano', 'limon', 'policia_fresa', 'policia_sandia', 'guardaespaldas', 'brocoli', 'reportera'];
-  sec('Amigos congelados (hp 2/2, 1/2; 3/3, 2/3)', '<div class="row">' + board('s96', WHO.map(function (w) { return cell(track('friend ' + w, A.friend(w, 2, 2))); })) + '</div><div class="row" style="margin-top:6px">' +
-    board('s96', ['lima', 'fresa', 'naranja', 'banano'].map(function (w) { return cell(A.friend(w, 1, 2)); }).concat(['lima', 'naranja'].map(function (w) { return cell(A.friend(w, 3, 3)); })).concat(['lima', 'naranja'].map(function (w) { return cell(A.friend(w, 2, 3)); }))) +
-    board('s48', WHO.slice(0, 6).map(function (w) { return cell(A.friend(w, 2, 2)); })) + '</div>');
+  sec('Amigos congelados · etapas 3/3 → 2/3 → 1/3 (y 2/2 → 1/2)', '<div class="row">' +
+    board('s96 light', COLS.map(function (c, i) { var w = WHO[i]; return cell(track('friend ' + w + ' 3/3', A.friend(w, 3, 3))) + cell(track('friend ' + w + ' 2/3', A.friend(w, 2, 3))) + cell(track('friend ' + w + ' 1/3', A.friend(w, 1, 3))); }).slice(0, 3)) + '</div><div class="row" style="margin-top:6px">' +
+    board('s96 light', COLS.map(function (c, i) { var w = WHO[i]; return cell(A.friend(w, 3, 3)) + cell(A.friend(w, 2, 3)) + cell(A.friend(w, 1, 3)); }).slice(3)) + '</div><div class="row" style="margin-top:6px">' +
+    board('s96', WHO.slice(6).map(function (w) { return cell(track('friend ' + w, A.friend(w, 2, 2))); })) + '</div><div class="row" style="margin-top:6px">' +
+    board('s96', ['lima', 'naranja'].map(function (w) { return cell(A.friend(w, 2, 2)) + cell(A.friend(w, 1, 2)); })) +
+    board('s48 light', WHO.slice(0, 6).map(function (w) { return cell(A.friend(w, 3, 3)) + cell(A.tile(COLS[WHO.indexOf(w)], {})); })) + '</div>');
 
   sec('Congeladores (hp 8,6,4,2 de 8)', '<div class="row fz">' + [8, 6, 4, 2].map(function (h) { return item(track('freezer cocardo ' + h, A.freezer('cocardo', h, 8)), 'cocardo ' + h + '/8'); }).join('') + '</div><div class="row fz">' +
     [8, 6, 4, 2].map(function (h) { return item(track('freezer cereza ' + h, A.freezer('cereza', h, 8)), 'cereza ' + h + '/8'); }).join('') + '</div>');
@@ -114,6 +133,40 @@
   var max = sizes.reduce(function (m, s) { return s[1] > m[1] ? s : m; }, ['', 0]);
   document.getElementById('sizes').innerHTML = 'SVG generados: ' + sizes.length + ' · más grande: ' + max[0] + ' (' + max[1] + ' B)' +
     (big.length ? ' · <span class="warn">&gt;12 KB: ' + big.map(function (s) { return s[0] + ' ' + s[1]; }).join(', ') + '</span>' : '');
+  // Métricas de legibilidad: color medio (HSV) de los píxeles opacos de cada ficha rasterizada a 48 px
+  // y ΔE (CIELAB) entre los colores medios. Objetivo: S ≥ 0.40 y pares bien separados.
+  (function metrics() {
+    function hsv(r, g, b) { r /= 255; g /= 255; b /= 255; var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h = 0; if (d) { if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4; h *= 60; if (h < 0) h += 360; } return [h, mx ? d / mx : 0, mx]; }
+    function lab(r, g, b) { function q(c) { c /= 255; return c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92; } var R = q(r), G = q(g), B = q(b); var X = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047, Y = R * 0.2126 + G * 0.7152 + B * 0.0722, Z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883; function t(v) { return v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116; } X = t(X); Y = t(Y); Z = t(Z); return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)]; }
+    var res = {}, left = COLS.length;
+    COLS.forEach(function (c) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var cv = document.createElement('canvas'); cv.width = cv.height = 48; var g = cv.getContext('2d'); g.drawImage(img, 0, 0, 48, 48);
+          var d = g.getImageData(0, 0, 48, 48).data, n = 0, s = [0, 0, 0], ps = 0;
+          for (var i = 0; i < d.length; i += 4) { if (d[i + 3] < 128) continue; n++; s[0] += d[i]; s[1] += d[i + 1]; s[2] += d[i + 2]; ps += hsv(d[i], d[i + 1], d[i + 2])[1]; }
+          var m = s.map(function (v) { return v / n; });
+          res[c] = { m: m, h: hsv(m[0], m[1], m[2]), ps: ps / n, lab: lab(m[0], m[1], m[2]) };
+        } catch (e) { res[c] = null; }
+        if (--left === 0) show();
+      };
+      img.onerror = function () { if (--left === 0) show(); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(A.tile(c, {}));
+    });
+    function show() {
+      if (COLS.some(function (c) { return !res[c]; })) { document.getElementById('metrics').textContent = 'Métricas no disponibles (canvas bloqueado)'; return; }
+      var rows = COLS.map(function (c) {
+        var r = res[c], col = 'rgb(' + r.m.map(Math.round).join(',') + ')', okS = r.h[1] >= 0.4;
+        return '<tr><td>' + c + '</td><td class="sw" style="background:' + col + '"></td><td>' + Math.round(r.h[0]) + '°</td><td class="' + (okS ? 'ok' : 'warn') + '">' + r.h[1].toFixed(2) + '</td><td>' + r.h[2].toFixed(2) + '</td><td>' + r.ps.toFixed(2) + '</td></tr>';
+      }).join('');
+      var pairs = [];
+      for (var i = 0; i < 6; i++) for (var j = i + 1; j < 6; j++) { var a = res[COLS[i]].lab, b = res[COLS[j]].lab; pairs.push([COLS[i] + COLS[j], Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])]); }
+      pairs.sort(function (x, y) { return x[1] - y[1]; });
+      document.getElementById('metrics').innerHTML = '<table class="m"><tr><th>ficha</th><th>media</th><th>H</th><th>S (color medio)</th><th>V</th><th>S media por píxel</th></tr>' + rows + '</table>' +
+        '<div style="font-size:12px">ΔE más cercanos (48 px): ' + pairs.slice(0, 4).map(function (p) { return p[0] + ' ' + p[1].toFixed(1); }).join(' · ') + '</div>';
+    }
+  })();
   // ids únicos
   var ids = {}, dup = 0;
   document.querySelectorAll('[id]').forEach(function (el) { if (ids[el.id]) dup++; ids[el.id] = 1; });
