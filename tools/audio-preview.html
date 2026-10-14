@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cocardo: sonidos</title>
+<style>
+  :root {
+    --ink: #2b1630; --cream: #fff6ea; --mint: #bff3e1; --pink: #ff6fa5; --cherry: #d61f4b;
+    --ice: #bfe9ff; --ice-deep: #4aa8e0; --gold: #ffc93c; --drama: #5b1e74; --drama-2: #a1286a; --ok: #33b679;
+    --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+    --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: linear-gradient(180deg, var(--mint), var(--cream) 320px); color: var(--ink);
+    font-family: var(--font-body); }
+  main { max-width: 860px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin: 4px 0 2px; color: var(--drama); }
+  p.sub { margin: 0 0 14px; font-size: 14px; opacity: .8; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; position: sticky; top: 0;
+    padding: 8px 0; background: rgba(255,246,234,.92); backdrop-filter: blur(4px); z-index: 2; }
+  .state { font-size: 13px; padding: 4px 10px; border-radius: 99px; background: #fff; border: 2px solid var(--ink); }
+  canvas { width: 100%; height: 90px; display: block; background: #fff; border: 2px solid var(--ink); border-radius: 12px; }
+  .meta { font: 600 12px/1.4 ui-monospace, Menlo, Consolas, monospace; margin: 6px 2px 14px; min-height: 17px; }
+  section { margin: 14px 0; }
+  h2 { font-family: var(--font-display); font-weight: 400; font-size: 18px; margin: 0 0 8px; color: var(--drama-2); }
+  .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: 800 14px var(--font-body); color: var(--ink); background: #fff; border: 2px solid var(--ink);
+    border-radius: 12px; padding: 9px 12px; cursor: pointer; box-shadow: 0 3px 0 var(--ink);
+    transition: transform .06s, box-shadow .06s; }
+  button:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+  button.on { background: var(--gold); }
+  button.big { background: var(--pink); color: #fff; }
+  button small { font-weight: 600; opacity: .7; }
+  .c1 { background: #e9fff4; } .c2 { background: #fff1d6; } .c3 { background: #ffe3ee; }
+  .c4 { background: #e3f4ff; } .c5 { background: #f0e6ff; } .c6 { background: #fffbd1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cocardo: sonidos</h1>
+  <p class="sub">Página de prueba de <code>js/audio.js</code>. El primer toque activa el audio (WebAudio, todo sintetizado).</p>
+
+  <div class="bar">
+    <button id="btn-mute">Sonido: sí</button>
+    <button id="btn-music">Música: no</button>
+    <button id="btn-all" class="big">Probar todo</button>
+    <span class="state" id="state">audio: bloqueado</span>
+  </div>
+
+  <canvas id="wave" width="1600" height="180"></canvas>
+  <div class="meta" id="meta">Toca un sonido para ver su forma de onda (render sin conexión).</div>
+
+  <div id="groups"></div>
+</main>
+
+<script src="../js/audio.js"></script>
+<script>
+(function () {
+  'use strict';
+  var A = window.Cocardo && window.Cocardo.Audio;
+
+  // Grupos de botones: [etiqueta, nombre, opts]
+  var GROUPS = [
+    ['Interfaz y tablero', 'c1', [
+      ['Toque', 'tap'], ['Intercambio', 'swap'], ['Inválido', 'invalid'], ['Especial creado', 'special'],
+      ['Mezclar', 'shuffle'], ['Potenciador', 'booster']]],
+    ['Match (cascada)', 'c2', [
+      ['c1', 'match', { cascade: 1 }], ['c2', 'match', { cascade: 2 }], ['c3', 'match', { cascade: 3 }],
+      ['c4', 'match', { cascade: 4 }], ['c5', 'match', { cascade: 5 }], ['c6', 'match', { cascade: 6 }],
+      ['c7', 'match', { cascade: 7 }], ['c8', 'match', { cascade: 8 }], ['c10', 'match', { cascade: 10 }],
+      ['Cascada 1→8', '#cascade']]],
+    ['Especiales y combos', 'c3', [
+      ['Paleta', 'paleta'], ['Bomba', 'bomba'], ['Copa', 'copa'], ['Combo', 'combo']]],
+    ['Obstáculos y fichas', 'c4', [
+      ['Hielo hp3', 'ice', { hp: 3 }], ['Hielo hp2', 'ice', { hp: 2 }], ['Hielo hp1', 'ice', { hp: 1 }],
+      ['Hielo roto', 'ice', { hp: 0 }], ['Escarcha', 'frost'], ['Caja', 'crate'], ['Rescate', 'rescue'],
+      ['Ficha', 'token']]],
+    ['Villanos', 'c5', [
+      ['Tic', 'tick'], ['Risa Cocardo', 'laugh', { who: 'cocardo' }], ['Risa Cereza', 'laugh', { who: 'cereza' }],
+      ['Villano actúa', 'villain'], ['Golpe Congelador', 'freezerHit']]],
+    ['Fin de nivel e historia', 'c6', [
+      ['Latido', 'heartbeat'], ['Victoria', 'win'], ['Estrella 1', 'star', { i: 0 }], ['Estrella 2', 'star', { i: 1 }],
+      ['Estrella 3', 'star', { i: 2 }], ['3 estrellas', '#stars'], ['Derrota', 'lose'], ['¡Drama!', 'drama'],
+      ['Blip', 'blip'], ['Diálogo Cocardo', '#dialog', { who: 'cocardo' }], ['Diálogo Cereza', '#dialog', { who: 'cereza' }]]],
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var timers = [];
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function clearLater() { while (timers.length) clearTimeout(timers.pop()); }
+
+  function refreshState() {
+    if (!A) { $('state').textContent = 'audio: no cargado'; return; }
+    var s = A._stats();
+    $('state').textContent = 'audio: ' + (!A.isSupported() ? 'sin soporte' : (s.state === 'none' ? 'bloqueado' : s.state)) + ' · voces ' + s.voices;
+  }
+
+  // Dibuja la forma de onda del sonido renderizado sin conexión
+  function show(name, opts) {
+    if (!A || !A._render) return;
+    A._render(name, opts, 2.6).then(function (buf) {
+      if (!buf) return;
+      var d0 = buf.getChannelData(0), d1 = buf.getChannelData(1);
+      var peak = 0, sum = 0, lastLoud = 0;
+      for (var i = 0; i < d0.length; i++) {
+        var v = Math.max(Math.abs(d0[i]), Math.abs(d1[i]));
+        if (v > peak) peak = v;
+        sum += d0[i] * d0[i];
+        if (v > 0.001) lastLoud = i;
+      }
+      var rms = Math.sqrt(sum / d0.length);
+      var cv = $('wave'), g = cv.getContext('2d');
+      var W = cv.width, H = cv.height, len = Math.max(lastLoud + 1, buf.sampleRate * 0.3);
+      g.clearRect(0, 0, W, H);
+      g.strokeStyle = 'rgba(43,22,48,.15)';
+      g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.stroke();
+      g.fillStyle = '#a1286a';
+      var per = len / W;
+      for (var x = 0; x < W; x++) {
+        var lo = 1, hi = -1, a = Math.floor(x * per), b = Math.floor((x + 1) * per);
+        for (var j = a; j < b && j < d0.length; j++) { if (d0[j] < lo) lo = d0[j]; if (d0[j] > hi) hi = d0[j]; }
+        if (hi < lo) continue;
+        g.fillRect(x, H / 2 - hi * H / 2, 1, Math.max(1, (hi - lo) * H / 2));
+      }
+      var db = function (x) { return (20 * Math.log10(Math.max(x, 1e-6))).toFixed(1) + ' dB'; };
+      $('meta').textContent = name + (opts ? ' ' + JSON.stringify(opts) : '') + ' · pico ' + db(peak) +
+        ' · duración ' + Math.round(lastLoud / buf.sampleRate * 1000) + ' ms';
+    });
+  }
+
+  function trigger(name, opts) {
+    if (!A) return;
+    A.unlock();
+    if (name === '#cascade') {
+      for (var c = 1; c <= 8; c++) (function (c) { later(function () { A.play('match', { cascade: c }); }, (c - 1) * 260); })(c);
+      show('match', { cascade: 8 });
+    } else if (name === '#stars') {
+      for (var i = 0; i < 3; i++) (function (i) { later(function () { A.play('star', { i: i }); }, i * 380); })(i);
+      show('star', { i: 2 });
+    } else if (name === '#dialog') {
+      for (var k = 0; k < 14; k++) (function (k) { later(function () { A.play('blip', opts); }, k * 70 + (k > 6 ? 120 : 0)); })(k);
+      show('blip', opts);
+    } else {
+      A.play(name, opts);
+      show(name, opts);
+    }
+    setTimeout(refreshState, 50);
+  }
+
+  // Construye los botones
+  var host = $('groups');
+  GROUPS.forEach(function (gr) {
+    var sec = document.createElement('section');
+    var h = document.createElement('h2');
+    h.textContent = gr[0];
+    sec.appendChild(h);
+    var grid = document.createElement('div');
+    grid.className = 'grid';
+    gr[2].forEach(function (it) {
+      var bt = document.createElement('button');
+      bt.className = gr[1];
+      bt.textContent = it[0] + ' ';
+      var sm = document.createElement('small');
+      sm.textContent = it[1].charAt(0) === '#' ? '' : it[1];
+      bt.appendChild(sm);
+      bt.dataset.sound = it[1];
+      bt.addEventListener('click', function () { trigger(it[1], it[2]); });
+      grid.appendChild(bt);
+    });
+    sec.appendChild(grid);
+    host.appendChild(sec);
+  });
+
+  $('btn-mute').addEventListener('click', function () {
+    if (!A) return;
+    A.unlock();
+    A.setMuted(!A.isMuted());
+    this.textContent = 'Sonido: ' + (A.isMuted() ? 'no' : 'sí');
+    this.classList.toggle('on', A.isMuted());
+    refreshState();
+  });
+  $('btn-music').addEventListener('click', function () {
+    if (!A) return;
+    A.unlock();
+    A.setMusic(!A.isMusicOn());
+    this.textContent = 'Música: ' + (A.isMusicOn() ? 'sí' : 'no');
+    this.classList.toggle('on', A.isMusicOn());
+    refreshState();
+  });
+  $('btn-all').addEventListener('click', function () {
+    if (!A) return;
+    A.unlock();
+    clearLater();
+    var seq = [];
+    GROUPS.forEach(function (gr) { gr[2].forEach(function (it) { if (it[1].charAt(0) !== '#') seq.push(it); }); });
+    var t = 0;
+    seq.forEach(function (it) {
+      later(function () { A.play(it[1], it[2]); show(it[1], it[2]); refreshState(); }, t);
+      t += ({ drama: 2400, win: 1700, lose: 1500, combo: 900, copa: 800, rescue: 900, laugh: 800 }[it[1]] || 520);
+    });
+  });
+
+  setInterval(refreshState, 500);
+  refreshState();
+})();
+</script>
+</body>
+</html>
