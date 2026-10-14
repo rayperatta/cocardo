@@ -658,10 +658,10 @@
       }
       ctx.globalAlpha = 1;
     }
-    function ringAt(r, c, color, lw, inset, alpha) {
-      var cs = R.cell, x = X(c) + inset, y = Y(r) + inset, s = cs - inset * 2, rad = cs * 0.22;
+    function ringAt(r, c, color, lw, inset, alpha, wc, hc) {
+      var cs = R.cell, x = X(c) + inset, y = Y(r) + inset, w = cs * (wc || 1) - inset * 2, h = cs * (hc || 1) - inset * 2, rad = cs * 0.22;
       ctx.globalAlpha = alpha;
-      ctx.beginPath(); roundRectPath(ctx, x, y, s, s, [rad, rad, rad, rad]);
+      ctx.beginPath(); roundRectPath(ctx, x, y, w, h, [rad, rad, rad, rad]);
       ctx.lineWidth = lw; ctx.strokeStyle = color; ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -701,15 +701,16 @@
       if (R.spotlight && R.spotlight.length) {
         ctx.beginPath();
         ctx.rect(0, 0, R.side, R.side);
+        // cada hueco es una celda, o un bloque de w x h celdas (el congelador entero)
         R.spotlight.forEach(function (q) {
-          var x = X(q.c) + 1, y = Y(q.r) + 1, s = cs - 2, rad = cs * 0.2;
-          ctx.moveTo(x + rad, y); ctx.arcTo(x, y, x, y + rad, rad); ctx.lineTo(x, y + s - rad); ctx.arcTo(x, y + s, x + rad, y + s, rad);
-          ctx.lineTo(x + s - rad, y + s); ctx.arcTo(x + s, y + s, x + s, y + s - rad, rad); ctx.lineTo(x + s, y + rad); ctx.arcTo(x + s, y, x + s - rad, y, rad);
+          var x = X(q.c) + 1, y = Y(q.r) + 1, w = cs * (q.w || 1) - 2, h = cs * (q.h || 1) - 2, rad = cs * 0.2;
+          ctx.moveTo(x + rad, y); ctx.arcTo(x, y, x, y + rad, rad); ctx.lineTo(x, y + h - rad); ctx.arcTo(x, y + h, x + rad, y + h, rad);
+          ctx.lineTo(x + w - rad, y + h); ctx.arcTo(x + w, y + h, x + w, y + h - rad, rad); ctx.lineTo(x + w, y + rad); ctx.arcTo(x + w, y, x + w - rad, y, rad);
           ctx.closePath();
         });
         ctx.fillStyle = 'rgba(30,12,40,0.58)';
         ctx.fill('evenodd');
-        R.spotlight.forEach(function (q) { ringAt(q.r, q.c, '#ffc93c', 3, 1.5, 0.6 + 0.4 * Math.sin(clock.t / 160)); });
+        R.spotlight.forEach(function (q) { ringAt(q.r, q.c, '#ffc93c', 3, 1.5, 0.6 + 0.4 * Math.sin(clock.t / 160), q.w, q.h); });
       }
       if (R.guide) drawGuide(R.guide);
       // selección y cursor

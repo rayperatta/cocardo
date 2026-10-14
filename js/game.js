@@ -256,8 +256,15 @@
 
   function setBackground() {
     var ch = G.level.chapter || Math.min(6, Math.max(1, Math.ceil((G.level.id || 1) / 5)));
+    // el fondo es el de la zona del capítulo (Levels.chapters[].zone, p. ej. «Coco's Scoops»; Art.background lo
+    // traduce a su escena); si no hay dato, la lista de zonas del arte por número de capítulo
+    var cz = safe(function () {
+      var list = Cocardo.Levels.chapters;
+      var c = list.filter(function (x) { return x && x.id === ch; })[0] || list[ch - 1];
+      return c && c.zone;
+    }, null);
     var zones = safe(function () { return Art().zones; }, ZONES) || ZONES;
-    var zone = zones[ch - 1] || 'heladeria';
+    var zone = cz || zones[ch - 1] || 'heladeria';
     if (G.bgZone === zone) return;
     G.bgZone = zone;
     var svg = safe(function () { return Art().background(zone); }, '');
@@ -2019,6 +2026,12 @@
     else t.move = findTeachMove(teach);
     if (!t.booster && !t.hud && !t.move) return;
     if (t.move && (teach === 'ficha' || teach === 'pruebas')) t.token = tutorialToken(t.move);
+    if (t.move && teach === 'congelador') {
+      // el congelador se ilumina entero (un solo hueco de 2x2) junto con el bloque del amigo
+      t.extra = blockerCells(function (b) { return b.kind === 'friend'; });
+      var fzs = G.state.freezer;
+      if (fzs && fzs.hp > 0) t.extra.push({ r: fzs.r, c: fzs.c, w: 2, h: 2 });
+    }
     G.tutorial = t;
     buildTip(t, text);
     addHand(t);
@@ -2053,6 +2066,12 @@
     }
     return best;
   }
+  // Celdas de bloqueos que la lección señala (congelador y bloque del amigo)
+  function blockerCells(fn) {
+    var out = [], s = G.state;
+    for (var r = 0; r < s.rows; r++) for (var c = 0; c < s.cols; c++) { var cl = s.grid[r][c]; if (cl && cl.b && fn(cl.b)) out.push({ r: r, c: c }); }
+    return out;
+  }
   // Fila de la casilla más baja de la columna (donde la ficha sale del tablero)
   function lowestSlot(c) {
     var s = G.state;
@@ -2077,15 +2096,25 @@
         if (low > t.token.r) R.guide = { c: t.token.c, r0: t.token.r, r1: low };
       }
       if (t.focus && !spot.some(function (q) { return same(q, t.focus); })) spot.push(t.focus);
+      (t.extra || []).forEach(function (q) { if (!spot.some(function (x) { return same(x, q); })) spot.push(q); });
       R.spotlight = spot;
       if (hand) {
         hand.className = 'cg-hand cg-hand-swipe';
         hand.style.left = (a.x - hs * 0.45) + 'px'; hand.style.top = (a.y - hs * 0.19) + 'px';
         hand.style.setProperty('--dx', (b.x - a.x) + 'px'); hand.style.setProperty('--dy', (b.y - a.y) + 'px');
       }
-      var midR = (t.move.a.r + t.move.b.r) / 2;
-      tipY = midR < R.rows / 2 ? boardPt(0, R.Y(Math.min(R.rows, Math.ceil(midR) + 2))).y : boardPt(0, R.Y(Math.max(0, Math.floor(midR) - 1))).y - 8;
-      tip.classList.toggle('cg-tip-above', midR >= R.rows / 2);
+      // el consejo va arriba o abajo de la jugada, del lado que no tape nada iluminado (ni se salga de la pantalla)
+      var midR = (t.move.a.r + t.move.b.r) / 2, tipH = tip.offsetHeight || 70;
+      var belowY = boardPt(0, R.Y(Math.min(R.rows, Math.ceil(midR) + 2))).y, aboveY = boardPt(0, R.Y(Math.max(0, Math.floor(midR) - 1))).y - 8;
+      var covers = function (y0, y1) {
+        if (y0 < 0 || y1 > rr.height) return true;
+        return spot.some(function (q) { var top = boardPt(0, R.Y(q.r)).y; return top < y1 && top + R.cell * (q.h || 1) > y0; });
+      };
+      var above = midR >= R.rows / 2;
+      if (above && covers(aboveY - tipH, aboveY) && !covers(belowY, belowY + tipH)) above = false;
+      else if (!above && covers(belowY, belowY + tipH) && !covers(aboveY - tipH, aboveY)) above = true;
+      tipY = above ? aboveY : belowY;
+      tip.classList.toggle('cg-tip-above', above);
     } else if (!t.acked) {
       R.spotlight = null; R.guide = null;
       var target = t.booster ? G.els.boosters.querySelector('.cg-boost-' + t.booster + ' .cg-boost-ic') : (G.villains[0] && (G.villains[0].badges[0] ? G.villains[0].badges[0].el : G.villains[0].face));
@@ -2405,7 +2434,8 @@
     _swap: testSwap,
     _skip: function () { if (G.phase === 'hf') skipHF(); else if (G.endSkip) G.endSkip(); },
     _tutorialMove: function () { return G.tutorial && G.tutorial.move ? G.tutorial.move : null; },
-    _tutorial: function () { return G.tutorial ? { teach: G.tutorial.teach, move: G.tutorial.move, booster: G.tutorial.booster, hud: G.tutorial.hud } : null; },
+    _tutorial: function () { return G.tutorial ? { teach: G.tutorial.teach, move: G.tutorial.move, booster: G.tutorial.booster, hud: G.tutorial.hud, stage: G.tutorial.stage, prep: !!G.tutorial.prep } : null; },
+    _hint: function () { return G.state ? goalHint(G.state) : null; },
     _cellCenter: function (r, c) { var p = cellPt(r, c), rr = rootRect(); return { x: rr.left + p.x, y: rr.top + p.y }; },
     _stats: function () { return { desyncs: G.desyncs, lastDiff: G.lastDiff, loadMs: G.loadMs, loadAllMs: G.loadAllMs, particles: G.fx ? G.fx.count() : 0, cell: G.R ? G.R.cell : 0, side: G.R ? G.R.side : 0 }; },
     _result: function () { return G.lastResult || null; },

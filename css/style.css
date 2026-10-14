@@ -1720,8 +1720,22 @@ svg { display: block; }
   .intro-card .booster small { display: none; }
   .intro-card .booster svg { width: 26px; height: 26px; }
   .intro-card .b-new { top: auto; bottom: -11px; left: 50%; transform: translateX(-50%) rotate(-4deg); }
+  .d-face { width: 108px; height: 108px; }
+  .d-near { margin-top: 6px; font-size: 23px; }
+  .d-near b { font-size: 28px; }
+  .v-hero-face { width: 84px; height: 84px; }
   .intro-card > .btn-row:last-child { padding: 8px 6px 14px; margin-top: 8px; }
   .intro-card .btn-big { min-height: 56px; }
+  .v-stars { height: 84px; margin: 8px 0 2px; }
+  .v-star { width: 62px; height: 62px; }
+  .v-star-1 { width: 80px; height: 80px; }
+  .v-score b { font-size: 34px; }
+  .victory-card .rescue-row { margin-top: 8px; padding: 3px 10px 3px 4px; }
+  .victory-card .rr-face { flex-basis: 54px; width: 54px; height: 54px; margin: -10px 0 -2px; }
+  .victory-card .reward, .defeat-card .reward { margin-top: 8px; padding: 5px 10px; }
+  .victory-card .r-icon, .defeat-card .r-icon { width: 40px; height: 40px; }
+  .victory-card > .btn-col, .defeat-card > .btn-col { margin-top: 10px; }
+  .btn-row.tri .btn { min-height: 58px; }
 }
 @media (max-height: 640px) {
   .intro-chapter { display: none; }
@@ -1740,10 +1754,23 @@ svg { display: block; }
   .title-tag { font-size: 24px; margin-top: 12px; }
   .overlay { padding-top: calc(32px + var(--sat)); }
   .card { padding-top: 26px; }
-  .v-stars { height: 80px; margin-top: 6px; }
-  .v-star { width: 58px; height: 58px; }
-  .v-star-1 { width: 74px; height: 74px; }
-  .d-face { width: 112px; height: 112px; }
+  .v-stars { height: 70px; margin-top: 4px; }
+  .v-star { width: 52px; height: 52px; }
+  .v-star-1 { width: 66px; height: 66px; }
+  .v-score b { font-size: 30px; }
+  .d-face { width: 84px; height: 84px; }
+  .d-bubble { margin-top: 2px; font-size: 12px; padding: 6px 8px; }
+  .d-near { font-size: 21px; }
+  .d-goals { margin-top: 6px; }
+  .dg-icon { width: 28px; height: 28px; }
+  .dg-n { font-size: 18px; }
+  .d-tip { margin-top: 8px; }
+  .d-tip-face { flex-basis: 42px; width: 42px; height: 42px; }
+  .d-tip-text { font-size: 12.5px; padding: 6px 9px; }
+  .defeat-card > .btn-col, .victory-card > .btn-col { margin-top: 10px; padding-bottom: 14px; }
+  .v-hero { margin-top: 4px; }
+  .v-hero-face { width: 72px; height: 72px; }
+  .v-hero-bubble { font-size: 14px; }
   .tip-face { flex-basis: 60px; width: 60px; height: 60px; }
   .story-box { min-height: 118px; }
   .story-stage { bottom: calc(132px + var(--sab)); }
