@@ -158,7 +158,18 @@
     // Texto flotante (puntos)
     function text(x, y, str, opts) {
       opts = opts || {};
-      texts.push({ x: x, y: y, s: String(str), size: opts.size || 18, color: opts.color || '#ffffff', stroke: opts.stroke || '#2b1630',
+      var size = opts.size || 18, start = -(opts.delay || 0);
+      // si ya hay un texto joven en el mismo sitio, se apila encima
+      for (var guard = 0; guard < 6; guard++) {
+        var hit = false;
+        for (var i = 0; i < texts.length; i++) {
+          var o = texts[i];
+          if (Math.abs(o.x - x) < size * 1.6 && Math.abs(o.y - y) < size * 0.9 && Math.abs(o.t - start) < 300) { hit = true; break; }
+        }
+        if (!hit) break;
+        y -= size * 1.05;
+      }
+      texts.push({ x: x, y: y, s: String(str), size: size, color: opts.color || '#ffffff', stroke: opts.stroke || '#2b1630',
         dur: opts.dur || 760, rise: opts.rise === undefined ? 34 : opts.rise, t: -(opts.delay || 0) });
     }
     // Ícono que vuela en arco hacia un contador (meta)

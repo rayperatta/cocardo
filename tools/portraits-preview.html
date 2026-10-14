@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retratos de personajes — Cocardo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<style>
+  :root { --ink:#2b1630; --cream:#fff6ea; --drama:#5b1e74; --ice:#bfe9ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--cream); color:var(--ink); font-family:'Nunito', system-ui, sans-serif; }
+  h1 { font-family:'Lilita One', 'Arial Rounded MT Bold', sans-serif; margin:0 0 4px; }
+  h2 { font-family:'Lilita One', 'Arial Rounded MT Bold', sans-serif; font-size:18px; margin:18px 0 6px; }
+  p.note { margin:0 0 10px; font-size:13px; color:#6a5a6a; }
+  .row { display:flex; flex-wrap:wrap; gap:6px; align-items:flex-end; }
+  .item { display:inline-flex; flex-direction:column; align-items:center; }
+  .item svg { display:block; }
+  .s200 svg { width:200px; height:200px; }
+  .s120 svg { width:120px; height:120px; }
+  .s64 svg { width:64px; height:64px; }
+  .s48 svg { width:48px; height:48px; }
+  .card { background:#fff; border-radius:14px; box-shadow:0 2px 0 rgba(43,22,48,.12); padding:4px; }
+  .dark .card { background:var(--drama); }
+  .lbl { font-size:11px; text-align:center; color:#7a6a7a; max-width:120px; }
+  .who { font-family:'Lilita One', sans-serif; font-size:15px; margin:14px 0 2px; }
+  .who small { font-family:'Nunito', sans-serif; font-weight:600; color:#7a6a7a; font-size:12px; }
+  .strip { padding:8px; border-radius:12px; }
+  .strip.dark { background:#3b2550; }
+  .strip.ice { background:linear-gradient(#d8f2ff, #8fcbef); }
+  #sizes { font-size:12px; color:#6a5a6a; }
+  .warn { color:#d61f4b; font-weight:800; }
+</style>
+</head>
+<body>
+<h1>Cocardo · Retratos de personajes</h1>
+<p class="note">16 personajes × 12 ánimos + variantes + congelado + silueta. Parámetros: <code>?only=cocardo,lima</code>, <code>?sec=cast,moods,small</code>.</p>
+<div id="sizes"></div>
+<div id="out"></div>
+<script>
+  // art.js es de otro agente: se carga si existe (no es necesario para los retratos)
+  document.write('<script src="../js/art.js" onerror="this.remove()"><\/script>');
+</script>
+<script src="../js/art-characters.js"></script>
+<script>
+(function () {
+  'use strict';
+  var A = window.Cocardo.Art, out = document.getElementById('out');
+  var q = new URLSearchParams(location.search);
+  var ids = Object.keys(A.characters);
+  if (q.get('only')) ids = q.get('only').split(',').filter(function (k) { return A.characters[k]; });
+  var secs = (q.get('sec') || 'cast,moods,small').split(',');
+  var moods = A.portraitMoods, sizes = [], t0 = performance.now();
+  function track(name, s) { sizes.push([name, s.length]); return s; }
+  function item(svg, lbl, cls) { return '<div class="item ' + (cls || '') + '"><div class="card">' + svg + '</div>' + (lbl ? '<div class="lbl">' + lbl + '</div>' : '') + '</div>'; }
+  function sec(title, html) { out.insertAdjacentHTML('beforeend', '<h2>' + title + '</h2>' + html); }
+
+  if (secs.indexOf('cast') >= 0) {
+    sec('Reparto · 200 px', '<div class="row">' + ids.map(function (id) {
+      var c = A.characters[id];
+      return item(track(id, A.portrait(id, 'normal')), c.name + ' · ' + c.fruit, 's200');
+    }).join('') + '</div>');
+  }
+  if (secs.indexOf('moods') >= 0) {
+    ids.forEach(function (id) {
+      var c = A.characters[id], cells = [];
+      moods.forEach(function (m) { cells.push(item(track(id + ' ' + m, A.portrait(id, m)), m, 's120')); });
+      (A.portraitVariants[id] || []).forEach(function (v) {
+        var vm = { carcel: 'enojado', huida: 'burlon', tubo: 'enojado', panecitos: 'feliz' }[v] || 'normal';
+        cells.push(item(track(id + ' ' + v, A.portrait(id, vm, { variant: v })), 'variante ' + v + ' (' + vm + ')', 's120'));
+        cells.push(item(track(id + ' ' + v + ' n', A.portrait(id, 'normal', { variant: v })), 'variante ' + v, 's120'));
+      });
+      cells.push(item(track(id + ' frozen', A.portrait(id, 'asustado', { frozen: true })), 'congelado', 's120'));
+      cells.push(item(track(id + ' sil', A.portrait(id, 'normal', { silhouette: true })), 'silueta', 's120'));
+      out.insertAdjacentHTML('beforeend', '<div class="who" id="w-' + id + '">' + c.name + ' <small>' + id + ' · ' + c.fruit + ' · ' + c.color + ' — ' + c.role + '</small></div><div class="row">' + cells.join('') + '</div>');
+    });
+  }
+  if (secs.indexOf('small') >= 0) {
+    var all = Object.keys(A.characters);
+    sec('Tamaño chico · 64 / 48 px (¿se distinguen?)',
+      '<div class="strip"><div class="row">' + all.map(function (id) { return item(A.portrait(id, 'normal'), A.characters[id].name, 's64'); }).join('') + '</div></div>' +
+      '<div class="strip dark"><div class="row">' + all.map(function (id) { return item(A.portrait(id, 'feliz'), '', 's48'); }).join('') + '</div></div>' +
+      '<div class="strip ice"><div class="row">' + all.map(function (id) { return item(A.portrait(id, 'asustado', { frozen: true }), '', 's48'); }).join('') +
+      all.map(function (id) { return item(A.portrait(id, 'normal', { silhouette: true }), '', 's48'); }).join('') + '</div></div>');
+  }
+  // tamaños
+  var max = 0, sum = 0, big = [];
+  sizes.forEach(function (s) { sum += s[1]; if (s[1] > max) max = s[1]; if (s[1] > 12288) big.push(s[0] + ' ' + (s[1] / 1024).toFixed(1) + 'KB'); });
+  document.getElementById('sizes').innerHTML = sizes.length + ' SVG · media ' + (sum / Math.max(1, sizes.length) / 1024).toFixed(1) + ' KB · máx ' + (max / 1024).toFixed(1) + ' KB · ' +
+    (performance.now() - t0).toFixed(0) + ' ms' + (big.length ? ' · <span class="warn">&gt;12KB: ' + big.join(', ') + '</span>' : '');
+  // validación: cada cadena debe ser SVG bien formado
+  var bad = [];
+  sizes.length && ids.forEach(function (id) {
+    moods.concat(['x']).forEach(function (m) {
+      var s = A.portrait(id, m, { frozen: m === 'x' });
+      var doc = new DOMParser().parseFromString(s, 'image/svg+xml');
+      if (doc.getElementsByTagName('parsererror').length) bad.push(id + ' ' + m);
+    });
+  });
+  if (bad.length) { document.getElementById('sizes').insertAdjacentHTML('beforeend', ' · <span class="warn">SVG inválido: ' + bad.join(', ') + '</span>'); console.error('SVG inválido', bad); }
+})();
+</script>
+</body>
+</html>
