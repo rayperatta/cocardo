@@ -42,7 +42,7 @@
     cucharon: 'Psst… toca el Cucharón y luego una fruta: ¡la rompe sin gastar movimiento!',
     escarcha: 'Psst… la escarcha no deja mover la fruta. ¡Combínala para soltarla!',
     villano: 'Psst… Cocardo escarcha una fruta cada pocos turnos. ¡Mira su cuenta!',
-    congelador: 'Combina junto al congelador para romperlo… ¡y junto a mi bloque para sacarme!',
+    congelador: 'Psst… rompe el hielo junto a mi bloque y pégale al congelador. ¡Así me sacas de aquí!',
     chorro: 'Te presto mi Chorro de Lima: ¡tócalo y elige una fila!',
     colores6: '¡Seis sabores! Busca bien tus jugadas.',
     batido: '¿Sin jugadas? Mi Batido de Fresa revuelve todo el tablero.',
@@ -1955,7 +1955,8 @@
       });
       return n;
     }
-    var tokenIds = {};
+    var tokenIds = {}, friendWall = {};
+    friendWallCells().forEach(function (q) { friendWall[q.r + ',' + q.c] = 1; });
     G.state.grid.forEach(function (row) { row.forEach(function (cl) { if (cl && cl.p && cl.p.type === 'token') tokenIds[cl.p.id] = 1; }); });
     switch (teach) {
       case 'paleta': return function (st) { return count(st, function (e) { return e.t === 'create' && (e.type === 'ph' || e.type === 'pv'); }, true); };
@@ -1967,8 +1968,10 @@
       };
       case 'escarcha': return function (st) { return count(st, function (e) { return e.t === 'unfrost'; }, true); };
       case 'congelador': return function (st) {
+        // pegarle al congelador; mejor aún si también rompe el hielo que encierra al amigo (texto del consejo)
         return 10 * count(st, function (e) { return (e.t === 'damage' && e.kind === 'freezer') || e.t === 'freezerDown'; }, true) +
-          count(st, function (e) { return e.t === 'damage' && e.kind === 'friend'; });
+          4 * count(st, function (e) { return (e.t === 'damage' || e.t === 'destroy') && e.kind === 'ice' && friendWall[e.r + ',' + e.c]; }, true) +
+          count(st, function (e) { return (e.t === 'damage' && e.kind === 'friend') || e.t === 'rescue'; });
       };
       case 'cajas': return function (st) { return count(st, function (e) { return (e.t === 'destroy' || e.t === 'damage') && e.kind === 'crate'; }, true); };
       case 'ficha': case 'pruebas': return function (st) {
@@ -2028,7 +2031,7 @@
     if (t.move && (teach === 'ficha' || teach === 'pruebas')) t.token = tutorialToken(t.move);
     if (t.move && teach === 'congelador') {
       // el congelador se ilumina entero (un solo hueco de 2x2) junto con el bloque del amigo
-      t.extra = blockerCells(function (b) { return b.kind === 'friend'; });
+      t.extra = blockerCells(function (b) { return b.kind === 'friend'; }).concat(friendWallCells());
       var fzs = G.state.freezer;
       if (fzs && fzs.hp > 0) t.extra.push({ r: fzs.r, c: fzs.c, w: 2, h: 2 });
     }
@@ -2065,6 +2068,17 @@
       if (d < bd) { bd = d; best = { r: r, c: c }; }
     }
     return best;
+  }
+  // Hielo pegado a un bloque de amigo (la pared que lo encierra)
+  function friendWallCells() {
+    var s = G.state, out = [];
+    blockerCells(function (b) { return b.kind === 'friend'; }).forEach(function (f) {
+      [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(function (d) {
+        var r = f.r + d[0], c = f.c + d[1], cl = r >= 0 && c >= 0 && r < s.rows && c < s.cols ? s.grid[r][c] : null;
+        if (cl && cl.b && cl.b.kind === 'ice' && !out.some(function (q) { return q.r === r && q.c === c; })) out.push({ r: r, c: c });
+      });
+    });
+    return out;
   }
   // Celdas de bloqueos que la lección señala (congelador y bloque del amigo)
   function blockerCells(fn) {
