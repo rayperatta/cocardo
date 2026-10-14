@@ -352,8 +352,8 @@
   }
   function puff(x, y, s) {
     var cs = [[0, 0, 8], [s * 9, -6, 7], [s * 3, -13, 5.5]], a = '', b = '';
-    cs.forEach(function (q) { a += C(x + q[0], y + q[1], q[2], '#f6f3fa', 2.4); b += C(x + q[0], y + q[1], q[2] - 1.2, '#f6f3fa'); });
-    return a + b + S('M' + f(x - s * 4) + ' ' + f(y + 12) + 'q' + f(s * 3) + ' -4 0 -8', INK, 2, op(0.6));
+    cs.forEach(function (q) { a += cc([x + q[0], y + q[1], q[2]], 0); b += cc([x + q[0], y + q[1], q[2]], 1.2); });
+    return G('', a, ' fill="#f6f3fa" stroke="' + INK + '" stroke-width="2.4"') + G('', b, ' fill="#f6f3fa"') + S('M' + f(x - s * 4) + ' ' + f(y + 12) + 'q' + f(s * 3) + ' -4 0 -8', INK, 2, op(0.6));
   }
   function extras(c, F, H, M) {
     var out = '', x = F.x, ey = F.ey, ex = F.ex, rx = F.er[0], ry = F.er[1];
@@ -408,8 +408,9 @@
       cap.push(p);
       if (i % 2) drips += '<ellipse cx="' + Math.round(p[0]) + '" cy="' + Math.round(p[1] + 6) + '" rx="4.2" ry="6"/>';
     }
-    var cd = smooth(cap, true);
-    out += G('', drips, ' fill="#f6fcff" stroke="#6aa8d6" stroke-width="1.6"') + S(cd, '#6aa8d6', 13) + S(cd, '#f6fcff', 10) + S(cd, '#fff', 3, ' transform="translate(0 -2)"');
+    var cid = gid(c);
+    c.defs.push('<path id="' + cid + '" d="' + cap.map(function (q, j) { return (j ? 'L' : 'M') + ip(q[0], q[1]); }).join('') + '" fill="none"/>');
+    out += G('', drips, ' fill="#f6fcff" stroke="#6aa8d6" stroke-width="1.6"') + '<use href="#' + cid + '" stroke="#6aa8d6" stroke-width="13"/><use href="#' + cid + '" stroke="#f6fcff" stroke-width="10"/><use href="#' + cid + '" stroke="#fff" stroke-width="3" transform="translate(0 -2)"/>';
     var ice = '', list = [[H.cx - 15, H.chin - 3, 12], [H.cx - 2, H.chin, 18], [H.cx + 12, H.chin - 3, 11],
       [44, H.sh + 2, 11], [56, H.sh - 2, 15], [144, H.sh - 2, 14], [157, H.sh + 2, 10]];
     p = onHead(H, 180, 0.98); list.push([p[0] + 4, p[1], 14]);
