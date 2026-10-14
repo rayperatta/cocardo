@@ -610,6 +610,19 @@
       // fichas (las que se mueven, encima)
       for (k in R.pieces) { p = R.pieces[k]; (p.z > 0 ? top : list).push(p); }
       for (var i = 0; i < R.dying.length; i++) (R.dying[i].z > 0 ? top : list).push(R.dying[i]);
+      // brillo bajo las fichas de la pista
+      if (R.hint) {
+        var hk = 0.7 + 0.3 * Math.sin((clock.t - R.hint.t0) / 220);
+        [R.hint.a, R.hint.b].forEach(function (q) {
+          var gx = X(q.c) + cs / 2, gy = Y(q.r) + cs / 2;
+          var gr = ctx.createRadialGradient(gx, gy, cs * 0.2, gx, gy, cs * 0.72);
+          gr.addColorStop(0, 'rgba(255,236,120,' + hk.toFixed(3) + ')');
+          gr.addColorStop(0.65, 'rgba(255,214,90,' + (0.55 * hk).toFixed(3) + ')');
+          gr.addColorStop(1, 'rgba(255,214,90,0)');
+          ctx.fillStyle = gr;
+          ctx.fillRect(X(q.c) - cs * 0.25, Y(q.r) - cs * 0.25, cs * 1.5, cs * 1.5);
+        });
+      }
       list.forEach(drawPiece);
       // bloqueos (las fichas que caen pasan por detrás)
       for (var r = 0; r < R.rows; r++) for (var c = 0; c < R.cols; c++) {
@@ -637,8 +650,9 @@
       // selección y cursor
       if (R.sel) {
         var pulse = 0.75 + 0.25 * Math.sin(clock.t / 130);
-        ringAt(R.sel.r, R.sel.c, 'rgba(255,201,60,0.55)', 9, 1, pulse);
-        ringAt(R.sel.r, R.sel.c, '#ffffff', 3.5, 2.5, 1);
+        ringAt(R.sel.r, R.sel.c, 'rgba(255,201,60,0.6)', 10, -1, pulse);
+        ringAt(R.sel.r, R.sel.c, '#ffc93c', 4, 0.5, 1);
+        ringAt(R.sel.r, R.sel.c, '#ffffff', 2, 3.5, 1);
       }
       if (R.cursor) {
         ctx.setLineDash([6, 4]);

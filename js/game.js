@@ -182,7 +182,8 @@
     cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     root.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     root.addEventListener('pointerdown', onRootDown, true);
-    G.els.pause.addEventListener('click', function () {
+    G.els.pause.addEventListener('click', function (e) {
+      if (e.detail > 0) G.els.pause.blur();
       unlockAudio(); sfx('tap');
       if (G.phase !== 'idle' && G.phase !== 'done' && G.opts.onPause) G.opts.onPause();
     });
@@ -210,7 +211,7 @@
     G.scoreShown = 0; G.scoreTarget = 0; G.movesShown = null;
     G.R.setPaused(false);
     G.fx.setReduced(reducedMotion());
-    G.root.classList.remove('cg-danger', 'cg-paused', 'cg-ended');
+    G.root.classList.remove('cg-danger', 'cg-paused', 'cg-ended', 'cg-won');
     G.root.classList.toggle('cg-daily', G.daily);
     G.els.canvas.style.opacity = '0';
     setBackground();
@@ -357,6 +358,7 @@
     }
     E.goals.classList.toggle('cg-has-ticket', !!ticket);
     E.goals.classList.toggle('cg-many', goals.length >= 3 && !ticket);
+    E.goals.setAttribute('data-n', String(goals.length));
     goals.forEach(function (g, i) {
       var chip = el('div', 'cg-goal cg-goal-' + g.type);
       chip.title = goalTitle(g);
@@ -474,6 +476,8 @@
   function taunt(kind, who) {
     who = who || mainVillain();
     var list = safe(function () { return Story().taunts[who][kind]; }, null) || (TAUNTS[who] || TAUNTS.cocardo)[kind];
+    if (!list && kind === 'lose') list = safe(function () { return Story().taunts[who].low; }, null) || (TAUNTS[who] || TAUNTS.cocardo).low;
+    if (!list && kind === 'win') list = ['¡Mi sabor estrella!'];
     var txt = pick(list);
     if (!txt) return;
     var ve = villainEntry(who);
@@ -585,7 +589,7 @@
       btn.setAttribute('data-type', b.type);
       btn.innerHTML = '<span class="cg-boost-ic">' + icon(b.type) + '</span><span class="cg-boost-name">' + b.name + '</span>' +
         '<span class="cg-boost-n">0</span><span class="cg-boost-lock">' + icon('lock') + '</span>';
-      btn.addEventListener('click', function () { onBoosterClick(b.type); });
+      btn.addEventListener('click', function (e) { if (e.detail > 0) btn.blur(); onBoosterClick(b.type); });
       bar.appendChild(btn);
     });
   }
@@ -721,9 +725,14 @@
     if (G.press && (!e || e.pointerId === G.press.id)) { G.press = null; releasePressed(); }
   }
   function setSel(cell) {
+    var R = G.R;
+    var old = G.sel && R.pieceAt(G.sel.r, G.sel.c);
+    if (old && (!cell || !same(cell, G.sel))) R.tween(old, { s: 1 }, 110, 'out');
     G.sel = cell ? { r: cell.r, c: cell.c } : null;
-    G.R.sel = G.sel;
-    G.R.kick();
+    R.sel = G.sel;
+    var p = G.sel && R.pieceAt(G.sel.r, G.sel.c);
+    if (p) R.tween(p, { s: 1.1 }, 140, 'outBack');
+    R.kick();
   }
   function onTapCell(cell) {
     if (G.armed) { useArmed(cell); return; }
@@ -860,16 +869,29 @@
     if (G.R && G.R.hint) { G.R.hint = null; G.R.kick(); }
     hidePeeker();
   }
+  // La cabeza se asoma por detrás del tablero: por un costado si hay lugar, si no por el borde de arriba, si no por encima del borde.
   function showPeeker(h) {
     var who = safe(function () { return Story().hintPeeker(G.level.id); }, null) || 'limon';
     var R = G.R, pk = G.els.peek;
     var midC = (h.a.c + h.b.c) / 2, midR = (h.a.r + h.b.r) / 2;
-    var side = midC < R.cols / 2 ? 'right' : 'left';
     var size = Math.round(Math.max(52, Math.min(96, R.cell * 1.35)));
+    var st = relRect(G.els.stage), bd = relRect(G.els.canvas), rr = rootRect();
+    var sideRoom = Math.min(bd.x, rr.width - (bd.x + bd.w)), above = bd.y - st.y;
+    var mode, side = midC < R.cols / 2 ? 'right' : 'left';
+    if (sideRoom >= size * 0.6) mode = 'side';
+    else if (above >= size * 0.5) mode = 'top';
+    else mode = 'over';
     pk.innerHTML = '<div class="cg-peek-face">' + portraitSvg(who, 'sorprendido') + '</div><div class="cg-peek-say">¡Psst!</div>';
-    pk.className = 'cg-peek cg-peek-' + side;
+    pk.className = 'cg-peek cg-peek-' + (mode === 'top' ? 'top' : side) + ' cg-peek-' + mode;
     pk.style.width = size + 'px'; pk.style.height = size + 'px';
-    pk.style.top = Math.round(R.Y(midR) + R.cell / 2 - size / 2) + 'px';
+    if (mode === 'top') {
+      var x = R.X(midC) + R.cell / 2 - size / 2;
+      pk.style.left = Math.round(Math.max(4, Math.min(R.side - size - 4, x))) + 'px';
+      pk.style.top = '';
+    } else {
+      pk.style.left = '';
+      pk.style.top = Math.round(R.Y(midR) + R.cell / 2 - size / 2) + 'px';
+    }
     void pk.offsetWidth;
     pk.classList.add('cg-in');
   }
@@ -1490,8 +1512,8 @@
       return D(60 + R.cols * 30 + 120);
     }
     if (e.type === 'batido') {
-      var c0 = boardPt(R.side / 2, R.side / 2);
-      domSprite(icon('batido'), 'cg-blender', c0.x - cs * 1.2, c0.y - cs * 1.2, cs * 2.4, 900);
+      var c0 = boardPt(R.side / 2, R.side * 0.2);
+      domSprite(icon('batido'), 'cg-blender', c0.x - cs * 1.1, c0.y - cs * 1.1, cs * 2.2, 1000);
       return D(380);
     }
     return 0;
@@ -1506,6 +1528,7 @@
     G.root.classList.remove('cg-danger');
     refreshMoods();
     clearHint();
+    taunt('win');
     var p = Promise.resolve();
     G.hfSkip = false; G.player = null;
     // espera que se corta si el jugador toca para saltar
@@ -1563,7 +1586,7 @@
   function celebrate(gen) {
     var s = G.state;
     G.phase = 'end';
-    G.root.classList.add('cg-ended');
+    G.root.classList.add('cg-ended', 'cg-won');
     setMoves(s.movesLeft, true);
     setScore(s.score);
     refreshMoods();
@@ -1585,7 +1608,7 @@
     sfx('laugh', { who: mainVillain() });
     sfx('lose');
     banner('¡Sin movimientos!', nm ? '¡Casi! Te faltan ' + nm.remaining : '', 'cg-banner-lose', 1700);
-    taunt('low');
+    taunt('lose');
     endAfter(gen, 1800, false);
   }
   function endAfter(gen, ms, won) {
@@ -1735,21 +1758,30 @@
       var a = cellPt(t.move.a.r, t.move.a.c), b = cellPt(t.move.b.r, t.move.b.c);
       R.spotlight = [t.move.a, t.move.b];
       hand.className = 'cg-hand cg-hand-swipe';
-      hand.style.left = (a.x - hs * 0.28) + 'px'; hand.style.top = (a.y - hs * 0.1) + 'px';
+      hand.style.left = (a.x - hs * 0.45) + 'px'; hand.style.top = (a.y - hs * 0.19) + 'px';
       hand.style.setProperty('--dx', (b.x - a.x) + 'px'); hand.style.setProperty('--dy', (b.y - a.y) + 'px');
       var midR = (t.move.a.r + t.move.b.r) / 2;
       tipY = midR < R.rows / 2 ? boardPt(0, R.Y(Math.min(R.rows, Math.ceil(midR) + 2))).y : boardPt(0, R.Y(Math.max(0, Math.floor(midR) - 1))).y - 8;
       tip.classList.toggle('cg-tip-above', midR >= R.rows / 2);
     } else {
       R.spotlight = null;
-      var target = t.booster ? G.els.boosters.querySelector('.cg-boost-' + t.booster) : (G.villains[0] && (G.villains[0].badges[0] ? G.villains[0].badges[0].el : G.villains[0].face));
+      var target = t.booster ? G.els.boosters.querySelector('.cg-boost-' + t.booster + ' .cg-boost-ic') : (G.villains[0] && (G.villains[0].badges[0] ? G.villains[0].badges[0].el : G.villains[0].face));
       if (target) {
         var tr = relRect(target);
         hand.className = 'cg-hand cg-hand-tap';
-        hand.style.left = (tr.cx - hs * 0.3) + 'px'; hand.style.top = (tr.cy - hs * 0.05) + 'px';
+        hand.style.left = (tr.cx - hs * 0.45) + 'px'; hand.style.top = (tr.cy - hs * 0.19) + 'px';
       }
-      tipY = boardPt(0, R.side * 0.5).y;
-      tip.classList.add('cg-tip-mid');
+      if (t.booster && !G.root.classList.contains('cg-wide')) {
+        // encima de la barra de ayudas, sin tapar más tablero del necesario
+        var bb = relRect(G.els.boosters);
+        tipY = Math.max(boardPt(0, R.side * 0.3).y, bb.y - 6);
+        tip.classList.add('cg-tip-above');
+      } else if (t.hud && !G.root.classList.contains('cg-wide')) {
+        tipY = relRect(G.els.card).y + relRect(G.els.card).h + 12;
+      } else {
+        tipY = boardPt(0, R.side * 0.5).y;
+        tip.classList.add('cg-tip-mid');
+      }
     }
     var bw = Math.min(R.side - 16, 420);
     tip.style.width = bw + 'px';
@@ -1798,9 +1830,11 @@
   function resize() {
     if (!G.mounted) return;
     var rr = rootRect(), w = rr.width, h = rr.height;
-    var wide = w >= 900 && w > h;
+    // ancho: ≥900 px horizontal (DISENO §11.5); también teléfonos acostados, donde el HUD arriba dejaría un tablero diminuto
+    var wide = w > h && (w >= 900 || (h < 560 && w >= 560));
     G.root.classList.toggle('cg-wide', wide);
-    G.root.classList.toggle('cg-short', !wide && h < 640);
+    G.root.classList.toggle('cg-short', h < (wide ? 620 : 640));
+    G.root.classList.toggle('cg-tall', !wide && h >= 760 && w >= 360);
     G.root.classList.toggle('cg-narrow', !wide && w < 360);
     var st = G.els.stage.getBoundingClientRect();
     var side;
@@ -1813,7 +1847,8 @@
     var rows = G.state ? G.state.rows : 8, cols = G.state ? G.state.cols : 8;
     var stale = G.R.layout(side, rows, cols, dpr);
     if (stale && G.state && G.phase !== 'idle') G.R.rerasterize();
-    G.fx.resize(Math.max(1, w), Math.max(1, h), dpr);
+    // la capa de efectos cubre toda la pantalla: con 1.5x basta y cuesta casi la mitad de píxeles
+    G.fx.resize(Math.max(1, w), Math.max(1, h), Math.min(1.5, dpr));
     var cr = G.els.canvas.getBoundingClientRect();
     G.boardOff = { x: cr.left - rr.left - (G.fx.offset().x || 0), y: cr.top - rr.top - (G.fx.offset().y || 0) };
     if (G.tutorial) placeTutorial();

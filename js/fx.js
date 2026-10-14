@@ -298,9 +298,9 @@
         var segs = o.jag.length - 1, amp = Math.min(14, len * 0.06);
         ctx.lineJoin = 'round'; ctx.lineCap = 'round';
         for (var pass = 0; pass < 2; pass++) {
-          ctx.globalAlpha = (pass ? 1 : 0.5) * (1 - tail * 0.9);
+          ctx.globalAlpha = (pass ? 1 : 0.75) * (1 - tail * 0.9);
           ctx.strokeStyle = pass ? '#ffffff' : o.color;
-          ctx.lineWidth = pass ? 2.5 : 9;
+          ctx.lineWidth = pass ? 3.5 : 13;
           ctx.beginPath();
           var started = false;
           for (var s = 0; s <= segs; s++) {
