@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Video: Así suena mi juego de Cocardo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&family=Yellowtail&display=swap">
+<style>html, body { margin: 0; background: #000; } canvas { display: block; }</style>
+</head>
+<body>
+<!-- Video 1 (D1 en docs/VIDEOS.md): cada sonido del juego con su forma de onda real. ~20 s, en bucle. -->
+<script src="../../js/audio.js"></script>
+<script src="video.js"></script>
+<script>
+(function () {
+  'use strict';
+  var V = window.Video, C = V.C, W = V.W, H = V.H, F = V.FONT;
+  var CASC_COL = ['#7ccf3a', '#ff6fa5', '#ffd23f', '#ff9a2e', '#bfe9ff', '#ffc93c', '#ffc93c', '#ffc93c'];
+  var CASCADA = ['', '¡Rico!', '¡Delicioso!', '¡Escandaloso!', '¡DRAMÁTICO!', '¡¡TELENOVELA!!', '¡¡TELENOVELA!!', '¡¡TELENOVELA!!'];
+  var CASC_T = [0.10, 0.50, 0.86, 1.19, 1.49, 1.77, 2.03, 2.27];
+  var DRAMA_T = [0.55, 0.82, 1.11];   // golpes de «tan-tan-TAAAN» (S.drama: 0, 0.27, 0.56)
+
+  // Tramos: tiempos de sonidos y textos relativos al inicio del tramo
+  var SEG = [
+    { t0: 0.00, t1: 1.75, bg: C.coco, bg2: '#a0683f', onda: C.gold,
+      textos: [[0, 'La risa de Cocardo', '«ja-ja-ja»']], codigo: 'onda cuadrada · 233 → 196 Hz',
+      sonidos: [['laugh', { who: 'cocardo' }, 0.0], ['laugh', { who: 'cocardo' }, 0.84]] },
+    { t0: 1.75, t1: 3.25, bg: C.cherry, bg2: '#f2557c', onda: C.pink,
+      textos: [[0, 'La risa de Cherry', '«ji-ji-ji»']], codigo: 'triangular + vibrato · 622–740 Hz',
+      sonidos: [['laugh', { who: 'cereza' }, 0.05], ['laugh', { who: 'cereza' }, 0.7]] },
+    { t0: 3.25, t1: 4.80, bg: C.iceDeep, bg2: '#86ccf3', onda: C.ice,
+      textos: [[0, 'El congelador', '«dale un golpecito»']], codigo: 'seno 115 → 52 Hz + ruido grave',
+      sonidos: [['freezerHit', {}, 0.05], ['freezerHit', {}, 0.42], ['freezerHit', {}, 0.95]] },
+    { t0: 4.80, t1: 6.30, bg: '#7fcdf5', bg2: C.ice, onda: '#9fe8ff',
+      textos: [[0, 'Hielo rompiéndose', 'crac… crac… ¡CRASH!']], codigo: 'ruido filtrado · 1900 → 2600 → 3400 Hz',
+      sonidos: [['ice', { hp: 2 }, 0.05], ['ice', { hp: 1 }, 0.47], ['ice', { hp: 0 }, 0.9]] },
+    { t0: 6.30, t1: 9.40, tipo: 'cascada', bg: '#2e2370', bg2: '#5446b8', onda: C.pink, sub: C.cream,
+      textos: [[0, 'Cascadas', 'cada una suena más aguda']].concat(CASC_T.map(function (t, i) {
+        return [t, CASCADA[i] || 'Cascada', 'cascada x' + (i + 1), CASC_COL[i]];
+      })), codigo: 'escala pentatónica · +1 nota por cascada',
+      sonidos: CASC_T.map(function (t, i) { return ['match', { cascade: i + 1 }, t]; }).concat([['copa', {}, 2.55]]) },
+    { t0: 9.40, t1: 11.30, bg: C.ok, bg2: '#62d69c', onda: C.gold,
+      textos: [[0, '¡Rescate!', 'cuando liberas a una fruta'], [0.82, '★ ★ ★', 'y tus tres estrellas']],
+      codigo: 'fanfarria de metales · sin grabar nada',
+      sonidos: [['rescue', {}, 0.05], ['star', { i: 0 }, 0.85], ['star', { i: 1 }, 1.05], ['star', { i: 2 }, 1.25]] },
+    { t0: 11.30, t1: 13.40, bg: C.ink, bg2: '#55305e', onda: C.cherry,
+      textos: [[0, 'Cuando pierdes…', ''], [1.17, '…Cocardo se ríe', '«ja-ja-ja»']], codigo: 'trombón triste · 4 notas que bajan',
+      sonidos: [['lose', {}, 0.05], ['laugh', { who: 'cocardo' }, 1.2]] },
+    { t0: 13.40, t1: 16.70, tipo: 'drama', bg: C.drama, bg2: C.drama2,
+      sonidos: [['drama', {}, DRAMA_T[0]]] },
+    { t0: 16.70, t1: 20.20, tipo: 'final', bg: C.mint, bg2: '#e6fff5', onda: C.pink },
+  ];
+  var DUR = SEG[SEG.length - 1].t1;
+  var FINAL = SEG[SEG.length - 1];
+
+  var cv = V.lienzo(), ctx = cv.getContext('2d'), an = null;
+
+  function tramo(t) {
+    for (var i = 0; i < SEG.length; i++) if (t < SEG[i].t1) return SEG[i];
+    return SEG[SEG.length - 1];
+  }
+
+  function textoActual(s, dt) {
+    var cur = s.textos[0];
+    for (var i = 0; i < s.textos.length; i++) if (dt >= s.textos[i][0]) cur = s.textos[i];
+    return cur;
+  }
+
+  function encabezado() {
+    V.texto(ctx, 'Así suena mi juego de Cocardo', W / 2, 262, { font: F.body, weight: '900', size: 64, maxW: 920,
+      strokeW: 13 });
+    V.texto(ctx, '(sin grabar ni un sonido)', W / 2, 336, { font: F.body, weight: '900', size: 50, fill: C.gold,
+      strokeW: 11 });
+  }
+
+  function camara(t, s) {
+    var dt = t - s.t0, z = 1 + 0.05 * Math.pow(Math.max(0, 1 - dt / 0.22), 2), sx = 0, sy = 0, fuerza = 0;
+    if (s.tipo === 'cascada') {
+      for (var i = 4; i < CASC_T.length; i++) {
+        var d = dt - CASC_T[i];
+        if (d >= 0 && d < 0.2) fuerza = Math.max(fuerza, (i - 2) * 3 * (1 - d / 0.2));
+      }
+    }
+    if (s.tipo === 'drama') {
+      for (var k = 0; k < 3; k++) {
+        var e = dt - DRAMA_T[k];
+        if (e >= 0) z += (k === 2 ? 0.16 : 0.07) * (1 - Math.exp(-e * 18)) + 0.05 * Math.exp(-e * 9);
+        if (k === 2 && e >= 0 && e < 0.45) fuerza = 16 * (1 - e / 0.45);
+      }
+    }
+    if (fuerza) {
+      var f = Math.floor(t * 30);
+      sx = (V.hash(f) - 0.5) * 2 * fuerza; sy = (V.hash(f + 99) - 0.5) * 2 * fuerza;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.translate(W / 2 + sx, H * 0.45 + sy);
+    ctx.scale(z, z);
+    ctx.translate(-W / 2, -H * 0.45);
+  }
+
+  function titulo(s, dt) {
+    var tx = textoActual(s, dt);
+    // el primer fotograma del video es la portada: el título ya está puesto
+    var k = s.t0 === 0 && tx === s.textos[0] ? 1 : V.pop(dt - tx[0], 0.24);
+    ctx.save();
+    ctx.translate(W / 2, 500); ctx.scale(k, k);
+    if (tx[3]) ctx.rotate(Math.sin(dt * 40) * 0.015);
+    V.texto(ctx, tx[1], 0, 0, { size: tx[3] ? 128 : 120, fill: tx[3] || C.cream, maxW: 900, strokeW: 22 });
+    ctx.restore();
+    if (tx[2]) {
+      var k2 = s.t0 === 0 && tx === s.textos[0] ? 1 : V.pop(dt - tx[0] - 0.08, 0.22);
+      ctx.save();
+      ctx.translate(W / 2, 622); ctx.scale(k2, k2);
+      V.texto(ctx, tx[2], 0, 0, { font: F.body, weight: '900', size: 54, fill: s.sub || C.gold, maxW: 860, strokeW: 12 });
+      ctx.restore();
+    }
+  }
+
+  function tramoNormal(t, s) {
+    var dt = t - s.t0;
+    V.fondo(ctx, s.bg, s.bg2);
+    V.toldo(ctx, C.pink, '#ffffff', 120);
+    encabezado();
+    titulo(s, dt);
+    V.osciloscopio(ctx, an, t, 70, 720, 860, 500, s.onda);
+    V.barras(ctx, an, s.t0, s.t1, t, 90, 1256, 820, 84, s.onda);
+    V.chip(ctx, s.codigo, 500, 1400);
+  }
+
+  function rayos(t, color) {
+    ctx.save();
+    ctx.translate(W / 2, H * 0.45);
+    ctx.rotate(t * 0.25);
+    ctx.fillStyle = color;
+    for (var i = 0; i < 16; i++) {
+      ctx.rotate(Math.PI * 2 / 16);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-90, -1500); ctx.lineTo(90, -1500); ctx.closePath();
+      if (i % 2) ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function tramoDrama(t, s) {
+    var dt = t - s.t0;
+    V.fondo(ctx, s.bg, s.bg2);
+    ctx.save(); ctx.globalAlpha = 0.22; rayos(t, '#ffffff'); ctx.restore();
+    var vig = ctx.createRadialGradient(W / 2, H * 0.45, 300, W / 2, H * 0.45, 1200);
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(20,0,30,0.65)');
+    ctx.fillStyle = vig; ctx.fillRect(-80, -80, W + 160, H + 160);
+    if (dt < DRAMA_T[0]) {
+      var k0 = V.pop(dt, 0.22);
+      ctx.save(); ctx.translate(W / 2, 760); ctx.scale(k0, k0);
+      V.texto(ctx, 'Y el más importante:', 0, 0, { size: 92, maxW: 900, strokeW: 18 });
+      ctx.restore();
+      return;
+    }
+    var golpe = 0;
+    for (var i = 0; i < 3; i++) if (dt >= DRAMA_T[i]) golpe = i;
+    var palabras = ['tan', 'tan', 'TAAAN'], tam = [150, 180, 210];
+    var k = V.pop(dt - DRAMA_T[golpe], 0.14);
+    ctx.save(); ctx.translate(W / 2, 760); ctx.scale(k, k);
+    V.texto(ctx, palabras[golpe] + (golpe < 2 ? '…' : '!'), 0, 0, { size: tam[golpe], fill: golpe === 2 ? C.gold : C.cream,
+      strokeW: golpe === 2 ? 30 : 24, maxW: 740 });
+    ctx.restore();
+    var dc = dt - (DRAMA_T[2] + 0.45);
+    if (dc >= 0) {
+      var kc = V.pop(dc, 0.3);
+      ctx.save(); ctx.translate(W / 2, 1010); ctx.rotate(-0.05); ctx.scale(kc, kc);
+      V.texto(ctx, 'Continuará...', 0, 0, { font: F.script, size: 140, fill: C.cream, stroke: C.drama, strokeW: 16,
+        sombraColor: 'rgba(0,0,0,0.5)' });
+      ctx.restore();
+    }
+  }
+
+  function flecha(x, y, k) {
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(k, k);
+    ctx.beginPath();
+    ctx.moveTo(-30, -70); ctx.lineTo(30, -70); ctx.lineTo(30, -5); ctx.lineTo(70, -5); ctx.lineTo(0, 70);
+    ctx.lineTo(-70, -5); ctx.lineTo(-30, -5); ctx.closePath();
+    ctx.lineJoin = 'round';
+    ctx.fillStyle = 'rgba(43,22,48,0.55)'; ctx.save(); ctx.translate(0, 8); ctx.fill(); ctx.restore();
+    ctx.lineWidth = 16; ctx.strokeStyle = C.ink; ctx.stroke();
+    ctx.fillStyle = C.pink; ctx.fill();
+    ctx.restore();
+  }
+
+  function tramoFinal(t, s) {
+    var dt = t - s.t0;
+    V.fondo(ctx, s.bg, s.bg2);
+    V.toldo(ctx, C.pink, '#ffffff', 120);
+    var k1 = V.pop(dt, 0.24);
+    ctx.save(); ctx.translate(W / 2, 330); ctx.scale(k1, k1);
+    V.texto(ctx, 'Son para mi juego', 0, 0, { size: 104, maxW: 900, strokeW: 18 });
+    V.texto(ctx, 'de Cocardo', 0, 120, { size: 128, fill: C.gold, maxW: 900, strokeW: 22 });
+    ctx.restore();
+    V.osciloscopio(ctx, an, t, 70, 560, 860, 380, s.onda);
+    var k2 = V.pop(dt - 0.45, 0.24);
+    ctx.save(); ctx.translate(W / 2, 1060); ctx.scale(k2, k2);
+    V.texto(ctx, '¿Qué sonido le falta?', 0, 0, { size: 96, fill: C.pink, maxW: 900, strokeW: 18 });
+    ctx.restore();
+    if (dt > 0.75) flecha(W / 2, 1215 + Math.sin((dt - 0.75) * 8) * 14, V.pop(dt - 0.75, 0.2));
+    V.chip(ctx, 'juego de fans · muy pronto gratis en la web', 500, 1350, { size: 30, fill: C.cream });
+  }
+
+  function dibujar(t) {
+    var s = tramo(t);
+    camara(t, s);
+    if (s.tipo === 'drama') tramoDrama(t, s);
+    else if (s.tipo === 'final') tramoFinal(t, s);
+    else tramoNormal(t, s);
+    return cv.toDataURL('image/png');
+  }
+
+  function preparar() {
+    return V.fuentesListas().then(function () {
+      var items = [];
+      SEG.forEach(function (s) {
+        (s.sonidos || []).forEach(function (x) { items.push([x[0], x[1], s.t0 + x[2]]); });
+      });
+      return Promise.all([V.renderSonidos(items, DUR + 0.5), Cocardo.Audio._renderMusic(1)]);
+    }).then(function (r) {
+      if (!r[1]) throw new Error('render de música falló');
+      var p = V.pista(DUR);
+      V.mezclar(p, r[0], 0);
+      V.mezclar(p, r[1], FINAL.t0, { dur: FINAL.t1 - FINAL.t0, gain: 2.2, fadeIn: 0.05, fadeOut: 0.7 });
+      V.normalizar(p, 0.5);
+      an = V.analizar(V.mono(p));
+      return { duracion: DUR, fps: 30, wav: V.wavBase64(p) };
+    });
+  }
+
+  window.Escena = { duracion: DUR, fps: 30, preparar: preparar, dibujar: dibujar };
+})();
+</script>
+</body>
+</html>

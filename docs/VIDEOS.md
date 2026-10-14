@@ -29,14 +29,26 @@ dueña de la cuenta solo los publica. Se apoya en `docs/PERSONAJES.md` (aspecto 
 - Subtítulos quemados en español latino (mucha gente ve sin sonido).
 - Hashtags base: `#cocardo #frutinovela #lanievedelima #cocardoylanievedelima #cocosscoops #match3 #juegosindie`.
 
-## 2. Cómo se fabrican (herramientas a construir en `tools/video/`)
+## 2. Cómo se fabrican (`tools/video/`)
+
+Ya existe:
+
+- `tools/video/grabar.cjs`: graba una escena a MP4 1080×1920 30 fps. Dibuja cada fotograma con reloj fijo, sintetiza el
+  audio, lo normaliza (-14 LUFS, pico -2 dBFS) y codifica H.264 + AAC. Uso:
+  `node tools/video/grabar.cjs tools/video/sonidos.html dist/videos/01-sonidos.mp4 [--fotos 0,5.5]`
+  (`--fotos` guarda PNG de esos segundos para revisar o para la portada; `dist/` no se sube al repo).
+- `tools/video/video.js`: utilidades de las escenas (colores de marca, texto tipo sticker, toldo, osciloscopio, barras,
+  render y mezcla de audio, WAV).
+- Una escena es un `.html` en `tools/video/` que define `window.Escena = { duracion, fps, preparar(), dibujar(t) }`.
+
+Falta construir:
 
 1. **Buscador de jugadas** (Node + `js/core/engine.js`): prueba miles de semillas y jugadas y guarda las mejores
    (cascadas largas, combos, casi-derrotas, finales con muchos movimientos sobrantes).
 2. **Grabador** (Playwright + Chromium): abre el juego con semilla y jugadas fijas, controla el reloj de la página
    (`page.clock` o `requestAnimationFrame` sustituido) y captura cada fotograma del canvas. Como el motor es
    determinista, el video sale idéntico cada vez.
-3. **Banda sonora sin grabar nada:** `Cocardo.Audio.render([[nombre, opts, segundo], …])` y `renderMusic()` generan
+3. **Banda sonora sin grabar nada:** `Cocardo.Audio._render([[nombre, opts, segundo], …])` y `_renderMusic()` generan
    el WAV exacto a partir de la lista de eventos del motor, sincronizado al fotograma.
 4. **Montaje** con `ffmpeg`: textos, zooms y tarjeta de «CONTINUARÁ...». De cada video salen 2 o 3 variantes de gancho
    para probar cuál funciona mejor.
@@ -116,9 +128,32 @@ Estado: **Ya** = se puede hacer con lo que existe (motor y audio). **Arte** = ne
 Ritmo: 1 o 2 videos al día, el mismo archivo en TikTok y Reels. Repetir lo que funcione en variantes (otra semilla,
 otro gancho) en vez de cambiar de idea.
 
-## 5. Pendiente de decidir (dueña o dueño de la cuenta)
+## 5. Decisiones (14 oct 2026)
 
-- ¿Se menciona a la creadora (`@frutitaenlatada`) en el texto? Es lo correcto y puede traer un dueto o repost, pero es
-  su obra y es decisión de quien publica.
-- ¿Cuenta nueva solo para el juego o la cuenta personal?
-- ¿Dónde se aloja el juego (GitHub Pages u otro) para el enlace en la bio?
+- **Plataforma:** el juego sale primero como página web HTML (gratis). Si le va bien, se publica en Play Store. Los
+  videos invitan a jugar «gratis en la web» con el enlace en la bio.
+- **Creadora:** por ahora no se menciona; el parecido con la serie se ve solo. Se mantiene «juego de fans, no
+  oficial».
+- **Edición:** Claude entrega cada video terminado (MP4 listo para subir, portada y texto del post). Quien publica no
+  edita nada: sube el archivo y pega el texto. No hace falta agregar música de TikTok: el sonido propio es parte del
+  video.
+- **Pendiente:** ¿cuenta nueva solo para el juego o la personal?
+
+## 6. Videos listos
+
+| # | Archivo | Idea | Duración | Escena |
+|---|---|---|---|---|
+| 1 | `01-asi-suena-cocardo.mp4` | D1 «Así suena mi juego de Cocardo» | 20,2 s | `tools/video/sonidos.html` |
+
+**Video 1, texto del post:**
+
+```
+Hice TODOS los sonidos de mi juego de Cocardo sin grabar nada: cada uno es puro código 🥥🍦
+La risa de Cherry me da miedo… ¿qué sonido le falta? 👇
+Juego de fans (no oficial). Pronto gratis en la web.
+#cocardo #frutinovela #lanievedelima #cocosscoops #juegosindie #gamedev
+```
+
+Estructura: risa de Cocardo (portada y gancho desde el fotograma 0), risa de Cherry, golpe al congelador, hielo,
+cascada x1 → x8 hasta «¡¡TELENOVELA!!», rescate y tres estrellas, derrota con risa de Cocardo, «tan-tan-TAAAN» con
+«Continuará...» y cierre con la cumbia y la pregunta para comentar. El final enlaza con el inicio (la risa).
