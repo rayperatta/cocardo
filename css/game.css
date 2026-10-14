@@ -81,6 +81,8 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cg-lvname:empty { display: none; }
+/* en el HUD lateral el título es angosto: el nombre baja a una segunda línea en vez de cortarse */
+.cg-wide .cg-lvname { white-space: normal; overflow: visible; text-overflow: clip; text-align: center; line-height: 1.2; border-radius: 9px; padding: 1px 8px 2px; }
 .cg-score {
   flex: none;
   min-width: 78px;
@@ -648,6 +650,25 @@
 .cg-wide.cg-short .cg-boosters { gap: 12px; padding: 10px 10px 10px 0; }
 .cg-wide.cg-short .cg-boost { width: 78px; height: 64px; border-radius: 18px; }
 .cg-wide.cg-short .cg-boost-ic { width: 32px; height: 32px; }
+
+/* acostado y angosto (568x320, 667x375): el tablero se queda con el alto completo y el HUD con lo que sobra */
+.cg-root.cg-wide.cg-tiny {
+  grid-template-columns: minmax(168px, 1fr) minmax(0, calc(100vh + 16px)) auto;
+  grid-template-columns: minmax(168px, 1fr) minmax(0, calc(100dvh + 16px)) auto;
+}
+.cg-wide.cg-tiny .cg-hud { gap: 6px; padding: 6px 0 6px 8px; }
+.cg-wide.cg-tiny .cg-topbar { gap: 4px 6px; }
+.cg-wide.cg-tiny .cg-score { flex: 1 0 100%; padding: 3px 8px 2px; font-size: 15px; }
+.cg-wide.cg-tiny .cg-card { gap: 6px; padding: 6px; }
+.cg-wide.cg-tiny .cg-villain, .cg-wide.cg-tiny .cg-villains.cg-two .cg-villain { width: 70px; }
+.cg-wide.cg-tiny .cg-portrait, .cg-wide.cg-tiny .cg-villains.cg-two .cg-portrait { width: 54px; height: 54px; }
+.cg-wide.cg-tiny .cg-moves-n { font-size: 28px; }
+.cg-root.cg-wide.cg-tiny .cg-goals .cg-goal, .cg-root.cg-wide.cg-tiny .cg-goals[data-n="1"] .cg-goal { width: 52px; height: 58px; }
+.cg-root.cg-wide.cg-tiny .cg-goals .cg-goal-ic, .cg-root.cg-wide.cg-tiny .cg-goals[data-n="1"] .cg-goal-ic { width: 46px; height: 46px; }
+.cg-wide.cg-tiny .cg-boosters { gap: 10px; padding: 8px 8px 8px 0; }
+.cg-wide.cg-tiny .cg-boost { width: 68px; height: 56px; border-radius: 16px; }
+.cg-wide.cg-tiny .cg-boost-ic { width: 28px; height: 28px; }
+.cg-wide.cg-tiny .cg-boost-name { font-size: 11px; }
 
 /* ---------- animaciones ---------- */
 @keyframes cg-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }

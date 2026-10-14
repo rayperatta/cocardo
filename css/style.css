@@ -382,6 +382,8 @@ svg { display: block; }
 .title-col { display: flex; flex-direction: column; background: #ffd3e3; }
 .title-bg, .zone-bg, .story-bg { position: absolute; inset: 0; overflow: hidden; }
 .title-bg svg, .zone-bg svg, .story-bg svg { width: 100%; height: 100%; }
+/* en la Portada el logo ya dice todo: el letrero de neón del fondo se veía como letras fantasma */
+.title-bg .bg-sign { display: none; }
 .title-bg::after {
   content: '';
   position: absolute;
@@ -435,10 +437,13 @@ svg { display: block; }
 .logo-text { font-family: var(--font-display); font-size: 64px; color: var(--pink); -webkit-text-stroke: 3px var(--ink); }
 @keyframes logoIn { from { opacity: 0; transform: scale(.4) rotate(-6deg); } to { opacity: 1; transform: none; } }
 .title-hero {
+  --hero: min(72vw, 300px, 36vh);
   position: relative;
-  width: min(72vw, 300px, 36vh);
+  width: var(--hero);
   aspect-ratio: 1;
   margin-top: -8px;
+  /* el mostrador cuelga 16 % bajo el héroe: se le reserva su lugar para que el lema no lo pise */
+  margin-bottom: calc(var(--hero) * .16);
 }
 .hero-glow {
   position: absolute;
@@ -479,10 +484,14 @@ svg { display: block; }
 }
 @keyframes scoopIn { from { transform: translateY(-40px) scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
 .title-tag {
-  margin: 34px 0 0;
+  margin: 10px 0 0;
+  padding: 0 16px 4px;
+  border-radius: 999px;
+  /* fondo morado translúcido: el lema se lee aunque caiga sobre la vitrina pastel */
+  background: rgba(91, 30, 116, .62);
   font-family: var(--font-script);
   font-weight: 400;
-  font-size: 30px;
+  font-size: min(30px, 6.8vw);
   color: #fff;
   text-shadow: 0 3px 0 var(--drama), 0 0 14px rgba(91, 30, 116, .6);
 }
@@ -497,6 +506,7 @@ svg { display: block; }
   font-family: var(--font-display);
   font-size: 24px;
   color: var(--drama);
+  white-space: nowrap;
   position: relative;
 }
 /* el botón no se mueve (área de toque estable); late su texto y un anillo */
@@ -1122,6 +1132,8 @@ svg { display: block; }
 }
 .rr-face { flex: 0 0 64px; width: 64px; height: 64px; margin: -14px 0 -4px; animation: hop 1s ease-in-out 1.6s 2; }
 .rr-face svg { width: 100%; height: 100%; }
+/* varios rescatados: caras encimadas en el mismo renglón */
+.rescue-row .rr-face + .rr-face { margin-left: -26px; animation-delay: 1.8s; }
 .rr-txt small { display: block; font-size: 11px; letter-spacing: .8px; text-transform: uppercase; color: var(--ice-deep); }
 .rr-txt b { font-family: var(--font-display); font-weight: 400; font-size: 19px; line-height: 1.05; }
 .rr-hearts { position: absolute; right: 8px; top: -6px; }
@@ -1427,7 +1439,7 @@ svg { display: block; }
   bottom: calc(9vh + 54px + var(--sab));
   margin: 0;
   font-family: var(--font-script);
-  font-size: clamp(46px, 14vw, 78px);
+  font-size: clamp(34px, 11vw, 78px);   /* «CONTINUARÁ…» no se parte: cabe a 320 px aun con la fuente de respaldo */
   line-height: 1.05;
   text-align: center;
   color: var(--gold);
@@ -1701,6 +1713,7 @@ svg { display: block; }
   .booster { width: 76px; }
   .story-text { font-size: 17px; }
   .card { padding-left: 14px; padding-right: 14px; }
+  .title-start { font-size: 21px; padding: 10px 22px 12px; }
 }
 /* teléfonos bajos (375x667 y menores): la tarjeta de intro cabe entera sin desplazar */
 @media (max-height: 760px) {
@@ -1755,8 +1768,8 @@ svg { display: block; }
   .intro-card .boosters { margin-top: 8px; }
   .intro-card > .btn-row:last-child { padding-bottom: 10px; }
   .intro-card .btn-big { min-height: 52px; }
-  .title-hero { width: min(56vw, 210px, 32vh); }
-  .title-tag { font-size: 24px; margin-top: 12px; }
+  .title-hero { --hero: min(50vw, 190px, 29vh); }
+  .title-tag { font-size: min(24px, 6.8vw); margin-top: 6px; }
   .overlay { padding-top: calc(32px + var(--sat)); }
   .card { padding-top: 26px; }
   .v-stars { height: 70px; margin-top: 4px; }
@@ -1779,6 +1792,109 @@ svg { display: block; }
   .tip-face { flex-basis: 60px; width: 60px; height: 60px; }
   .story-box { min-height: 118px; }
   .story-stage { bottom: calc(132px + var(--sab)); }
+}
+/* teléfono acostado (y ventanas bajas): tarjetas a lo ancho en dos columnas para que todo quepa sin desplazar */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Portada: héroe a la izquierda; logo, lema y botón a la derecha; el aviso queda debajo */
+  .awning { height: calc(44px + var(--sat)); }
+  .title-main {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas: "hero logo" "hero tag" "hero start";
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    justify-items: center;
+    gap: 2px 10px;
+    padding: calc(30px + var(--sat)) 12px 4px;
+  }
+  .title-logo { grid-area: logo; width: min(300px, calc((100vh - 186px) * 2)); }
+  .title-hero { grid-area: hero; --hero: min(170px, 40vh); margin: 0 0 calc(var(--hero) * .16); }
+  .title-tag { grid-area: tag; margin: 2px 0 0; font-size: 22px; }
+  .title-start { grid-area: start; margin-top: 8px; min-height: 48px; padding: 8px 24px 10px; font-size: 21px; }
+  .disclaimer { margin-bottom: calc(6px + var(--sab)); padding: 5px 10px; font-size: 11px; }
+
+  .overlay { padding-top: calc(30px + var(--sat)); padding-bottom: calc(10px + var(--sab)); }
+  .intro-card, .pause-card, .victory-card, .defeat-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: center;
+    max-width: 680px;
+    padding: 30px 14px 12px;
+  }
+  .ribbon span { font-size: 22px; padding: 6px 18px 8px; }
+  .ribbon-gold span { font-size: 24px; }
+  .intro-card > .btn-row:last-child, .victory-card > .btn-col, .defeat-card > .btn-col { bottom: -12px; padding: 8px 6px 12px; }
+
+  /* Intro: nombre arriba, metas a la izquierda, consejo y potenciadores a la derecha con «¡A jugar!» debajo */
+  .intro-card { grid-template-areas: "head head" "main side" "main play"; padding-top: 26px; }
+  .intro-head { grid-area: head; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 10px; margin: 0 40px; }
+  .intro-head .intro-name { margin: 0; }
+  .intro-head .badges, .intro-head .intro-stars { margin: 0; }
+  .intro-main { grid-area: main; }
+  .intro-side { grid-area: side; align-self: end; }
+  .intro-card .sec-boost { display: block; }
+  .intro-card .tip { margin-top: 4px; }
+  .intro-card > .btn-row:last-child { grid-area: play; align-self: start; margin-top: 10px; }
+
+  /* Pausa: metas y sonido a la izquierda, botones a la derecha */
+  .pause-card { grid-template-areas: "lvl lvl" "goals btns" "tog btns"; }
+  .pause-level { grid-area: lvl; margin-bottom: 4px; }
+  .pause-card > .goals, .pause-card > .ticket { grid-area: goals; }
+  .pause-card > .btn-col { grid-area: btns; margin-top: 0; }
+  .pause-toggles { grid-area: tog; margin-top: 10px; }
+
+  /* Victoria y derrota: resultado a la izquierda, protagonista y premios a la derecha, botones en una fila */
+  .victory-card { grid-template-areas: "sub sub" "stars side" "score side" "btns btns"; }
+  .victory-card > .v-sub, .defeat-card > .v-sub { grid-area: sub; }
+  .v-stars { grid-area: stars; }
+  .v-score { grid-area: score; }
+  .v-side { grid-area: side; }
+  .v-side > :first-child, .d-info > :first-child { margin-top: 0; }
+  .victory-card .rr-face { margin-top: -4px; }
+  .ribbon { min-width: 44%; }
+  .btn-row.tri .btn { font-size: 14px; }
+  .defeat-card { grid-template-areas: "sub sub" "vil info" "btns btns"; }
+  .d-villain { grid-area: vil; }
+  .d-info { grid-area: info; }
+  .victory-card > .btn-col, .defeat-card > .btn-col { grid-area: btns; flex-direction: row; align-items: stretch; gap: 10px; margin-top: 8px; }
+  .victory-card > .btn-col > .btn-big, .defeat-card > .btn-col > .btn-big { flex: 1 1 0; width: auto; min-height: 56px; }
+  .victory-card > .btn-col > .btn-row, .defeat-card > .btn-col > .btn-row { flex: 1.3 1 0; margin-top: 0; }
+}
+/* acostado y aún más bajo (568x320): todo un poco más chico */
+@media (orientation: landscape) and (max-height: 360px) {
+  .overlay { padding-top: calc(26px + var(--sat)); padding-bottom: calc(6px + var(--sab)); }
+  .intro-card, .pause-card, .victory-card, .defeat-card { padding-top: 26px; padding-bottom: 8px; }
+  .intro-card > .btn-row:last-child, .victory-card > .btn-col, .defeat-card > .btn-col { bottom: -8px; padding-bottom: 8px; }
+  .intro-card .tip-face { flex-basis: 40px; width: 40px; height: 40px; }
+  .intro-card .tip-bubble { font-size: 12px; padding: 5px 8px; }
+  .intro-card .ticket-head { font-size: 19px; margin-bottom: 4px; }
+  .intro-card .moves-pill { margin-top: 6px; }
+  .intro-card .btn-big, .victory-card .btn-big, .defeat-card .btn-big { min-height: 48px; font-size: 22px; }
+  .v-stars { height: 58px; margin-top: 2px; }
+  .v-star { width: 46px; height: 46px; }
+  .v-star-1 { width: 58px; height: 58px; }
+  .v-score b { font-size: 26px; }
+  .v-hero-face { width: 60px; height: 60px; }
+  .victory-card .rescue-row { padding-top: 0; padding-bottom: 0; }
+  .victory-card .rr-face { flex-basis: 46px; width: 46px; height: 46px; }
+  .victory-card .reward, .defeat-card .reward { margin-top: 6px; padding: 3px 8px; }
+  .victory-card .r-icon, .defeat-card .r-icon { width: 34px; height: 34px; }
+  .btn-row.tri .btn { min-height: 50px; font-size: 12.5px; }
+  .btn-row.tri .btn svg { width: 20px; height: 20px; }
+  .d-face { width: 72px; height: 72px; }
+  .pause-card .btn-big { min-height: 50px; }
+  .pause-card .btn-col .btn:not(.btn-big) { min-height: 44px; }
+  .intro-card .sec-boost { display: none; }
+  .intro-card .boosters { margin-top: 6px; }
+  .d-near { margin-top: 0; font-size: 18px; }
+  .d-near b { font-size: 24px; }
+  .d-icon { width: 32px; height: 32px; }
+  .d-goals { margin-top: 4px; }
+  .d-tip { margin-top: 6px; }
+  .d-tip-text { font-size: 12px; padding: 5px 8px; }
+  .defeat-card .btn-row .btn { min-height: 48px; }
 }
 /* escritorio: decoración a los lados de la columna */
 @media (min-width: 900px) {

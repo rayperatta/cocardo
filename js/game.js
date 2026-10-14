@@ -2307,6 +2307,8 @@
     var wide = w > h && (w >= 900 || (h < 560 && w >= 560));
     G.root.classList.toggle('cg-wide', wide);
     G.root.classList.toggle('cg-short', h < (wide ? 620 : 640));
+    // teléfono chico acostado: el HUD se angosta para que el tablero use casi todo el alto
+    G.root.classList.toggle('cg-tiny', wide && h < 560 && w - h < 330);
     G.root.classList.toggle('cg-tall', !wide && h >= 760 && w >= 360);
     G.root.classList.toggle('cg-narrow', !wide && w < 360);
     var st = G.els.stage.getBoundingClientRect();

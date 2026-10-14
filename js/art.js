@@ -1047,9 +1047,9 @@
         [70, 200, 330].forEach(function (x) {
           o += '<path d="M' + x + ' 0V70" stroke="#c78aa5" stroke-width="2"/><ellipse cx="' + x + '" cy="104" rx="40" ry="16" fill="#fff6c8" opacity=".5"/><path d="M' + (x - 26) + ' 96Q' + x + ' 56 ' + (x + 26) + ' 96Z" fill="#bff3e1" stroke="#8fdcc4" stroke-width="3"/>';
         });
-        // letrero de neón «Coco's Scoops»
-        o += neonText(200, 250, "Coco's Scoops", 54, '#ff6fa5');
-        o += '<g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(200 300)"><path d="M-14 0L0 34L14 0M-16 0Q-18 -18 0 -20Q18 -18 16 0Z" stroke="#ff6fa5" stroke-width="10" opacity=".25"/><path d="M-14 0L0 34L14 0M-16 0Q-18 -18 0 -20Q18 -18 16 0Z" stroke="#fff0f6" stroke-width="3.5" opacity=".9"/></g>';
+        // letrero de neón «Coco's Scoops» (clase bg-sign: la Portada lo oculta, ahí lo tapa el logo)
+        o += '<g class="bg-sign">' + neonText(200, 250, "Coco's Scoops", 54, '#ff6fa5');
+        o += '<g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(200 300)"><path d="M-14 0L0 34L14 0M-16 0Q-18 -18 0 -20Q18 -18 16 0Z" stroke="#ff6fa5" stroke-width="10" opacity=".25"/><path d="M-14 0L0 34L14 0M-16 0Q-18 -18 0 -20Q18 -18 16 0Z" stroke="#fff0f6" stroke-width="3.5" opacity=".9"/></g></g>';
         // vitrina curva con charolas de helado
         o += '<rect y="610" width="400" height="190" fill="#bff3e1"/><rect y="600" width="400" height="16" fill="#fff6ea"/>';
         o += '<g fill="none" stroke="#8fdcc4" stroke-width="4">' + [20, 120, 220, 320].map(function (x) { return '<rect x="' + x + '" y="640" width="60" height="130" rx="8"/>'; }).join('') + '</g>';

@@ -1315,10 +1315,10 @@
       var s = list.shift();
       if (typeof s === 'string') { playScene(s, step, { level: lvId }); return; }
       if (s.cliff) {
-        // diálogo del cliffhanger + tarjeta «CONTINUARÁ...» (si el guion no la trae)
+        // diálogo del cliffhanger + tarjeta «CONTINUARÁ…» (si el guion no la trae)
         var lines = script(s.cliff) || [];
         var hasCard = lines.some(function (l) { return l && l.card; });
-        playStory(s.cliff, step, { level: lvId, extraCards: hasCard ? null : [{ card: 'CONTINUARÁ...' }], cardsOnly: skipStoriesOn() });
+        playStory(s.cliff, step, { level: lvId, extraCards: hasCard ? null : [{ card: 'CONTINUARÁ…' }], cardsOnly: skipStoriesOn() });
         return;
       }
       if (s.ending) {
@@ -1414,14 +1414,16 @@
       '<div class="card pop intro-card" style="--zc:' + esc(ch && ch.color || '#ff6fa5') + '">' +
         '<button class="close-btn" data-act="close" aria-label="Volver al mapa">' + icon('close', 22) + '</button>' +
         '<div class="ribbon"><span>Nivel ' + id + '</span></div>' +
-        '<h2 class="intro-name">' + esc(lv.name || '') + '</h2>' +
-        meta +
-        (badges ? '<div class="badges">' + badges + '</div>' : '') +
-        starsRow +
-        '<h3 class="sec-title">Objetivos</h3>' + goalsHtml(lv) +
-        '<div class="moves-pill">' + icon('moves', 22) + '<b>' + (lv.moves | 0) + '</b> movimientos</div>' +
-        (tip ? '<div class="tip"><span class="tip-face">' + portrait(helper, 'feliz', helperFrozen(id) ? { frozen: true } : {}) + '</span><p class="tip-bubble"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '') +
-        '<h3 class="sec-title sec-boost">Potenciadores</h3>' + boostersHtml(false, fresh) +
+        // bloques: en vertical van uno tras otro; en horizontal bajo, metas a la izquierda y ayudas a la derecha
+        '<div class="intro-head"><h2 class="intro-name">' + esc(lv.name || '') + '</h2>' +
+          meta +
+          (badges ? '<div class="badges">' + badges + '</div>' : '') +
+          starsRow + '</div>' +
+        '<div class="intro-main"><h3 class="sec-title">Objetivos</h3>' + goalsHtml(lv) +
+          '<div class="moves-pill">' + icon('moves', 22) + '<b>' + (lv.moves | 0) + '</b> movimientos</div></div>' +
+        '<div class="intro-side">' +
+          (tip ? '<div class="tip"><span class="tip-face">' + portrait(helper, 'feliz', helperFrozen(id) ? { frozen: true } : {}) + '</span><p class="tip-bubble"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '') +
+          '<h3 class="sec-title sec-boost">Potenciadores</h3>' + boostersHtml(false, fresh) + '</div>' +
         '<div class="btn-row"><button class="btn btn-pink btn-big" data-act="play" data-autofocus>' + icon('play', 26) + ' ¡A jugar!</button></div>' +
       '</div>',
     { label: 'Nivel ' + id, guard: true, onEsc: function () { closeOverlay('intro'); } });
@@ -1749,9 +1751,11 @@
     var id = result.levelId || sess.levelId;
     var count = levelCount();
     var rescued = (sum.rescuedAll || result.rescued || []).filter(function (w, i, a) { return a.indexOf(w) === i; });
-    var rescueHtml = rescued.map(function (w) {
-      return '<div class="rescue-row"><span class="rr-face">' + portrait(w, 'feliz') + '</span><span class="rr-txt"><small>¡Libre del hielo!</small><b>¡Rescataste a ' + esc(nameOf(w)) + '!</b></span><span class="rr-hearts" aria-hidden="true"><i></i><i></i><i></i></span></div>';
-    }).join('');
+    // un solo renglón aunque sean varios (L30: Uva y Banana), para que la tarjeta quepa sin desplazar
+    var rNames = rescued.map(nameOf);
+    var rescueHtml = rescued.length ? '<div class="rescue-row' + (rescued.length > 1 ? ' rr-multi' : '') + '">' +
+      rescued.map(function (w) { return '<span class="rr-face">' + portrait(w, 'feliz') + '</span>'; }).join('') +
+      '<span class="rr-txt"><small>¡Libre del hielo!</small><b>¡Rescataste a ' + esc(rNames.length > 1 ? rNames.slice(0, -1).join(', ') + ' y ' + rNames[rNames.length - 1] : rNames[0]) + '!</b></span><span class="rr-hearts" aria-hidden="true"><i></i><i></i><i></i></span></div>' : '';
     var title = daily ? '¡Reto superado!' : VICTORY_TITLES[stars - 1];
     // protagonista de la tarjeta: la fruta rescatada (fila de rescate) o, si no hubo rescate, el villano llorando
     var villain = villainFor(id);
@@ -1786,9 +1790,7 @@
           return '<span class="v-star v-star-' + k + '" data-i="' + k + '"><span class="v-empty">' + icon('starEmpty', 64) + '</span><span class="v-full">' + icon('star', 64) + '</span></span>';
         }).join('') + '</div>' +
         '<div class="v-score"><small>Puntos</small><b class="js-score">0</b>' + (sum.record ? '<span class="badge badge-record">¡Nuevo récord!</span>' : '') + '</div>' +
-        heroHtml +
-        rescueHtml +
-        (sum.rewards || []).map(rewardHtml).join('') +
+        '<div class="v-side">' + heroHtml + rescueHtml + (sum.rewards || []).map(rewardHtml).join('') + '</div>' +
         '<div class="btn-col">' + btns + '</div>' +
       '</div>',
     { label: title, guard: true });
@@ -1941,10 +1943,7 @@
         '<p class="v-sub">' + esc(daily ? 'Reto #' + (sess.dailyNum || '') : 'Nivel ' + id + (lv.name ? ' · ' + lv.name : '')) + '</p>' +
         '<div class="d-villain"><div class="d-face">' + portrait(villain, 'carcajada') + '</div>' +
           '<p class="d-bubble">' + esc(taunt) + '</p></div>' +
-        headline +
-        progHtml +
-        tipHtml +
-        (sum.rewards || []).map(rewardHtml).join('') +
+        '<div class="d-info">' + headline + progHtml + tipHtml + (sum.rewards || []).map(rewardHtml).join('') + '</div>' +
         '<div class="btn-col">' + btns + '</div>' +
       '</div>',
     { label: 'Derrota', guard: true });
@@ -2128,7 +2127,7 @@
   }
   // Estado de una carta: 'open' | 'frozen' | 'locked'
   //  - 'level': se conoce al superar ese nivel (antes, silueta)
-  //  - víctimas: congeladas hasta que se rescatan
+  //  - víctimas: bloqueadas hasta ver su captura; luego congeladas hasta que se rescatan
   function cardState(e) {
     var d = data();
     var u = e.unlock || { type: 'start' };
@@ -2137,8 +2136,12 @@
       var met = n <= 1 || (d.stars[n - 1] | 0) > 0 || d.unlocked > n;
       if (!met) return 'locked';
     }
-    if (u.type === 'rescue') return d.rescued.indexOf(u.who || e.id) >= 0 ? 'open' : 'frozen';
-    if (VICTIMS.indexOf(e.id) >= 0 && d.rescued.indexOf(e.id) < 0) return 'frozen';
+    var who = u.type === 'rescue' ? (u.who || e.id) : e.id;
+    if (u.type === 'rescue' || VICTIMS.indexOf(who) >= 0) {
+      if (d.rescued.indexOf(who) >= 0) return 'open';
+      // sin spoilers: antes de ver su captura la víctima sigue siendo una carta bloqueada («???»)
+      return captureSeen(who) ? 'frozen' : 'locked';
+    }
     return 'open';
   }
 
@@ -2159,7 +2162,7 @@
         hint = rl ? '¡Congelada! Rescátala en el nivel ' + rl : '¡Congelada!';
       } else {
         face = portrait(e.id, 'normal', { silhouette: true });
-        hint = 'Se desbloquea en el nivel ' + (u.level || '?');
+        hint = u.level ? 'Se desbloquea en el nivel ' + u.level : 'Sigue la historia…';
       }
       return '<button class="acard acard-' + st + '" data-i="' + i + '" style="--i:' + i + '" aria-label="' + esc(st === 'locked' ? 'Carta bloqueada' : (e.name || nameOf(e.id))) + '">' +
         '<span class="acard-face">' + face + '</span>' +
