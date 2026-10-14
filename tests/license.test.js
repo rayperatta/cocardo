@@ -91,9 +91,11 @@ test('License: formato, producto, anulados, sin clave y sin crypto', async () =>
     assert.equal(r.reason, 'revoked');
     assert.equal(r.serial, 5);
   } finally { License.REVOKED.pop(); }
-  // sin jwk explícito usa PUBLIC_KEY (apagada en el repo)
-  assert.equal(License.PUBLIC_KEY, null);
-  assert.equal((await License.verify(code, subtle)).reason, 'nokey');
+  // sin jwk explícito usa PUBLIC_KEY (la de producción: no reconoce códigos de otra clave)
+  assert.equal((await License.verify(code, subtle)).reason, 'signature');
+  const k = License.PUBLIC_KEY;
+  License.PUBLIC_KEY = null;
+  try { assert.equal((await License.verify(code, subtle)).reason, 'nokey'); } finally { License.PUBLIC_KEY = k; }
 });
 
 test('License: candados en el borde 10/11', () => {
@@ -129,26 +131,52 @@ function fakeEnv(hash, protocol) {
 
 function withStore(fn) {
   return async () => {
-    const saved = { key: License.PUBLIC_KEY, buy: Store.config.buyUrl };
+    const saved = { key: License.PUBLIC_KEY, buy: Store.config.buyUrl, contact: Store.config.contact };
     License.PUBLIC_KEY = jwk;
-    Store.config.buyUrl = 'https://ko-fi.com/ejemplo';
+    Store.config.buyUrl = 'https://ejemplo.itch.io/cocardo-completo';
+    Store.config.contact = 'juego@example.com';
     Store._memory.license = null;
     try { await fn(); } finally {
       License.PUBLIC_KEY = saved.key;
       Store.config.buyUrl = saved.buy;
+      Store.config.contact = saved.contact;
       Store._memory.license = null;
       Store._setEnv(null);
     }
   };
 }
 
-test('Store: sin clave o sin enlace de compra no bloquea nada', async () => {
-  Store._memory.license = null;
-  assert.equal(Store.selling(), false);
-  assert.equal(Store.isLocked(11), false);
-  assert.equal(Store.isLocked(30), false);
-  License.PUBLIC_KEY = jwk;
-  try { assert.equal(Store.isLocked(30), false, 'clave sin buyUrl'); } finally { License.PUBLIC_KEY = null; }
+test('Store: falta clave, enlace de compra o contacto -> no bloquea nada', withStore(async () => {
+  assert.equal(Store.selling(), true);
+  for (const [field, obj] of [['PUBLIC_KEY', License], ['buyUrl', Store.config], ['contact', Store.config]]) {
+    const v = obj[field];
+    obj[field] = field === 'PUBLIC_KEY' ? null : '';
+    assert.equal(Store.selling(), false, 'sin ' + field);
+    assert.equal(Store.isLocked(11), false, 'sin ' + field);
+    obj[field] = v;
+  }
+  assert.equal(Store.isLocked(11), true);
+}));
+
+test('Store: configuración publicada (precio y aviso de fans; la venta espera enlace y correo)', () => {
+  assert.equal(Store.config.price, 'US$1,99');
+  assert.match(Store.config.fanNote, /^Juego de fans hecho con permiso de la creadora\./);
+  assert.doesNotMatch(Store.config.fanNote, /oficial/i);
+  assert.equal(Store.selling(), !!(Store.config.buyUrl && Store.config.contact));
+});
+
+test('License: la clave pública del repo corresponde a la privada de producción (código de control anulado)', async () => {
+  // Serie 0 firmada con la clave privada de producción. Está anulada: no desbloquea nada.
+  const control = 'AQEAAAAA-xUEK1edzkzmYrlogwTRf5lJNY7g9OBsMf_sny_diy2FzEiomQ-eZpfzIvV_yXhzmsnY6u1O07KDPvYkjluvBQ';
+  assert.ok(License.PUBLIC_KEY && License.PUBLIC_KEY.crv === 'P-256');
+  assert.deepEqual(License.REVOKED, [0]);
+  assert.equal((await License.verify(control, subtle)).reason, 'revoked');
+  License.REVOKED.length = 0;
+  try {
+    const r = await License.verify(control, subtle);
+    assert.equal(r.reason, 'ok', 'la clave pública no coincide con la que firmó el control');
+    assert.equal(r.serial, 0);
+  } finally { License.REVOKED.push(0); }
 });
 
 test('Store: con venta activa bloquea 11–30 hasta canjear', withStore(async () => {
@@ -242,7 +270,8 @@ test('Store en el navegador: guarda la licencia en Cocardo.Save y llama save()',
   }
   const S = win.Cocardo.Store;
   win.Cocardo.License.PUBLIC_KEY = jwk;
-  S.config.buyUrl = 'https://ko-fi.com/ejemplo';
+  S.config.buyUrl = 'https://ejemplo.itch.io/cocardo-completo';
+  S.config.contact = 'juego@example.com';
   assert.equal(S.isLocked(11), true);
   const r = await S.init({ show: false });
   assert.equal(r.redeemed, true);
@@ -270,12 +299,21 @@ test('tools/license.cjs: keygen, sign, batch y verify', () => {
     assert.match(run('verify', code, '--key', key), /ok serie=42 producto=1/);
     assert.throws(() => run('sign', '--key', key, '--serial', '42'), /ya se usó/);
     const csv = path.join(dir, 'lote.csv');
-    run('batch', '--key', key, '--from', '100', '--count', '3', '--csv', csv);
+    run('batch', '--key', key, '--from', '100', '--count', '3', '--csv', csv, '--url', 'https://fan.example/c/');
     const rows = fs.readFileSync(csv, 'utf8').trim().split('\n');
+    assert.equal(rows[0], 'serie,codigo,enlace');
     assert.equal(rows.length, 4);
-    assert.match(rows[3], /^102,[\w-]{94},https:\/\/USUARIO/);
+    assert.match(rows[3], /^102,[\w-]{94},https:\/\/fan\.example\/c\/#licencia=[\w-]{94}$/);
     assert.match(run('verify', rows[1].split(',')[2], '--key', key), /ok serie=100/);
-    assert.equal(fs.readFileSync(path.join(dir, 'licencias.csv'), 'utf8').trim().split('\n').length, 5);
+    // sin --url: solo serie y código; --txt: un código por línea
+    const csv2 = path.join(dir, 'lote2.csv'), txt = path.join(dir, 'lote2.txt');
+    run('batch', '--key', key, '--from', '200', '--count', '2', '--csv', csv2, '--txt', txt);
+    assert.match(fs.readFileSync(csv2, 'utf8'), /^serie,codigo\n200,[\w-]{94}\n201,[\w-]{94}\n$/);
+    const codes = fs.readFileSync(txt, 'utf8').trim().split('\n');
+    assert.equal(codes.length, 2);
+    assert.match(run('verify', codes[1], '--key', key), /ok serie=201/);
+    assert.ok(!run('sign', '--key', key, '--serial', '300').includes('enlace:'));
+    assert.equal(fs.readFileSync(path.join(dir, 'licencias.csv'), 'utf8').trim().split('\n').length, 8);
     assert.throws(() => run('keygen', '--out', path.join(__dirname, 'no.pem')), /dentro del repo/);
     assert.ok(!fs.existsSync(path.join(__dirname, 'no.pem')));
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }

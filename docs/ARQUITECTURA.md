@@ -370,8 +370,9 @@ Respect `prefers-reduced-motion` and the in-game "Movimiento reducido" setting (
 ## 14. `Cocardo.License` and `Cocardo.Store` — full version (done)
 
 Business decision, texts and how to switch selling on: `docs/MONETIZACION.md`. Levels 1–10, the Reto Diario and the
-Álbum are always free; levels 11–30 need the full version **only while selling is on** (`License.PUBLIC_KEY` and
-`Store.config.buyUrl` both set). With either missing, nothing is locked.
+Álbum are always free; levels 11–30 need the full version **only while selling is on** (`License.PUBLIC_KEY`,
+`Store.config.buyUrl` and `Store.config.contact` all set). With any of them missing, nothing is locked. The production
+public key is already in `js/core/license.js`; `buyUrl` and `contact` are pending.
 
 ```js
 Cocardo.License = {            // js/core/license.js — pure; WebCrypto `subtle` is passed in
@@ -386,11 +387,11 @@ Cocardo.License = {            // js/core/license.js — pure; WebCrypto `subtle
 };
 
 Cocardo.Store = {              // js/store.js + css/store.css — browser; uses License, Save and Audio (optional)
-  config: { buyUrl:'', donateUrl:'', price:'', contact:'' },
+  config: { buyUrl, donateUrl, price:'US$1,99', contact, fanNote },   // fanNote: footer text for Portada and Ajustes
   init({ show = true }) -> Promise<{ redeemed, result? }>,   // main.js, right after Save.load(): redeems '#licencia=…'
       // (then strips it from the URL with history.replaceState), re-checks the saved code (REVOKED), and with show
       // opens the success or error view
-  selling() -> boolean,        // PUBLIC_KEY && buyUrl
+  selling() -> boolean,        // PUBLIC_KEY && buyUrl && contact
   isFull() -> boolean,
   isLocked(levelId) -> boolean,           // selling() && License.isLevelLocked(levelId, isFull())
   code() -> string | null,
@@ -412,5 +413,6 @@ inside). The Shell only calls it:
 - Ajustes: a «Versión completa» button → `Store.open('status')` (shows buy/redeem, or the code to copy, and the donation
   link).
 - Álbum: the «Socio de la heladería» golden frame when `Store.isFull()`.
+- Portada and Ajustes footer: `Store.config.fanNote` (never the old «no oficial» line).
 - `Store.onChange(redrawMap)`.
 - The Reto Diario ignores `isLocked` (its boards come from campaign levels 6–25 and it is always free).

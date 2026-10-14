@@ -8,12 +8,15 @@
   var root = typeof window !== 'undefined' ? window : null;
   var Cocardo = root ? (root.Cocardo = root.Cocardo || {}) : {};
 
-  // Lo único que cambia quien publica el juego (ver docs/MONETIZACION.md §6)
+  // Lo único que cambia quien publica el juego (ver docs/MONETIZACION.md §6).
+  // La venta se enciende cuando hay clave pública, buyUrl y contact (el contacto es obligatorio antes de cobrar).
   var config = {
-    buyUrl: '',        // página de pago (Ko-fi, itch.io, Mercado Pago…). Vacío = venta apagada
+    buyUrl: '',        // PENDIENTE: página de venta en itch.io
     donateUrl: '',     // «Invítame un helado» (opcional, no desbloquea nada)
-    price: '',         // texto del botón, p. ej. 'US$1'
-    contact: '',       // correo para reembolsos y reclamos (se muestra en la pantalla de compra)
+    price: 'US$1,99',  // texto del botón
+    contact: '',       // PENDIENTE: correo para dudas y reembolsos (se muestra en la pantalla de compra)
+    // Aviso de juego de fans: el mismo texto va en la portada y en Ajustes (DISENO §11)
+    fanNote: 'Juego de fans hecho con permiso de la creadora. Inspirado en la frutinovela viral.',
   };
 
   var memory = { license: null };   // sin Cocardo.Save (vistas previas, pruebas)
@@ -52,7 +55,7 @@
 
   // ------------------------------------------------------------ estado
 
-  function selling() { return !!(L().PUBLIC_KEY && config.buyUrl); }
+  function selling() { return !!(L().PUBLIC_KEY && config.buyUrl && config.contact); }
   function isFull() {
     var lic = data().license;
     return !!(lic && lic.code);
@@ -200,7 +203,7 @@
 
   function footer(card, withMinors) {
     var f = el('p', 'st-fine');
-    var parts = ['Juego de fans, no oficial. Inspirado en la frutinovela viral.'];
+    var parts = [config.fanNote];
     if (withMinors) parts.push('Si eres menor de edad, pide permiso a un adulto antes de pagar.');
     parts.push('Tu progreso se guarda en este navegador.');
     if (config.contact) parts.push('¿Dudas o reembolsos? ' + config.contact);

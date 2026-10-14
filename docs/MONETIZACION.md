@@ -15,10 +15,21 @@ las interfaces en `docs/ARQUITECTURA.md` §14.
 | **Anuncios** | **No.** Se vuelve a evaluar cuando pase la ola, y solo con licencia de la creadora. |
 | **Donaciones** | Enlace opcional «Invítame un helado». No desbloquea nada. |
 | **Dónde se cobra** | itch.io, que entrega a cada comprador uno de nuestros códigos únicos («External keys»). Plan B: Payhip. |
-| **Condición previa** | **No se cobra nada sin permiso escrito de la creadora de la serie** (§3). Mientras no lo haya, el juego entero es gratis. |
+| **Permiso** | **Obtenido.** La creadora de la serie dio permiso explícito por correo (14 de octubre de 2026). El correo lo guarda quien publica, fuera del repo. |
+| **Créditos** | «Juego de fans hecho con permiso de la creadora», sin nombrarla (lo decidió quien publica). Nunca «oficial». |
 
-El código ya respeta esa condición: **sin clave pública y sin enlace de compra configurados, no se bloquea ningún nivel**.
-Activar la venta es cuestión de configuración (§6), no de programar.
+**Estado de la activación** (la venta se enciende sola cuando están las tres primeras cosas):
+
+| | Estado |
+|---|---|
+| Clave pública de producción en `js/core/license.js` | ✅ Lista |
+| `config.buyUrl`: página de venta en itch.io | ⏳ Pendiente: crear la página (§6) |
+| `config.contact`: correo para dudas y reembolsos | ⏳ Pendiente: lo pasa quien publica |
+| Precio `US$1,99` y aviso de fans en `js/store.js` | ✅ Listos |
+| Clave privada y primer lote de 1.000 códigos (series 1 a 1.000) | ✅ Entregados a quien publica, fuera del repo |
+| Pantallas conectadas al resto del juego (Shell) | ⏳ Pendiente de que exista el Shell (§7) |
+
+Mientras falte algo de las tres primeras filas, **no se bloquea ningún nivel**: el juego entero sigue gratis.
 
 ## 2. Por qué
 
@@ -58,7 +69,11 @@ Activar la venta es cuestión de configuración (§6), no de programar.
 - En el 10 el arco del título ya cerró, el jugador conoce las mecánicas y lleva de 15 a 30 minutos jugando.
 - El gancho es el adelanto de la parte 3 (Don Piña quiere mil helados), no un rehén.
 
-## 3. Antes de cobrar: permiso de la creadora
+## 3. El permiso de la creadora
+
+> **Estado:** permiso escrito obtenido por correo el 14 de octubre de 2026. Guarden ese correo (y cualquier condición que
+> ella haya puesto, como el porcentaje de ingresos o los créditos) junto a la clave privada. Si hay reparto de ingresos,
+> la página de ventas de itch.io sirve como reporte mensual. Lo que sigue explica por qué hacía falta.
 
 El juego usa los personajes, nombres y frases de *La Nieve de Lima*. Redibujarlos no los vuelve nuestros: es una obra
 derivada. Cobrar por ella (con venta o con anuncios) es uso comercial. Sin permiso, el riesgo es **alto**: un aviso DMCA
@@ -77,8 +92,6 @@ Que la serie esté hecha con IA **no** resuelve el problema: guiones, nombres y 
 3. **Dejarlo por escrito**: como mínimo un correo con su aceptación expresa; mejor, un contrato que diga qué se licencia,
    el territorio, el plazo, el pago, que ella es la autora y cómo se termina (plazo para retirar el juego y reembolsar).
    Consulten a un abogado de propiedad intelectual antes de firmar o si llega un reclamo.
-
-**Mientras no haya permiso:** todo gratis y, como mucho, el enlace de donación. El código ya funciona así.
 
 **Además, antes de cobrar:**
 - Un dominio propio o el juego alojado en itch.io: GitHub Pages no admite comercio.

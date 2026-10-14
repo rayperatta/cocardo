@@ -111,10 +111,12 @@
     FREE_LEVELS: 10,
     PRODUCT_FULL: 1,
     CODE_LEN: CODE_LEN,
-    // Clave pública de producción: la imprime `node tools/license.cjs keygen`. null = venta apagada.
-    PUBLIC_KEY: null,
-    // Números de serie anulados (códigos filtrados o reembolsados)
-    REVOKED: [],
+    // Clave pública de producción (generada el 14-10-2026; la privada la guarda quien publica, fuera del repo).
+    // null = venta apagada.
+    PUBLIC_KEY: { kty: 'EC', crv: 'P-256', x: 'MdlLMCBmrqT0YuGOzWp2qCRqtzt-6-wlYR2cMr_KZTk',
+      y: 'jl3zwzYBJUm10Xz16OBJATV2QRi0dg7_xYlp4Wjv7iU' },
+    // Números de serie anulados (códigos filtrados o reembolsados). 0 = código de control de las pruebas.
+    REVOKED: [0],
     normalize: normalize,
     decode: decode,
     verify: verify,
