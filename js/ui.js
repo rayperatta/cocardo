@@ -238,7 +238,7 @@
     if (typeof content === 'string') o.innerHTML = content;
     else if (content) o.appendChild(content);
     overlayRoot().appendChild(o);
-    var entry = { name: name, el: o, onEsc: opts.onEsc || null, prevFocus: doc.activeElement, openedAt: now(), downInside: false };
+    var entry = { name: name, el: o, onEsc: opts.onEsc || null, prevFocus: doc.activeElement, openedAt: now() };
     stack.push(entry);
     if (opts.guard) guardClicks(entry);
     focusFirst(o);
@@ -246,15 +246,20 @@
   }
   // Capas que se abren justo después de un toque (nodo del mapa, carta del Álbum, toque que salta la
   // celebración del tablero): el segundo toque de un doble toque no debe cerrarlas ni pulsar sus botones.
-  // Se ignoran los clics de puntero en los primeros GUARD_MS y los que no empezaron (pointerdown) dentro de
-  // la capa. Teclado y click() programático (detail 0) siempre pasan.
+  // Un clic de puntero solo cuenta si su pointerdown empezó dentro de la capa y al menos GUARD_MS después de
+  // abrirla (el toque que la abrió también suelta su clic encima, y en táctil llega con detail 0).
+  // Teclado (Enter/Espacio dentro de la capa) y click() programático (isTrusted false) siempre pasan.
   var GUARD_MS = 350;
   function guardClicks(entry) {
     var o = entry.el;
-    o.addEventListener('pointerdown', function () { entry.downInside = true; }, true);
+    var downAt = -1;
+    o.addEventListener('pointerdown', function () { downAt = now(); }, true);
     o.addEventListener('click', function (ev) {
-      var stray = ev.detail > 0 && (now() - entry.openedAt < GUARD_MS || !entry.downInside);
-      entry.downInside = false;
+      // entry.keyAt lo marca onKeyDown (Enter/Espacio con esta capa arriba)
+      var keyed = entry.keyAt != null && now() - entry.keyAt < 1500;
+      var stray = ev.isTrusted !== false && !keyed && (downAt < 0 || downAt - entry.openedAt < GUARD_MS);
+      downAt = -1;
+      entry.keyAt = null;
       if (stray) {
         ev.stopImmediatePropagation();
         ev.preventDefault();
@@ -2106,6 +2111,7 @@
   function onKeyDown(ev) {
     var top = topOverlay();
     if (top) {
+      if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') top.keyAt = now();   // activación por teclado (guardClicks)
       if (top.onKey && top.onKey(ev)) { ev.preventDefault(); ev.stopPropagation(); return; }
       if (ev.key === 'Escape' || ev.key === 'Esc') {
         ev.preventDefault();

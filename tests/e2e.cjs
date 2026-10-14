@@ -242,29 +242,18 @@ async function runCombo(browser, combo) {
   if (combo.sandbox) ok(await ev('Cocardo.Save.isPersistent() === false'), 'sandbox: sin localStorage, guardado en memoria');
   await wait(400);
   await shot('portada');
-  await tap('#screen-title .title-start');
-  ok(await waitScreen('map'), 'Portada -> Mapa');
-  await wait(600);
-  await shot('mapa');
 
-  /* ---------------- Nivel 1: historia + intro ---------------- */
-  await tap('.node[data-level="1"]');
-  ok(await waitScreen('story'), 'nivel 1 abre la historia pre1');
+  /* ---------------- Primera sesión: Portada -> historia pre1 -> tablero L1 (sin mapa ni intro) ---------------- */
+  await tap('#screen-title .title-start');
+  ok(await waitScreen('story'), 'guardado nuevo: la Portada abre directo la historia pre1');
   await wait(700);
   await shot('historia');
-  // se avanza tocando (sin «Saltar») hasta la intro
+  // se avanza tocando (sin «Saltar») hasta el tablero
   for (let i = 0; i < 40 && (await screen()) === 'story'; i++) {
     await tap('.overlay-story .story-box');
     await wait(260);
   }
-  ok(await waitScreen('intro'), 'historia -> intro del nivel 1');
-  await wait(500);
-  const intro1 = await ev(`(() => { const o = document.querySelector('.overlay-intro'); return { locked: o.querySelectorAll('.booster.locked').length, tip: (o.querySelector('.tip-bubble b') || {}).textContent || '' }; })()`);
-  ok(intro1.locked === 3, `(a) intro L1: los 3 potenciadores bloqueados (${intro1.locked})`);
-  ok(/^Lima/.test(intro1.tip), `(b) intro L1: el consejo lo da Lima («${intro1.tip}»)`);
-  await shot('intro');
-  await tap('.overlay-intro [data-act="play"]');
-  ok(await waitScreen('game'), 'intro -> tablero');
+  ok(await waitScreen('game'), 'historia -> tablero del nivel 1 (sin mapa ni tarjeta de intro)');
   await waitPlayable(12000);
   await wait(300);
   const tut = await ev(`(() => { const t = document.querySelector('.cg-tip'); return t ? { who: t.querySelector('b').textContent, text: t.querySelector('.cg-tip-text span').textContent, move: Cocardo.Game._tutorialMove() } : null; })()`);
@@ -429,19 +418,29 @@ async function runCombo(browser, combo) {
     await ev(`Cocardo.debug.go(${n}, { intro: true })`);
     await wait(300);
     await skipStories();
+    // un potenciador nuevo se celebra en su propia ventana, encima de la tarjeta de intro
+    let fresh = [];
+    if ((await screen()) === 'unlock') {
+      await wait(450);
+      fresh = await ev(`[...document.querySelectorAll('.overlay-unlock .unlock-name')].map(x => x.textContent)`);
+      if (n === 7) await shot('nuevo-potenciador-L7');
+      await tap('.overlay-unlock [data-act="ok"]');
+    }
     ok(await waitScreen('intro'), `intro de L${n}`);
     await wait(300);
-    const s = await ev(`(() => { const d = Cocardo.Save.get(); return { u: d.boostersUnlocked, b: d.boosters, fresh: [...document.querySelectorAll('.overlay-intro .reward-booster b')].map(x => x.textContent) }; })()`);
+    const s = await ev(`(() => { const d = Cocardo.Save.get(); const o = document.querySelector('.overlay-intro'); return { u: d.boostersUnlocked, b: d.boosters, locked: o.querySelectorAll('.booster.locked').length, tip: (o.querySelector('.tip-bubble b') || {}).textContent || '' }; })()`);
+    s.fresh = fresh;
     return s;
   };
   if (!QUICK) {
     // nivel 6 todavía sin potenciadores
     let s = await unlockAt(6);
     ok(!s.u.cucharon && !s.u.chorro && !s.u.batido, '(a) L6: todo bloqueado');
+    ok(s.locked === 3, `(a) intro L6: los 3 potenciadores bloqueados (${s.locked})`);
     await ev(`Cocardo.UI.show('map')`);
     s = await unlockAt(7);
     ok(s.u.cucharon && !s.u.chorro && !s.u.batido && s.b.cucharon >= 3, `(a) L7 desbloquea el Cucharón ×3 (${JSON.stringify(s.b)})`);
-    ok(s.fresh.some(t => /Cucharón/.test(t)), `(a) la intro de L7 lo anuncia (${s.fresh.join(', ')})`);
+    ok(s.fresh.some(t => /Cucharón/.test(t)), `(a) L7 lo anuncia en su ventana (${s.fresh.join(', ')})`);
     await shot('intro-L7-cucharon');
     s = await unlockAt(10);
     ok(!s.u.chorro && !s.u.batido, '(a) L10: Chorro y Batido siguen bloqueados');
@@ -449,6 +448,8 @@ async function runCombo(browser, combo) {
     ok(s.u.chorro && !s.u.batido && s.b.chorro >= 3, '(a) L11 desbloquea el Chorro de Lima ×3');
     s = await unlockAt(13);
     ok(!s.u.batido, '(a) L13: Batido sigue bloqueado');
+    // L13 no tiene tutorial en el tablero: el consejo va en la tarjeta, en voz de Lima
+    ok(/^Lima/.test(s.tip), `(b) intro L13: el consejo lo da Lima («${s.tip}»)`);
     s = await unlockAt(14);
     ok(s.u.batido && s.b.batido >= 3, '(a) L14 desbloquea el Batido de Fresa ×3');
     await ev(`(() => { [...document.querySelectorAll('.overlay-intro [data-act="close"]')].forEach(b => b.click()); Cocardo.UI.show('map'); })()`);
@@ -692,20 +693,13 @@ async function runShort(browser, combo) {
   if (combo.reduced) ok(await ev(`document.body.classList.contains('reduced-motion')`), 'prefers-reduced-motion activa el movimiento reducido');
   await wait(300);
   await shot('portada');
+  // guardado nuevo: Portada -> historia pre1 -> tablero del nivel 1 (sin mapa ni intro)
   await tap('#screen-title .title-start');
-  ok(await until(`Cocardo.debug.screen() === 'map'`), 'Portada -> Mapa');
-  await wait(500);
-  await shot('mapa');
-  await tap('.node[data-level="1"]');
-  await until(`Cocardo.debug.screen() === 'story'`);
+  ok(await until(`Cocardo.debug.screen() === 'story'`), 'Portada -> historia pre1');
   await wait(800);
   await shot('historia');
   await tap('.overlay-story .story-skip');
-  ok(await until(`Cocardo.debug.screen() === 'intro'`), 'intro');
-  await wait(400);
-  await shot('intro');
-  await tap('.overlay-intro [data-act="play"]');
-  ok(await until(`Cocardo.debug.screen() === 'game' && Cocardo.Game._phase() === 'play'`, 12000), 'tablero');
+  ok(await until(`Cocardo.debug.screen() === 'game' && Cocardo.Game._phase() === 'play'`, 12000), 'tablero del nivel 1');
   await wait(300);
   await shot('tablero');
   const r = await ev(`(() => { const c = document.querySelector('canvas.cg-board').getBoundingClientRect(); const h = document.querySelector('.cg-hud').getBoundingClientRect(); const b = document.querySelector('.cg-boosters').getBoundingClientRect(); return { c: [c.left, c.top, c.right, c.bottom], hud: [h.left, h.top, h.right, h.bottom], boost: [b.left, b.top, b.right, b.bottom], w: innerWidth, h: innerHeight }; })()`);
@@ -749,6 +743,20 @@ async function runShort(browser, combo) {
   await wait(2200);
   await shot('victoria');
   await tap('.overlay-victory [data-act="map"]');
+  ok(await until(`Cocardo.debug.screen() === 'map'`), 'Victoria -> Mapa');
+  await wait(500);
+  await shot('mapa');
+  // tarjeta de intro del nivel 2 desde el mapa (historia pre2 primero)
+  await tap('.node[data-level="2"]');
+  await until(`Cocardo.debug.screen() === 'story'`);
+  await wait(500);
+  await tap('.overlay-story .story-skip');
+  ok(await until(`Cocardo.debug.screen() === 'intro'`), 'intro del nivel 2');
+  await wait(500);
+  await shot('intro');
+  const fits = await ev(`(() => { const o = document.querySelector('.overlay-intro'); return o.scrollHeight <= o.clientHeight + 1; })()`);
+  ok(fits, 'la tarjeta de intro cabe sin desplazar');
+  await tap('.overlay-intro [data-act="close"]');
   await until(`Cocardo.debug.screen() === 'map'`);
   for (const s of ['album', 'settings']) {
     await ev(`Cocardo.debug.show('${s}')`);

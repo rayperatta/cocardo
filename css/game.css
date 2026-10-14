@@ -353,11 +353,12 @@
   background: rgba(43, 22, 48, 0.55);
 }
 .cg-boost-lock svg { width: 24px; height: 24px; color: #fff; }
-.cg-boost.cg-locked .cg-boost-lock { display: grid; align-content: center; justify-items: center; gap: 1px; }
-.cg-boost-at { display: block; color: #fff; font-size: 10px; font-weight: 900; line-height: 1; white-space: nowrap; }
+.cg-boost.cg-locked .cg-boost-lock { display: grid; align-content: center; justify-items: center; gap: 3px; padding-top: 4px; }
+.cg-boost-at { display: block; color: #fff; font-size: 11px; font-weight: 900; line-height: 1; white-space: nowrap; text-shadow: 0 1px 0 rgba(43, 22, 48, 0.6); }
 .cg-root.cg-noboost .cg-boosters { display: none; }
 .cg-boost.cg-locked .cg-boost-n { display: none; }
-.cg-boost.cg-locked .cg-boost-ic, .cg-boost.cg-locked .cg-boost-name { opacity: 0.55; }
+.cg-boost.cg-locked .cg-boost-ic { opacity: 0.55; }
+.cg-boost.cg-locked .cg-boost-name { opacity: 0; }   /* en su lugar, «Nivel N» sobre el candado */
 .cg-boost.cg-empty .cg-boost-ic { filter: grayscale(0.8); opacity: 0.6; }
 .cg-boost.cg-empty .cg-boost-n { background: #9a8a9a; }
 .cg-boost.cg-disabled { filter: grayscale(1); opacity: 0.55; }
@@ -618,8 +619,8 @@
 .cg-wide .cg-face { width: 58px; height: 58px; }
 .cg-wide .cg-face + .cg-face { margin-left: -14px; }
 .cg-wide .cg-goal-n { font-size: 20px; line-height: 24px; min-width: 38px; margin-top: -11px; }
-.cg-root.cg-wide .cg-ticket .cg-goal { width: 64px; height: 74px; }
-.cg-root.cg-wide .cg-ticket .cg-goal-ic { width: 60px; height: 60px; }
+.cg-root.cg-wide .cg-ticket .cg-goal { width: 72px; height: 82px; }
+.cg-root.cg-wide .cg-ticket .cg-goal-ic { width: 68px; height: 68px; }
 .cg-wide .cg-ticket-title { font-size: 20px; }
 .cg-wide .cg-boosters { flex-direction: column; gap: 22px; padding: 18px 18px 18px 0; }
 .cg-wide .cg-boost { width: 96px; height: 86px; border-radius: 22px; }
