@@ -40,7 +40,7 @@
     // ---------- reloj, tweens y temporizadores ----------
     var clock = { t: 0, paused: false };
     var tweens = [], timers = [];
-    var rafId = 0, lastTs = 0, fxWasAlive = false;
+    var rafId = 0, lastTs = 0, fxWasAlive = false, freezeLeft = 0;
 
     function now() { return clock.t; }
 
@@ -90,10 +90,10 @@
       R.dying = []; R.dyingB = []; R.fzDying = null;
       kick();
     }
-    function cancelAll() { tweens = []; timers = []; R.dying = []; R.dyingB = []; R.fzDying = null; }
+    function cancelAll() { tweens = []; timers = []; freezeLeft = 0; R.dying = []; R.dyingB = []; R.fzDying = null; }
     function report(e) { if (typeof console !== 'undefined') console.error(e); }
 
-    function continuous() { return !!(R.sel || R.hint || R.spotlight || (R.fzBadge && R.fzBadge.n === 1)); }
+    function continuous() { return !!(R.sel || R.hint || R.spotlight || freezeLeft > 0 || (R.fzBadge && R.fzBadge.n === 1)); }
     function active() {
       if (clock.paused) return false;
       return tweens.length > 0 || timers.length > 0 || (fx && fx.alive()) || continuous();
@@ -106,10 +106,13 @@
       var dt = lastTs ? Math.min(50, Math.max(0, ts - lastTs)) : 16;
       lastTs = ts;
       if (!clock.paused) {
-        clock.t += dt;
-        stepTweens();
-        stepTimers();
-        if (fx) fx.update(dt);
+        if (freezeLeft > 0) freezeLeft -= dt;   // congelar imagen: el reloj no avanza
+        else {
+          clock.t += dt;
+          stepTweens();
+          stepTimers();
+          if (fx) fx.update(dt);
+        }
       }
       if (R.onFrame) { try { R.onFrame(dt); } catch (e) { report(e); } }
       draw();
@@ -676,7 +679,7 @@
 
     // ---------- API ----------
     R.now = now; R.tween = tween; R.after = after; R.wait = wait; R.flush = flush; R.cancelAll = cancelAll;
-    R.setPaused = setPaused; R.isPaused = function () { return clock.paused; };
+    R.setPaused = setPaused; R.freeze = function (ms) { freezeLeft = Math.max(freezeLeft, ms || 0); kick(); }; R.isPaused = function () { return clock.paused; };
     R.layout = layout; R.X = X; R.Y = Y; R.cellCenter = cellCenter; R.cellAt = cellAt;
     R.load = load; R.cellV = cellV; R.pieceAt = pieceAt; R.removePiece = removePiece; R.addPiece = addPiece;
     R.removeBlock = removeBlock; R.setBlock = setBlock; R.removeFreezer = removeFreezer; R.computeStatic = computeStatic; R.diff = diff;

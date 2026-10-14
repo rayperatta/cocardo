@@ -78,7 +78,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 5, name: 'Dale un golpecito', boss: true, colors: 'LFBUN', moves: 22, teach: 'copa', ensure: 'copa',
+    L({ id: 5, name: 'Dale un golpecito', boss: true, colors: 'LFBUN', moves: 24, teach: 'copa', ensure: 'copa',
       goals: [color('N', 20), ice()],
       layout: [
         '........',
@@ -92,7 +92,7 @@
       ] }),
 
     // ===== Capítulo 2 · Necesitamos un nuevo sabor (Partes 2-3) — Fresa y el trato de Don Piña =====
-    L({ id: 6, name: 'Uno por persona', colors: 'LFBUN', moves: 22, teach: 'hp2',
+    L({ id: 6, name: 'Uno por persona', colors: 'LFBUN', moves: 17, teach: 'hp2',
       goals: [ice()],
       layout: [
         '11111111',
@@ -104,7 +104,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 7, name: 'Depende quién pregunte', colors: 'LFBND', moves: 22, teach: 'cucharon',
+    L({ id: 7, name: 'Depende quién pregunte', colors: 'LFBND', moves: 17, teach: 'cucharon',
       // primer «Pedido de Piña»: tres sabores a la vez
       goals: [color('L', 18), color('F', 18), color('D', 18)],
       layout: [
@@ -117,7 +117,7 @@
         '#......#',
         '##....##',
       ] }),
-    L({ id: 8, name: 'Es orgánico', colors: 'LFBUN', moves: 24, teach: 'escarcha',
+    L({ id: 8, name: 'Es orgánico', colors: 'LFBUN', moves: 17, teach: 'escarcha',
       goals: [color('B', 25)],
       layout: [
         '........',
@@ -129,7 +129,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 9, name: '¿Ayudas o estorbas?', colors: 'LFBUN', moves: 24, teach: 'villano',
+    L({ id: 9, name: '¿Ayudas o estorbas?', colors: 'LFBUN', moves: 20, teach: 'villano',
       goals: [color('U', 25), ice()],
       villains: [frost(5)],
       layout: [
@@ -142,7 +142,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 10, name: 'El congelador viejo', boss: true, colors: 'LFBUN', moves: 26, teach: 'congelador',
+    L({ id: 10, name: 'El congelador viejo', boss: true, colors: 'LFBUN', moves: 20, teach: 'congelador',
       goals: [boss(), rescue()],
       freezer: { who: 'cocardo', hp: 8, label: 'El congelador viejo' },
       rescue: ['lima'], friendHP: 2,
@@ -159,7 +159,7 @@
       ] }),
 
     // ===== Capítulo 3 · Voy a ampliar el menú (Partes 4-5) — el congelador grande =====
-    L({ id: 11, name: '¿Para qué tanto espacio?', colors: 'LFBUN', moves: 22, teach: 'chorro',
+    L({ id: 11, name: '¿Para qué tanto espacio?', colors: 'LFBUN', moves: 17, teach: 'chorro',
       goals: [color('L', 25), color('N', 25)],
       villains: [frost(5)],
       layout: [
@@ -184,7 +184,7 @@
         '#......#',
         '##....##',
       ] }),
-    L({ id: 13, name: 'Prima al rescate', colors: 'LFBUN', moves: 25,
+    L({ id: 13, name: 'Prima al rescate', colors: 'LFBUN', moves: 17,
       goals: [rescue(), ice()],
       rescue: ['fresa'], friendHP: 2,
       villains: [frost(5)],
@@ -198,7 +198,7 @@
         '..111...',
         '111R1111',
       ] }),
-    L({ id: 14, name: 'A la hora del cierre', colors: 'LFBND', moves: 24, teach: 'batido',
+    L({ id: 14, name: 'A la hora del cierre', colors: 'LFBND', moves: 19, teach: 'batido',
       goals: [color('D', 25), ice()],
       villains: [frost(4)],
       layout: [
@@ -211,7 +211,7 @@
         '##....##',
         '##....##',
       ] }),
-    L({ id: 15, name: 'El congelador grande', boss: true, colors: 'LFBND', moves: 26,
+    L({ id: 15, name: 'El congelador grande', boss: true, colors: 'LFBND', moves: 25,
       goals: [boss(), rescue()],
       freezer: { who: 'cocardo', hp: 10, label: 'El congelador grande' },
       rescue: ['durazna'], friendHP: 3,
@@ -229,7 +229,7 @@
       ] }),
 
     // ===== Capítulo 4 · Cherry conoce el negocio (Partes 6-7) — las cajas del inventario =====
-    L({ id: 16, name: 'Un imperio de helado', colors: 'LFBUN', moves: 22, teach: 'cajas',
+    L({ id: 16, name: 'Un imperio de helado', colors: 'LFBUN', moves: 17, teach: 'cajas',
       goals: [crates(12)],
       layout: [
         '........',
@@ -241,7 +241,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 17, name: 'Denos el triple', colors: 'LFBUND', moves: 25, teach: 'cereza',
+    L({ id: 17, name: 'Denos el triple', colors: 'LFBUND', moves: 27, teach: 'cereza',
       goals: [crates(10), color('B', 25)],
       villains: [crate(5)],
       layout: [
@@ -254,7 +254,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 18, name: 'Demasiado familiar', colors: 'LFBUN', moves: 24,
+    L({ id: 18, name: 'Demasiado familiar', colors: 'LFBUN', moves: 19,
       goals: [ice(), crates(8)],
       villains: [crate(5)],
       layout: [
@@ -267,7 +267,7 @@
         '#.2222.#',
         '##2222##',
       ] }),
-    L({ id: 19, name: 'Buenas noches, naranjita', hard: true, colors: 'LFBUND', moves: 26,
+    L({ id: 19, name: 'Buenas noches, naranjita', hard: true, colors: 'LFBUND', moves: 17,
       // Cherry la congeló, pero Cocardo la guardó en su congelador viejo: él escarcha
       goals: [rescue(), crates(8)],
       rescue: ['naranja'], friendHP: 3,
@@ -282,7 +282,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 20, name: 'Socios del congelador', boss: true, colors: 'LFBUND', moves: 28, teach: 'dosvillanos',
+    L({ id: 20, name: 'Socios del congelador', boss: true, colors: 'LFBUND', moves: 27, teach: 'dosvillanos',
       goals: [boss(), crates(10)],
       freezer: { who: 'cocardo', hp: 12, label: 'El congelador grande' },
       villains: [frost(4, 1, 'boss'), crate(6)],
@@ -298,7 +298,7 @@
       ] }),
 
     // ===== Capítulo 5 · La fuga (Partes 8-10) — el apagón y las pruebas de Banano =====
-    L({ id: 21, name: 'La fuga de Uva', colors: 'LFBUN', moves: 22, teach: 'ficha',
+    L({ id: 21, name: 'La fuga de Uva', colors: 'LFBUN', moves: 17, teach: 'ficha',
       goals: [token(), color('N', 20)],
       tokens: { skin: 'uva', total: 1, onBoard: 1 },
       villains: [crate(5)],
@@ -312,7 +312,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 22, name: 'Solo quiero respuestas', colors: 'LFBUN', moves: 24, teach: 'pruebas',
+    L({ id: 22, name: 'Solo quiero respuestas', colors: 'LFBUN', moves: 32, teach: 'pruebas',
       // 5 sabores (DISENO decía 6): con 6 en el embudo de la CRUZ las pruebas se atascan
       goals: [token(), crates(8)],
       tokens: { skin: 'prueba', total: 3, onBoard: 1 },
@@ -327,7 +327,7 @@
         '##....##',
         '##....##',
       ] }),
-    L({ id: 23, name: 'Tenías suerte', hard: true, colors: 'LFBUND', moves: 25,
+    L({ id: 23, name: 'Tenías suerte', hard: true, colors: 'LFBUND', moves: 20,
       goals: [ice()],
       villains: [crate(4)],
       layout: [
@@ -340,7 +340,7 @@
         '........',
         '...33...',
       ] }),
-    L({ id: 24, name: 'La grabación', colors: 'LFBND', moves: 25,
+    L({ id: 24, name: 'La grabación', colors: 'LFBND', moves: 37,
       // 5 sabores en los niveles normales de pruebas, para que no queden más duros que los ⚠
       goals: [token(), crates(10)],
       tokens: { skin: 'prueba', total: 4, onBoard: 2 },
@@ -355,7 +355,7 @@
         '........',
         '........',
       ] }),
-    L({ id: 25, name: 'El congelador de Cherry', boss: true, colors: 'LFBUND', moves: 28,
+    L({ id: 25, name: 'El congelador de Cherry', boss: true, colors: 'LFBUND', moves: 40,
       goals: [boss(), token()],
       freezer: { who: 'cereza', hp: 14, label: 'El congelador de Cherry' },
       tokens: { skin: 'prueba', total: 2, onBoard: 2 },
@@ -373,7 +373,7 @@
       ] }),
 
     // ===== Capítulo 6 · Se acabó el sabor (Partes 11-13) — la pulsera, el choque y el deshielo =====
-    L({ id: 26, name: 'La pulsera', colors: 'LFBUD', moves: 25,
+    L({ id: 26, name: 'La pulsera', colors: 'LFBUD', moves: 30,
       goals: [ice(), token()],
       tokens: { skin: 'prueba', total: 3, onBoard: 1 },
       villains: [crate(4)],
@@ -387,7 +387,7 @@
         '#.1111.#',
         '##....##',
       ] }),
-    L({ id: 27, name: 'Deja de temblar', hard: true, colors: 'LFBUND', moves: 26,
+    L({ id: 27, name: 'Deja de temblar', hard: true, colors: 'LFBUND', moves: 23,
       goals: [color('U', 30), crates(12)],
       villains: [crate(4)],
       layout: [
@@ -400,7 +400,7 @@
         'eeeeeeee',
         '........',
       ] }),
-    L({ id: 28, name: '¿Dónde está mi hermana?', colors: 'FBUND', moves: 26,
+    L({ id: 28, name: '¿Dónde está mi hermana?', colors: 'FBUND', moves: 36,
       goals: [ice(), token()],
       tokens: { skin: 'prueba', total: 3, onBoard: 1 },
       villains: [frost(4)],
@@ -414,7 +414,7 @@
         '##....##',
         '##....##',
       ] }),
-    L({ id: 29, name: 'Todas las unidades', hard: true, colors: 'LFBUND', moves: 27,
+    L({ id: 29, name: 'Todas las unidades', hard: true, colors: 'LFBUND', moves: 18,
       goals: [crates(14), ice()],
       villains: [crate(3)],
       layout: [
@@ -427,7 +427,7 @@
         '........',
         '.KKKKKK.',
       ] }),
-    L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 30,
+    L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 36,
       goals: [boss(), rescue()],
       freezer: { who: 'cocardo', hp: 16, label: 'El gran congelador' },
       rescue: ['uva', 'banana'], friendHP: 3,

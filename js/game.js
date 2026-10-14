@@ -332,7 +332,7 @@
           var who = left[0] || (lv.rescue || ['lima'])[0];
           return A.friend(who, 2, 2);
         }
-        case 'token': return A.token((lv.tokens && lv.tokens.skin) || 'uva');
+        case 'token': return A.token((G.state && G.state.tokens && G.state.tokens.skin) || (lv.tokens && lv.tokens.skin) || 'uva');
         case 'boss': {
           var f = G.state && G.state.freezer;
           return A.freezer((f && f.who) || (lv.freezer && lv.freezer.who) || 'cocardo', f ? f.maxHp : 8, f ? f.maxHp : 8);
@@ -953,7 +953,9 @@
     var s = G.state;
     setMoves(s.movesLeft);
     setScore(s.score);
-    s.goals.forEach(function (g, i) { setGoal(i, g.remaining); });
+    // los contadores quedan exactos cuando terminan de llegar los íconos voladores
+    var gen = G.gen;
+    G.R.after(620, function () { if (gen === G.gen) G.state.goals.forEach(function (g, i) { setGoal(i, g.remaining); }); });
     updateVillainBadges();
     refreshMoods();
     if (G.tutorial && (G.tutorial.move || G.tutorial.hud || kind === 'swap')) endTutorial();
@@ -994,7 +996,7 @@
         case 'ph': return D(40 + dc * 24);
         case 'pv': return D(40 + dr * 24);
         case 'bomba': return D(60 + Math.max(dr, dc) * 30);
-        case 'copa': return D(210) + (red ? 0 : 60);
+        case 'copa': return D(210);
         case 'combo': return D(70 + Math.max(dr, dc) * 26);
         case 'combocopa': return D(120);
         case 'cucharon': return D(190);
@@ -1227,7 +1229,9 @@
             fx.glow(pt.x, pt.y, cs * 2, 'rgba(255,220,255,0.9)', D(300));
             fx.sparkle(pt.x, pt.y, cs * 1.4, 12);
             sfx('copa');
-            end = Math.max(end, D(210) + (red ? 0 : 60) + D(170));
+            // congelar imagen 60 ms cuando los rayos llegan (no con movimiento reducido)
+            if (!red) R.after(D(200), function () { R.freeze(60); });
+            end = Math.max(end, D(210) + D(170));
           }
           if (e.points) { /* los puntos llegan en su propio evento */ }
           break;
@@ -1830,6 +1834,10 @@
   function resize() {
     if (!G.mounted) return;
     var rr = rootRect(), w = rr.width, h = rr.height;
+    if ((w < 10 || h < 10) && G.laidOut) {   // pantalla oculta: se conserva el último tamaño
+      if (G.state && (G.R.rows !== G.state.rows || G.R.cols !== G.state.cols)) G.R.layout(G.R.side, G.state.rows, G.state.cols, G.R.dpr);
+      return;
+    }
     // ancho: ≥900 px horizontal (DISENO §11.5); también teléfonos acostados, donde el HUD arriba dejaría un tablero diminuto
     var wide = w > h && (w >= 900 || (h < 560 && w >= 560));
     G.root.classList.toggle('cg-wide', wide);
@@ -1846,6 +1854,7 @@
     var dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
     var rows = G.state ? G.state.rows : 8, cols = G.state ? G.state.cols : 8;
     var stale = G.R.layout(side, rows, cols, dpr);
+    if (w >= 10 && h >= 10) G.laidOut = true;
     if (stale && G.state && G.phase !== 'idle') G.R.rerasterize();
     // la capa de efectos cubre toda la pantalla: con 1.5x basta y cuesta casi la mitad de píxeles
     G.fx.resize(Math.max(1, w), Math.max(1, h), Math.min(1.5, dpr));
@@ -1869,6 +1878,7 @@
   function resume() {
     if (!G.paused) return;
     G.paused = false;
+    G.fx.setReduced(reducedMotion());
     G.R.setPaused(false);
     G.root.classList.remove('cg-paused');
     armHint();
@@ -1903,6 +1913,7 @@
   // ---------- ayudas para pruebas (contrato §12) ----------
   function testSwap(a, b) {
     if (!canPlay()) return Promise.resolve(false);
+    if (G.tutorial) endTutorial();   // las pruebas automáticas no quedan atadas a la jugada del tutorial
     var before = G.turns.length;
     var ok = trySwap(a, b);
     if (!ok) return Promise.resolve(false);
@@ -1929,6 +1940,22 @@
     clearTimeout(G.endTimer);
   }
 
+  // Solo pruebas: reemplaza el estado del motor por uno armado a mano (Engine.fromRows) y redibuja.
+  function testSetState(st) {
+    if (!G.mounted || !st || G.phase === 'idle') return false;
+    clearHint(); setSel(null); disarm();
+    if (G.tutorial) endTutorial();
+    G.R.flush(); G.fx.clear();
+    G.state = st;
+    G.phase = 'play';
+    buildHud();
+    resize();
+    G.R.load(st);
+    updateVillainBadges();
+    var keys = G.R.keysFor(st, G.level);
+    return G.R.ensure(keys.essential.concat(keys.rest)).then(function () { G.R.kick(); return true; });
+  }
+
   Cocardo.Game = {
     mount: mount,
     start: start,
@@ -1950,6 +1977,7 @@
     _stats: function () { return { desyncs: G.desyncs, lastDiff: G.lastDiff, loadMs: G.loadMs, loadAllMs: G.loadAllMs, particles: G.fx ? G.fx.count() : 0, cell: G.R ? G.R.cell : 0, side: G.R ? G.R.side : 0 }; },
     _result: function () { return G.lastResult || null; },
     _debugEnd: debugEnd,
+    _setState: testSetState,
     _useBooster: function (type, cell) { if (!canPlay()) return false; arm(type); onTapCell(cell); return true; },
   };
 })();

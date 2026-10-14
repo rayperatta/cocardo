@@ -3,12 +3,14 @@
 
    Uso:  node tools/sim.js [ids de nivel...] [--seeds N] [opciones]
      --seeds N    semillas por nivel (40 por defecto)
+     --offset K   empieza en la semilla K (para validar con semillas que no se usaron al ajustar)
      --sweep      además imprime la curva victoria%-vs-movimientos (15..40) y una sugerencia de movimientos
      --moves M    juega todos los niveles elegidos con M movimientos en vez de los de levels.js
      --hint       agrega como referencia el bot que solo juega Engine.hint()
      --peek       el bot ve el relleno real al mirar una jugada adelante (por defecto NO: un humano no lo ve)
      --md         tabla en Markdown
      --jobs N     hilos de trabajo (por defecto: núcleos de la CPU)
+     --cap N      tope de movimientos de cada partida simulada (60; se usa para detectar niveles imposibles)
 
    Bots:
      bot    principal, consciente de las metas: prueba cada jugada válida con Engine.applySwap (sobre una copia
@@ -139,7 +141,7 @@ function runTask(t) {
   const used = [];
   let stuck = 0;
   for (let i = 0; i < t.seeds; i++) {
-    const r = playGame(level, 'sim' + i, t.policy, t.cap, t.peek);
+    const r = playGame(level, 'sim' + (t.offset + i), t.policy, t.cap, t.peek);
     used.push(r.used);
     if (r.stuck) stuck++;
   }
@@ -168,9 +170,18 @@ function statsAt(used, M) {
 }
 
 // Movimientos sugeridos: lo más cerca posible del punto ideal, dentro de la banda y con el bot débil >= 25%.
+// Piso de movimientos: el reto diario usa los niveles 6..25 con moves - 2, que no puede bajar de 15.
+function minMovesFor(lvl) { return lvl.id >= 6 && lvl.id <= 25 ? MIN_MOVES + 2 : MIN_MOVES; }
+
+// Regla de tests/levels.test.js: el jefe de cada capítulo tiene al menos tantos movimientos como el resto.
+function chapterMax(lvl) {
+  const ch = Levels.chapters.find((c) => c.levels.includes(lvl.id));
+  return Math.max(0, ...ch.levels.filter((id) => id !== lvl.id).map((id) => Levels.get(id).moves));
+}
+
 function suggest(lvl, bot, weak) {
   const tg = targetFor(lvl);
-  const minM = lvl.id >= 6 && lvl.id <= 25 ? Math.max(MIN_MOVES, 17) : MIN_MOVES;   // reto diario = moves - 2 >= 15
+  const minM = Math.max(minMovesFor(lvl), lvl.boss ? chapterMax(lvl) : 0);
   let best = null, bestCost = Infinity;
   for (let M = minM; M <= MAX_MOVES; M++) {
     const p = statsAt(bot, M).win, w = statsAt(weak, M).win;
@@ -185,12 +196,13 @@ function suggest(lvl, bot, weak) {
 
 // ---------------------------------------------------------------- CLI
 function parseArgs(argv) {
-  const o = { ids: [], seeds: 40, cap: 60, sweep: false, moves: null, hint: false, peek: false, md: false, jobs: os.cpus().length };
+  const o = { ids: [], seeds: 40, offset: 0, cap: 60, sweep: false, moves: null, hint: false, peek: false, md: false, jobs: os.cpus().length };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const num = () => { const v = Number(argv[++i]); if (!Number.isFinite(v)) throw new Error('falta número tras ' + a); return v; };
     if (a === '--seeds') o.seeds = num();
     else if (a === '--cap') o.cap = num();
+    else if (a === '--offset') o.offset = num();
     else if (a === '--moves') o.moves = num();
     else if (a === '--jobs') o.jobs = num();
     else if (a === '--sweep') o.sweep = true;
@@ -236,6 +248,8 @@ function runPool(tasks, jobs) {
 }
 
 const pct = (x) => String(Math.round(x));
+// margen de error al 95% (en puntos) de un porcentaje medido con n partidas
+function margin(p, n) { const q = Math.min(0.95, Math.max(0.05, p / 100)); return 196 * Math.sqrt((q * (1 - q)) / n); }
 const fix1 = (x) => x.toFixed(1);
 
 function table(headers, rows, md, align) {
@@ -251,18 +265,18 @@ function table(headers, rows, md, align) {
 async function main() {
   const o = parseArgs(process.argv.slice(2));
   if (o.help) {
-    console.log('node tools/sim.js [ids|a-b...] [--seeds N] [--sweep] [--moves M] [--hint] [--peek] [--md] [--jobs N] [--cap N]');
+    console.log('node tools/sim.js [ids|a-b...] [--seeds N] [--offset K] [--sweep] [--moves M] [--hint] [--peek] [--md] [--jobs N] [--cap N]');
     return;
   }
   const policies = ['bot', 'weak'].concat(o.hint ? ['hint'] : []);
   const tasks = [];
-  for (const id of o.ids) for (const policy of policies) tasks.push({ id, policy, seeds: o.seeds, cap: o.cap, peek: o.peek });
+  for (const id of o.ids) for (const policy of policies) tasks.push({ id, policy, seeds: o.seeds, offset: o.offset, cap: o.cap, peek: o.peek });
   const t0 = Date.now();
   const results = await runPool(tasks, o.jobs);
   const by = {};
   for (const r of results) (by[r.id] = by[r.id] || {})[r.policy] = r;
 
-  console.log(`Cocardo · simulación de balance · ${o.seeds} semillas por nivel · bot consciente de metas (1 jugada adelante${o.peek ? ', viendo el relleno' : ''}) · débil = ${WEAK_RANDOM * 100}% al azar · ${((Date.now() - t0) / 1000).toFixed(1)} s\n`);
+  console.log(`Cocardo · simulación de balance · ${o.seeds} semillas por nivel${o.offset ? ' (desde la ' + o.offset + ')' : ''} · bot consciente de metas (1 jugada adelante${o.peek ? ', viendo el relleno' : ''}) · débil = ${WEAK_RANDOM * 100}% al azar · ${((Date.now() - t0) / 1000).toFixed(1)} s\n`);
 
   const headers = ['Nivel', 'Tipo', 'Mov', 'Meta%', 'Bot%', 'Resto', '3★%', 'Turnos', 'Débil%', 'Débil3★%'];
   if (o.hint) headers.push('Hint%');
@@ -275,9 +289,16 @@ async function main() {
     const flags = [];
     if (statsAt(R.bot.used, o.cap).win === 0) flags.push(`IMPOSIBLE: 0% incluso con ${o.cap}`);
     else if (at40.win === 0) flags.push('0% con 40 mov.');
-    if (b.win < tg.lo) flags.push('difícil');
-    if (b.win > tg.hi) flags.push('fácil');
-    if (id > 5 && w.win < WEAK_MIN) flags.push(`débil<${WEAK_MIN}`);
+    // «?» = fuera de la meta por menos que el margen de error del muestreo
+    const unsure = (p, gap) => (gap <= margin(p, o.seeds) ? '?' : '');
+    if (b.win < tg.lo) flags.push('difícil' + unsure(b.win, tg.lo - b.win));
+    if (b.win > tg.hi) {
+      const floor = minMovesFor(lvl), cm = lvl.boss ? chapterMax(lvl) : 0;
+      if (statsAt(R.bot.used, floor).win > tg.hi) flags.push(`fácil aun con ${floor} mov.`);
+      else if (cm && statsAt(R.bot.used, cm).win > tg.hi) flags.push(`fácil: jefe >= mov. del capítulo (${cm})`);
+      else flags.push('fácil' + unsure(b.win, b.win - tg.hi));
+    }
+    if (id > 5 && w.win < WEAK_MIN) flags.push(`débil<${WEAK_MIN}` + unsure(w.win, WEAK_MIN - w.win));
     if (R.bot.stuck || R.weak.stuck) flags.push(`sin jugadas×${R.bot.stuck + R.weak.stuck}`);
     if (flags.length) flagged.push(`L${id}: ${flags.join(', ')}`);
     const row = [id, tg.kind, M, `${tg.lo}-${tg.hi}`, pct(b.win), fix1(b.left), pct(b.three), fix1(b.turns), pct(w.win), pct(w.three)];
@@ -287,6 +308,7 @@ async function main() {
   }
   console.log(table(headers, rows, o.md, align));
   console.log('\nResto = movimientos que sobran al ganar (promedio de las victorias) · 3★% sobre todas las partidas · Turnos = movimientos jugados en promedio.');
+  console.log(`Margen de error con ${o.seeds} semillas: hasta ±${Math.round(margin(50, o.seeds))} puntos; «?» = fuera de la meta por menos que eso (usa --seeds 300 para decidir).`);
   console.log(flagged.length ? '\nNiveles marcados:\n  ' + flagged.join('\n  ') : '\nTodos los niveles dentro de la meta.');
 
   if (o.sweep) {
