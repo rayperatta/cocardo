@@ -341,21 +341,21 @@
     12: '¡Seis sabores! Cuesta más combinar: busca Paletas y Bombas.',
     13: 'Fresa está hasta abajo. Rompe el hielo de encima para llegar a ella.',
     14: 'Mi Batido revuelve todo el tablero. ¡Úsalo si no ves jugadas!',
-    15: 'Rompe el congelador grande y el bloque de Durazna. ¡Necesita tres golpes!',
+    15: 'Rompe el congelador grande y el bloque de Durazna. ¡Su hielo aguanta varios golpes!',
     16: 'Las cajas de Cherry se rompen como el hielo: combina junto a ellas.',
     17: 'Cherry convierte fruta en cajas cada pocos turnos. ¡Que no se te junten!',
-    18: 'Hielo arriba, cajas en medio y hielo doble abajo. ¡Las Paletas ayudan!',
-    19: 'Naranja está rodeada de cajas. Ábrete paso y dale tres golpes.',
+    18: 'Hielo arriba y abajo, cajas en medio. ¡Las Paletas ayudan!',
+    19: 'Naranja está encerrada en hielo. Ábrete paso y pégale a su bloque hasta sacarla.',
     20: '¡Los dos villanos a la vez! Rompe el congelador y no olvides las cajas.',
     21: 'Baja a Uva hasta el fondo del tablero para que escape. ¡Rápido!',
     22: 'Baja cada prueba hasta el fondo. Una Paleta vertical la tira de golpe.',
     23: 'Tres capas de hielo. Empieza por arriba y que las cajas no te encierren.',
     24: 'Dos pruebas a la vez. Abre camino en sus columnas.',
-    25: 'El congelador de Cherry escarcha fruta cada 3 turnos. ¡Rómpelo rápido!',
+    25: 'El congelador de Cherry escarcha fruta muy seguido. ¡Rómpelo rápido!',
     26: 'El hielo doble tapa el camino. Rómpelo y baja las pruebas.',
     27: 'Muchas cajas y una fila escarchada. Junta uvas con Paletas y Bombas.',
-    28: 'Cocardo escarcha cada 4 turnos. Rompe el hielo del centro y baja las pruebas.',
-    29: 'Cajas arriba y abajo, hielo doble en medio. ¡Ya casi lo tenemos!',
+    28: 'Cocardo escarcha fruta cada pocos turnos. Rompe el hielo del centro y baja las pruebas.',
+    29: 'Cajas arriba y abajo, hielo grueso en medio. ¡Ya casi lo tenemos!',
     30: 'Rompe el gran congelador y saca a Uva y a mi hermana. ¡Ahora o nunca!',
   };
 
@@ -440,6 +440,10 @@
     return 'banano';
   }
 
+  // Lima da los consejos de los niveles 6 a 10 desde el congelador viejo (la congelan en cliff5 y la
+  // rescatas en el nivel 10): su retrato del consejo va congelado.
+  function helperFrozen(id) { var n = lvl(id); return helperFor(n) === 'lima' && n >= 6 && n <= 10; }
+
   // La cabeza que se asoma con la pista: Limón (capítulos 1-4) y Banano (5-6).
   function hintPeeker(id) { return lvl(id) <= 20 ? 'limon' : 'banano'; }
 
@@ -455,6 +459,7 @@
     album: album,
     villainFor: villainFor,
     helperFor: helperFor,
+    helperFrozen: helperFrozen,
     hintPeeker: hintPeeker,
     chapterTitles: chapterTitles,
     effects: effects,

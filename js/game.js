@@ -29,26 +29,28 @@
     lima: '¡Libre! ¡Ese coco me encerró!', fresa: '¡Gracias! ¡Ya siento mis semillitas!', durazna: '¡Siento las pelusitas otra vez!',
     naranja: '¡Libre! ¡Y con toda mi pulpa!', uva: '¡Libre otra vez! ¡Y para siempre!', banana: '¡Gracias! ¿Y mi hermano?',
   };
+  // Textos del tutorial en voz del ayudante de Story.helperFor(id): Lima (capítulos 1-3; en 6-10 habla
+  // «Psst…» desde el congelador), Fresa (L14), Durazna (L16-17), Naranja (L20) y Banano (desde L21).
   var TEACH = {
-    swap: 'Desliza una fruta para juntar 3 iguales.',
-    paleta: '¡Junta 4 en línea y sale una Paleta!',
-    bomba: '¿Una L o una T? ¡Bomba de Coco!',
-    hielo: 'Combina junto al hielo para romperlo.',
+    swap: 'Desliza una fruta y junta 3 iguales. ¡Así se llena la vitrina!',
+    paleta: '¡Junta 4 en línea y sale una Paleta! Limpia toda su fila o columna.',
+    bomba: '¿Una L o una T? ¡Bomba de Coco! Revienta todo a su alrededor.',
+    hielo: 'Combina junto al hielo para romperlo. ¡Hielo de importación, dice Cocardo!',
     copa: '¡5 en línea: Copa Arcoíris! Cámbiala con cualquier fruta.',
-    hp2: 'Este hielo es más grueso: ¡pégale dos veces!',
+    hp2: 'Psst… este hielo es más grueso: ¡pégale dos veces!',
     pedido: '¡Pedido de Piña! Junta todos los sabores del ticket.',
-    cucharon: 'Toca el Cucharón y luego una ficha: ¡la rompe sin gastar movimiento!',
-    escarcha: 'La escarcha no deja mover la fruta. ¡Combínala para soltarla!',
-    villano: 'Cocardo congela una fruta cada pocos turnos. ¡Mira su cuenta!',
-    congelador: 'Combina junto al congelador para romperlo y rescatar a tu amiga.',
-    chorro: 'El Chorro de Lima limpia una fila entera. ¡Tócalo y elige una fila!',
+    cucharon: 'Psst… toca el Cucharón y luego una ficha: ¡la rompe sin gastar movimiento!',
+    escarcha: 'Psst… la escarcha no deja mover la fruta. ¡Combínala para soltarla!',
+    villano: 'Psst… Cocardo escarcha una fruta cada pocos turnos. ¡Mira su cuenta!',
+    congelador: 'Combina junto al congelador para romperlo… ¡y junto a mi bloque para sacarme!',
+    chorro: 'Te presto mi Chorro de Lima: ¡tócalo y elige una fila!',
     colores6: '¡Seis sabores! Busca bien tus jugadas.',
-    batido: '¿Atorado? El Batido de Fresa revuelve todo el tablero.',
+    batido: '¿Atorado? Mi Batido de Fresa revuelve todo el tablero.',
     cajas: 'Las cajas de Cherry se rompen como el hielo: ¡combina a su lado!',
     cereza: 'Cherry convierte frutas en cajas. ¡Ojo con su cuenta!',
-    dosvillanos: '¡Dos villanos! Vigila las dos cuentas.',
+    dosvillanos: '¡Son los dos a la vez! Vigila las dos cuentas.',
     ficha: '¡Lleva a Uva hasta abajo para que escape!',
-    pruebas: 'Baja las pruebas hasta el fondo para que Banano las reúna.',
+    pruebas: 'Baja las pruebas hasta el fondo: ¡yo las reúno!',
   };
   var BOOSTERS = [
     { type: 'cucharon', name: 'Cucharón', unlock: 7, prompt: 'Toca una ficha o un bloque' },
@@ -185,7 +187,7 @@
     G.els.pause.addEventListener('click', function (e) {
       if (e.detail > 0) G.els.pause.blur();
       unlockAudio(); sfx('tap');
-      if (G.phase !== 'idle' && G.phase !== 'done' && G.opts.onPause) G.opts.onPause();
+      if (pausable() && G.opts.onPause) G.opts.onPause();
     });
     window.addEventListener('keydown', onKey);
     if (typeof ResizeObserver === 'function') {
@@ -671,6 +673,8 @@
   //  Entrada
   // =====================================================================
   function canPlay() { return G.phase === 'play' && !G.paused; }
+  // Con el nivel ya decidido (Helado Final, celebración) un toque salta la animación: no se abre la Pausa
+  function pausable() { return G.phase === 'intro' || G.phase === 'play' || G.phase === 'resolve'; }
   function markInput() { clearHint(); armHint(); }
   function evPt(e) {
     var rect = G.els.canvas.getBoundingClientRect();
@@ -808,7 +812,7 @@
     var k = e.key;
     if (k === 'Escape') {
       if (G.armed) { disarm(); e.preventDefault(); return; }
-      if (!G.paused && G.opts.onPause) { e.preventDefault(); G.opts.onPause(); }
+      if (!G.paused && pausable() && G.opts.onPause) { e.preventDefault(); G.opts.onPause(); }
       return;
     }
     if (G.paused) return;
@@ -1740,7 +1744,8 @@
     G.tutorial = t;
     var helper = safe(function () { return Story().helperFor(G.level.id); }, null) || ((G.level.id || 1) >= 16 ? 'banano' : 'lima');
     var tip = el('div', 'cg-tip');
-    tip.innerHTML = '<span class="cg-tip-face">' + portraitSvg(helper, 'feliz') + '</span><span class="cg-tip-text"><b></b><span></span></span>';
+    var frozen = safe(function () { return !!Story().helperFrozen(G.level.id); }, false);
+    tip.innerHTML = '<span class="cg-tip-face">' + portraitSvg(helper, 'feliz', frozen ? { frozen: true } : null) + '</span><span class="cg-tip-text"><b></b><span></span></span>';
     tip.querySelector('b').textContent = charName(helper);
     tip.querySelector('.cg-tip-text span').textContent = text;
     G.els.overlay.appendChild(tip);

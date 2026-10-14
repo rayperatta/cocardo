@@ -82,9 +82,11 @@ test('Levels: colores 4-6 válidos y metas de color dentro del nivel', () => {
   }
 });
 
-test('Levels: movimientos >= 15 y 1-3 metas sin repetir', () => {
+test('Levels: movimientos en [18, 32] (capítulo 1 en [20, 24]) y 1-3 metas sin repetir', () => {
   for (const lvl of Levels.list) {
-    assert.ok(Number.isInteger(lvl.moves) && lvl.moves >= 15, `L${lvl.id} movimientos`);
+    // el reto diario juega los niveles 6-25 con 2 menos: con 18 queda en 16 o más
+    const [lo, hi] = lvl.chapter === 1 ? [20, 24] : [18, 32];
+    assert.ok(Number.isInteger(lvl.moves) && lvl.moves >= lo && lvl.moves <= hi, `L${lvl.id} movimientos ${lvl.moves} fuera de [${lo}, ${hi}]`);
     assert.ok(lvl.goals.length >= 1 && lvl.goals.length <= 3, `L${lvl.id} metas`);
     const keys = lvl.goals.map((g) => g.type + (g.color || ''));
     assert.equal(new Set(keys).size, keys.length, `L${lvl.id} metas repetidas`);
@@ -213,10 +215,16 @@ test('Levels: orden de enseñanza, ensure, jefes y niveles difíciles', () => {
   assert.deepEqual(Levels.list.filter((l) => l.boss).map((l) => l.id), [5, 10, 15, 20, 25, 30]);
   assert.deepEqual(Levels.list.filter((l) => l.hard).map((l) => l.id), [19, 23, 27, 29]);
   assert.deepEqual(Levels.list.filter((l) => l.final).map((l) => l.id), [30]);
-  // curva: el jefe de cada capítulo tiene al menos tantos movimientos como el resto del capítulo
-  for (const ch of Levels.chapters) {
-    const moves = ch.levels.map((id) => Levels.get(id).moves);
-    assert.equal(Math.max(...moves), moves[4], `capítulo ${ch.id}`);
+  // cada jefe tiene un congelador de verdad (salvo el del capítulo 1, que enseña la Copa)
+  for (const lvl of Levels.list.filter((l) => l.boss && l.id > 5)) {
+    assert.ok(lvl.freezer && lvl.freezer.hp >= 8, `L${lvl.id}: jefe sin congelador de al menos 8 PV`);
+    assert.ok(lvl.goals.some((g) => g.type === 'boss'), `L${lvl.id}: jefe sin meta boss`);
+  }
+  // curva de movimientos suave: entre vecinos no más de 6 de diferencia, salvo al entrar o salir de un jefe
+  for (let id = 2; id <= Levels.count; id++) {
+    const a = Levels.get(id - 1), b = Levels.get(id);
+    if (a.boss || b.boss) continue;
+    assert.ok(Math.abs(b.moves - a.moves) <= 6, `L${a.id}→L${b.id}: ${a.moves}→${b.moves} movimientos`);
   }
 });
 

@@ -2,9 +2,11 @@
 /* Cocardo: ¡Rescate Helado! — simulador de balance (DISENO §7 «Tuning»).
 
    Uso:  node tools/sim.js [ids de nivel...] [--seeds N] [opciones]
-     --seeds N    semillas por nivel (40 por defecto)
+     --seeds N    semillas por nivel (40 por defecto; usa 300 para decidir)
      --offset K   empieza en la semilla K (para validar con semillas que no se usaron al ajustar)
      --sweep      además imprime la curva victoria%-vs-movimientos (15..40) y una sugerencia de movimientos
+     --try FILE   prueba variantes sin tocar levels.js: FILE es un módulo que exporta
+                  [{ id, name, patch }] (patch se mezcla sobre una copia del nivel id); imprime la curva de cada una
      --moves M    juega todos los niveles elegidos con M movimientos en vez de los de levels.js
      --hint       agrega como referencia el bot que solo juega Engine.hint()
      --peek       el bot ve el relleno real al mirar una jugada adelante (por defecto NO: un humano no lo ve)
@@ -26,25 +28,30 @@
 'use strict';
 
 const os = require('os');
+const path = require('path');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const Engine = require('../js/core/engine.js');
 const Levels = require('../js/core/levels.js');
 const RNG = require('../js/core/rng.js');
 
-const MIN_MOVES = 15;
+const MIN_MOVES = 15;       // rango de la curva de --sweep
 const MAX_MOVES = 40;
 const WEAK_RANDOM = 0.3;   // el bot débil juega al azar este porcentaje de las veces
-const WEAK_MIN = 25;       // después del L5 el bot débil debería ganar al menos esto (%)
+const WEAK_MIN = 30;       // después del L5 el bot débil debería ganar al menos esto (%)
 
 // ---------------------------------------------------------------- metas de balance (DISENO §7)
-// lo-hi = banda de victorias del bot principal; aim = punto ideal para una curva suave hacia arriba.
+// lo-hi = banda de victorias del bot principal; aim = punto ideal para una curva suave que baja poco a poco.
 function targetFor(lvl) {
-  if (lvl.id <= 5) return { kind: lvl.boss ? 'BOSS' : 'intro', lo: 90, hi: 100, aim: lvl.boss ? 92 : 96 };
-  if (lvl.boss || lvl.hard) {
-    return { kind: lvl.final ? 'FINAL' : lvl.boss ? 'BOSS' : 'hard', lo: 35, hi: 60, aim: Math.round(58 - (lvl.id - 10) * 0.8) };
-  }
-  return { kind: 'normal', lo: 55, hi: 85, aim: 80 - (lvl.chapter - 2) * 4 };
+  if (lvl.id <= 5) return { kind: lvl.boss ? 'BOSS' : 'intro', lo: 90, hi: 100, aim: lvl.boss ? 94 : 98 };
+  if (lvl.final) return { kind: 'FINAL', lo: 35, hi: 55, aim: 50 };
+  if (lvl.boss || lvl.hard) return { kind: lvl.boss ? 'BOSS' : 'hard', lo: 40, hi: 60, aim: Math.round(58 - (lvl.id - 10) * 0.4) };
+  return { kind: 'normal', lo: 60, hi: 85, aim: 82 - (lvl.chapter - 2) * 4 };
 }
+
+// Curva de movimientos (DISENO §7): rango por capítulo. Nunca menos de 18: el reto diario (niveles 6..25)
+// juega con 2 menos y debe quedar en 16 o más.
+const MOVES_RANGE = { 1: [20, 24], 2: [20, 26], 3: [22, 28], 4: [22, 28], 5: [22, 32], 6: [22, 32] };
+function movesRange(lvl) { return MOVES_RANGE[lvl.chapter] || [18, 32]; }
 
 // ---------------------------------------------------------------- bot
 function isSlot(cell) { return !!cell && !cell.b && !(cell.p && cell.p.frost); }
@@ -137,7 +144,7 @@ function playGame(level, seed, policy, cap, peek) {
 }
 
 function runTask(t) {
-  const level = Levels.get(t.id);
+  const level = t.level || Levels.get(t.id);
   const used = [];
   let stuck = 0;
   for (let i = 0; i < t.seeds; i++) {
@@ -169,21 +176,13 @@ function statsAt(used, M) {
   };
 }
 
-// Movimientos sugeridos: lo más cerca posible del punto ideal, dentro de la banda y con el bot débil >= 25%.
-// Piso de movimientos: el reto diario usa los niveles 6..25 con moves - 2, que no puede bajar de 15.
-function minMovesFor(lvl) { return lvl.id >= 6 && lvl.id <= 25 ? MIN_MOVES + 2 : MIN_MOVES; }
-
-// Regla de tests/levels.test.js: el jefe de cada capítulo tiene al menos tantos movimientos como el resto.
-function chapterMax(lvl) {
-  const ch = Levels.chapters.find((c) => c.levels.includes(lvl.id));
-  return Math.max(0, ...ch.levels.filter((id) => id !== lvl.id).map((id) => Levels.get(id).moves));
-}
-
+// Movimientos sugeridos: lo más cerca posible del punto ideal, dentro de la banda, con el bot débil >= WEAK_MIN
+// y dentro del rango de movimientos del capítulo.
 function suggest(lvl, bot, weak) {
   const tg = targetFor(lvl);
-  const minM = Math.max(minMovesFor(lvl), lvl.boss ? chapterMax(lvl) : 0);
+  const [minM, maxM] = movesRange(lvl);
   let best = null, bestCost = Infinity;
-  for (let M = minM; M <= MAX_MOVES; M++) {
+  for (let M = minM; M <= maxM; M++) {
     const p = statsAt(bot, M).win, w = statsAt(weak, M).win;
     let cost = Math.abs(p - tg.aim);
     if (p < tg.lo) cost += 3 * (tg.lo - p);
@@ -196,7 +195,7 @@ function suggest(lvl, bot, weak) {
 
 // ---------------------------------------------------------------- CLI
 function parseArgs(argv) {
-  const o = { ids: [], seeds: 40, offset: 0, cap: 60, sweep: false, moves: null, hint: false, peek: false, md: false, jobs: os.cpus().length };
+  const o = { ids: [], seeds: 40, offset: 0, cap: 60, sweep: false, moves: null, hint: false, peek: false, md: false, jobs: os.cpus().length, tryFile: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const num = () => { const v = Number(argv[++i]); if (!Number.isFinite(v)) throw new Error('falta número tras ' + a); return v; };
@@ -206,6 +205,7 @@ function parseArgs(argv) {
     else if (a === '--moves') o.moves = num();
     else if (a === '--jobs') o.jobs = num();
     else if (a === '--sweep') o.sweep = true;
+    else if (a === '--try') o.tryFile = argv[++i];
     else if (a === '--hint') o.hint = true;
     else if (a === '--peek') o.peek = true;
     else if (a === '--md') o.md = true;
@@ -262,67 +262,100 @@ function table(headers, rows, md, align) {
   return [fmt(headers), w.map((x) => '-'.repeat(x)).join('  '), ...rows.map(fmt)].join('\n');
 }
 
+// Niveles a simular: los de levels.js, o las variantes de --try (cada una mezclada sobre una copia de su nivel).
+function entriesFor(o) {
+  if (!o.tryFile) return o.ids.map((id) => ({ id, label: String(id), lvl: Levels.get(id), inline: false }));
+  const variants = require(path.resolve(o.tryFile));
+  if (!Array.isArray(variants)) throw new Error('--try: el módulo debe exportar un arreglo [{ id, name, patch }]');
+  return variants.map((v) => {
+    const base = Levels.get(v.id);
+    if (!base) throw new Error('--try: nivel desconocido ' + v.id);
+    const lvl = Object.assign(JSON.parse(JSON.stringify(base)), JSON.parse(JSON.stringify(v.patch || {})));
+    return { id: v.id, label: `${v.id} ${v.name || ''}`.trim(), lvl, inline: true };
+  });
+}
+
 async function main() {
   const o = parseArgs(process.argv.slice(2));
   if (o.help) {
-    console.log('node tools/sim.js [ids|a-b...] [--seeds N] [--offset K] [--sweep] [--moves M] [--hint] [--peek] [--md] [--jobs N] [--cap N]');
+    console.log('node tools/sim.js [ids|a-b...] [--seeds N] [--offset K] [--sweep] [--try FILE] [--moves M] [--hint] [--peek] [--md] [--jobs N] [--cap N]');
     return;
   }
+  const entries = entriesFor(o);
   const policies = ['bot', 'weak'].concat(o.hint ? ['hint'] : []);
   const tasks = [];
-  for (const id of o.ids) for (const policy of policies) tasks.push({ id, policy, seeds: o.seeds, offset: o.offset, cap: o.cap, peek: o.peek });
+  entries.forEach((en, k) => {
+    for (const policy of policies) {
+      tasks.push({ k, id: en.id, level: en.inline ? en.lvl : undefined, policy, seeds: o.seeds, offset: o.offset, cap: o.cap, peek: o.peek });
+    }
+  });
   const t0 = Date.now();
   const results = await runPool(tasks, o.jobs);
-  const by = {};
-  for (const r of results) (by[r.id] = by[r.id] || {})[r.policy] = r;
+  const by = entries.map(() => ({}));
+  results.forEach((r, i) => { by[tasks[i].k][r.policy] = r; });
 
   console.log(`Cocardo · simulación de balance · ${o.seeds} semillas por nivel${o.offset ? ' (desde la ' + o.offset + ')' : ''} · bot consciente de metas (1 jugada adelante${o.peek ? ', viendo el relleno' : ''}) · débil = ${WEAK_RANDOM * 100}% al azar · ${((Date.now() - t0) / 1000).toFixed(1)} s\n`);
 
   const headers = ['Nivel', 'Tipo', 'Mov', 'Meta%', 'Bot%', 'Resto', '3★%', 'Turnos', 'Débil%', 'Débil3★%'];
   if (o.hint) headers.push('Hint%');
   headers.push('Bot@40', 'Estado');
-  const align = headers.map((h, i) => (i === 1 || h === 'Estado' ? 'l' : 'r'));
+  const align = headers.map((h, i) => (i <= 1 || h === 'Estado' ? 'l' : 'r'));
   const rows = [], flagged = [];
-  for (const id of o.ids) {
-    const lvl = Levels.get(id), tg = targetFor(lvl), M = o.moves || lvl.moves, R = by[id];
+  entries.forEach((en, k) => {
+    const lvl = en.lvl, tg = targetFor(lvl), M = o.moves || lvl.moves, R = by[k];
     const b = statsAt(R.bot.used, M), w = statsAt(R.weak.used, M), at40 = statsAt(R.bot.used, MAX_MOVES);
+    const [minM, maxM] = movesRange(lvl);
     const flags = [];
     if (statsAt(R.bot.used, o.cap).win === 0) flags.push(`IMPOSIBLE: 0% incluso con ${o.cap}`);
     else if (at40.win === 0) flags.push('0% con 40 mov.');
     // «?» = fuera de la meta por menos que el margen de error del muestreo
     const unsure = (p, gap) => (gap <= margin(p, o.seeds) ? '?' : '');
-    if (b.win < tg.lo) flags.push('difícil' + unsure(b.win, tg.lo - b.win));
+    if (b.win < tg.lo) {
+      if (statsAt(R.bot.used, maxM).win < tg.lo) flags.push(`difícil aun con ${maxM} mov.`);
+      else flags.push('difícil' + unsure(b.win, tg.lo - b.win));
+    }
     if (b.win > tg.hi) {
-      const floor = minMovesFor(lvl), cm = lvl.boss ? chapterMax(lvl) : 0;
-      if (statsAt(R.bot.used, floor).win > tg.hi) flags.push(`fácil aun con ${floor} mov.`);
-      else if (cm && statsAt(R.bot.used, cm).win > tg.hi) flags.push(`fácil: jefe >= mov. del capítulo (${cm})`);
+      if (statsAt(R.bot.used, minM).win > tg.hi) flags.push(`fácil aun con ${minM} mov.`);
       else flags.push('fácil' + unsure(b.win, b.win - tg.hi));
     }
-    if (id > 5 && w.win < WEAK_MIN) flags.push(`débil<${WEAK_MIN}` + unsure(w.win, WEAK_MIN - w.win));
+    if (lvl.id > 5 && w.win < WEAK_MIN) flags.push(`débil<${WEAK_MIN}` + unsure(w.win, WEAK_MIN - w.win));
+    if (M < minM || M > maxM) flags.push(`mov. fuera de ${minM}-${maxM}`);
     if (R.bot.stuck || R.weak.stuck) flags.push(`sin jugadas×${R.bot.stuck + R.weak.stuck}`);
-    if (flags.length) flagged.push(`L${id}: ${flags.join(', ')}`);
-    const row = [id, tg.kind, M, `${tg.lo}-${tg.hi}`, pct(b.win), fix1(b.left), pct(b.three), fix1(b.turns), pct(w.win), pct(w.three)];
+    if (flags.length) flagged.push(`L${en.label}: ${flags.join(', ')}`);
+    const row = [en.label, tg.kind, M, `${tg.lo}-${tg.hi}`, pct(b.win), fix1(b.left), pct(b.three), fix1(b.turns), pct(w.win), pct(w.three)];
     if (o.hint) row.push(pct(statsAt(R.hint.used, M).win));
     row.push(pct(at40.win), flags.length ? flags.join(', ') : 'ok');
     rows.push(row);
-  }
+  });
   console.log(table(headers, rows, o.md, align));
   console.log('\nResto = movimientos que sobran al ganar (promedio de las victorias) · 3★% sobre todas las partidas · Turnos = movimientos jugados en promedio.');
   console.log(`Margen de error con ${o.seeds} semillas: hasta ±${Math.round(margin(50, o.seeds))} puntos; «?» = fuera de la meta por menos que eso (usa --seeds 300 para decidir).`);
   console.log(flagged.length ? '\nNiveles marcados:\n  ' + flagged.join('\n  ') : '\nTodos los niveles dentro de la meta.');
 
-  if (o.sweep) {
-    console.log(`\nCurva victoria% vs movimientos (${MIN_MOVES}..${MAX_MOVES}); «*» = movimientos actuales, «>» = sugerido`);
+  // la curva de movimientos de la campaña: saltos de más de 6 entre vecinos (salvo hacia o desde un jefe)
+  if (!o.tryFile && !o.moves) {
+    const jumps = [];
+    for (let id = 2; id <= Levels.count; id++) {
+      const a = Levels.get(id - 1), b2 = Levels.get(id);
+      if (!a.boss && !b2.boss && Math.abs(b2.moves - a.moves) > 6) jumps.push(`L${a.id}→L${b2.id}: ${a.moves}→${b2.moves}`);
+    }
+    if (jumps.length) console.log('\nSaltos de movimientos > 6 entre vecinos: ' + jumps.join(', '));
+  }
+
+  if (o.sweep || o.tryFile) {
+    console.log(`\nCurva victoria% vs movimientos (${MIN_MOVES}..${MAX_MOVES}); «*» = movimientos actuales, «>» = sugerido (dentro del rango del capítulo)`);
     const Ms = [];
     for (let M = MIN_MOVES; M <= MAX_MOVES; M++) Ms.push(M);
-    console.log('       ' + Ms.map((M) => String(M).padStart(4)).join(''));
-    for (const id of o.ids) {
-      const lvl = Levels.get(id), R = by[id], sug = suggest(lvl, R.bot.used, R.weak.used);
+    const pad = Math.max(4, ...entries.map((en) => en.label.length + 1));
+    console.log(''.padEnd(pad + 5) + Ms.map((M) => String(M).padStart(4)).join(''));
+    entries.forEach((en, k) => {
+      const lvl = en.lvl, R = by[k], sug = suggest(lvl, R.bot.used, R.weak.used);
       const mark = (M) => (M === lvl.moves ? '*' : M === sug ? '>' : ' ');
-      console.log(`L${String(id).padEnd(3)}bot ` + Ms.map((M) => (mark(M) + pct(statsAt(R.bot.used, M).win)).padStart(4)).join('') + `   actual ${lvl.moves} → sugerido ${sug} (meta ${targetFor(lvl).aim}%)`);
-      console.log('    weak ' + Ms.map((M) => pct(statsAt(R.weak.used, M).win).padStart(4)).join(''));
-      if (R.hint) console.log('    hint ' + Ms.map((M) => pct(statsAt(R.hint.used, M).win).padStart(4)).join(''));
-    }
+      console.log(('L' + en.label).padEnd(pad) + ' bot ' + Ms.map((M) => (mark(M) + pct(statsAt(R.bot.used, M).win)).padStart(4)).join('') + `   actual ${lvl.moves} → sugerido ${sug} (meta ${targetFor(lvl).aim}%)`);
+      console.log(''.padEnd(pad) + ' weak' + Ms.map((M) => pct(statsAt(R.weak.used, M).win).padStart(4)).join(''));
+      console.log(''.padEnd(pad) + ' 3★  ' + Ms.map((M) => pct(statsAt(R.bot.used, M).three).padStart(4)).join(''));
+      if (R.hint) console.log(''.padEnd(pad) + ' hint' + Ms.map((M) => pct(statsAt(R.hint.used, M).win).padStart(4)).join(''));
+    });
   }
 }
 
@@ -335,4 +368,4 @@ if (!isMainThread && workerData && workerData.worker) {
   main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { goalWork, goalAwareMove, playGame, statsAt, targetFor, suggest };
+module.exports = { goalWork, goalAwareMove, playGame, statsAt, targetFor, movesRange, suggest, WEAK_MIN };

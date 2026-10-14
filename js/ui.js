@@ -169,6 +169,9 @@
     try { if (typeof story().helperFor === 'function') return story().helperFor(id) || 'lima'; } catch (e) { /* nada */ }
     return id > 20 ? 'banano' : 'lima';
   }
+  function helperFrozen(id) {
+    try { return typeof story().helperFrozen === 'function' && !!story().helperFrozen(id); } catch (e) { return false; }
+  }
   function tipFor(id) {
     var t = story().tips;
     return (t && t[id]) || '';
@@ -304,13 +307,22 @@
     try { return /^https?:$/.test(location.protocol) ? location.href.split('#')[0] : ''; } catch (e) { return ''; }
   }
 
+  // En un iframe sin permiso (p. ej. el artifact) llamar a la API ya ensucia la consola: se pregunta antes
+  function policyAllows(feature) {
+    try {
+      var pp = doc.permissionsPolicy || doc.featurePolicy;
+      if (pp && typeof pp.allowsFeature === 'function') return !!pp.allowsFeature(feature);
+    } catch (e) { /* sin política: se intenta */ }
+    return true;
+  }
+
   function share(text) {
     var url = shareUrl();
     var full = url ? text + '\n' + url : text;
     function copyFallback() {
       var done = false;
       try {
-        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && policyAllows('clipboard-write')) {
           return navigator.clipboard.writeText(full).then(function () {
             toast('¡Copiado!');
             return 'copied';
@@ -324,7 +336,7 @@
       return Promise.resolve('box');
     }
     try {
-      if (navigator.share) {
+      if (navigator.share && policyAllows('web-share')) {
         return navigator.share({ text: full }).then(function () { return 'shared'; }, function (err) {
           if (err && err.name === 'AbortError') return 'abort';
           return copyFallback();
@@ -551,7 +563,7 @@
   /*                                  MAPA                                 */
   /* ===================================================================== */
 
-  var MAP = { STEP: 112, HEAD: 136, TAIL: 40, PAD_TOP: 24, PAD_BOT: 170 };
+  var MAP = { STEP: 112, HEAD: 160, TAIL: 40, PAD_TOP: 24, PAD_BOT: 170 };   // HEAD: sitio para el rótulo del capítulo (2 líneas) sin tapar las estrellas del jefe
   var XPAT = [0.5, 0.73, 0.64, 0.33, 0.5];
   var bgCache = {};
   var mapGeom = null;
@@ -1155,7 +1167,7 @@
         '<div class="intro-stars">' + starsHtml(stars, 'mid-star') + (best ? '<small>Récord: ' + best.toLocaleString('es-MX') + '</small>' : '') + '</div>' +
         '<h3 class="sec-title">Objetivos</h3>' + goalsHtml(lv) +
         '<div class="moves-pill">' + icon('moves', 22) + '<b>' + (lv.moves | 0) + '</b> movimientos</div>' +
-        (tip ? '<div class="tip"><span class="tip-face">' + portrait(helper, 'feliz') + '</span><p class="tip-bubble"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '') +
+        (tip ? '<div class="tip"><span class="tip-face">' + portrait(helper, 'feliz', helperFrozen(id) ? { frozen: true } : {}) + '</span><p class="tip-bubble"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '') +
         fresh +
         '<h3 class="sec-title">Potenciadores</h3>' + boostersHtml(false) +
         '<div class="btn-row"><button class="btn btn-pink btn-big" data-act="play" data-autofocus>' + icon('play', 26) + ' ¡A jugar!</button></div>' +
