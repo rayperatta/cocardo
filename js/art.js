@@ -117,13 +117,13 @@
   var COLORS = ['L', 'F', 'B', 'U', 'N', 'D'];
   var IDS = { L: 'lima', F: 'fresa', B: 'banana', U: 'uva', N: 'naranja', D: 'durazna' };
   var PAL = {
-    L: { skin: '#a6e34f', light: '#e3fb9c', dark: '#57a021', hair: '#3f9b2c', hairL: '#79c944', hairD: '#226b18',
+    L: { skin: '#b5ea5c', light: '#efffbe', dark: '#5fa826', hair: '#2f8f2a', hairL: '#62c23e', hairD: '#185a14',
       iris: '#e0a020', brow: '#2c7020', lips: '#3c8a2a', blush: '#ff9a7a', main: '#8fd63a' },
     F: { skin: '#ff4256', light: '#ff9aa0', dark: '#b3122f', hair: '#3daa45', hairL: '#7fd65a', hairD: '#1d7a2c',
       iris: '#2fa84f', brow: '#2f8a3a', lips: '#a3123a', blush: '#ffb3c0', main: '#ff3b55' },
     B: { skin: '#fff0a0', light: '#fffbe0', dark: '#e3b93c', hair: '#ffd23c', hairL: '#fff3c4', hairD: '#c89412',
       iris: '#7d8b2a', brow: '#7d7a2a', lips: '#ff4f93', blush: '#ff9ab5', main: '#ffe266' },
-    U: { skin: '#9b4fd6', light: '#d7a8ff', dark: '#4e1a7a', hair: '#466454', hairL: '#6e8d7a', hairD: '#26392e',
+    U: { skin: '#9b4fd6', light: '#d7a8ff', dark: '#4e1a7a', hair: '#4d6e5a', hairL: '#7fa08a', hairD: '#26392e',
       iris: '#7a4a26', brow: '#3a4f40', lips: '#d58ad0', blush: '#e08ad8', main: '#9a4ed6' },
     N: { skin: '#ffab55', light: '#ffd9a6', dark: '#e0661a', hair: '#ff8a1a', hairL: '#ffc25a', hairD: '#c45306',
       iris: '#8f9a36', brow: '#b0601e', lips: '#ff6f5a', blush: '#ff7a6a', main: '#ff8c1f' },
@@ -276,7 +276,8 @@
 
   HEADS.U = function (ctx, p, mood) {
     var out = '', hf = hairFill(ctx, p);
-    out += '<path d="M15 58C12 30 30 14 50 14C70 14 88 30 85 58C84 72 88 82 84 90C76 92 24 92 16 90C12 82 16 72 15 58Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    out += '<path d="M15 58C12 30 30 14 50 14C70 14 88 30 85 58C84 68 90 76 86 84C84 90 78 92 74 88C70 93 63 93 60 89C56 93 44 93 40 89C37 93 30 93 26 88C22 92 16 90 14 84C10 76 16 68 15 58Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>' +
+      '<path d="M19 62q-2 12 3 22M81 62q2 12-3 22" fill="none" stroke="' + p.hairL + '" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>';
     out += '<circle cx="50" cy="58" r="27" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
     out += '<g fill="#5a2290" opacity=".35"><circle cx="33" cy="72" r="2.4"/><circle cx="68" cy="73" r="2"/><circle cx="60" cy="82" r="1.6"/><circle cx="41" cy="82" r="1.8"/></g>';
     out += gloss(37, 46, 8, 4.5, -30, 0.6) + '<circle cx="46" cy="42" r="1.6" fill="#fff" opacity=".8"/>';
@@ -502,34 +503,31 @@
     return wrap(ctx, 100, 100, body);
   }
 
+  // Paleta: la cabeza sobre una paleta helada con franjas y flechas en la dirección que limpia
   function paletaBody(ctx, col, p, mood, horiz) {
-    var out = '', pf = lg(ctx, [[0, p.light], [0.5, p.main], [1, p.dark]], horiz ? 0 : 0, horiz ? 0 : 0, horiz ? 0 : 1, horiz ? 1 : 0);
-    var stripes = '', i;
-    if (horiz) {
-      out += shadow(48, 93, 40, 4);
-      // palito a la derecha
-      out += '<rect x="78" y="43" width="20" height="13" rx="6" fill="#e8c48a" stroke="' + INK + '" stroke-width="2.6"/>';
-      out += '<rect x="3" y="17" width="82" height="66" rx="30" fill="' + pf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-      var cp = clip(ctx, '<rect x="3" y="17" width="82" height="66" rx="30"/>');
-      for (i = 0; i < 4; i++) stripes += '<rect x="0" y="' + (22 + i * 16) + '" width="90" height="7"/>';
-      out += '<g clip-path="' + cp + '" fill="#fff" opacity=".55">' + stripes + '</g>';
-      out += g('translate(18 13) scale(.66)', headStr(ctx, col, mood));
-      out += arrow(7, 50, 180) + arrow(93, 50, 0);
-    } else {
-      out += shadow(50, 94, 18, 3.5);
-      out += '<rect x="43.5" y="76" width="13" height="21" rx="6" fill="#e8c48a" stroke="' + INK + '" stroke-width="2.6"/>';
-      out += '<rect x="17" y="3" width="66" height="80" rx="30" fill="' + pf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-      var cp2 = clip(ctx, '<rect x="17" y="3" width="66" height="80" rx="30"/>');
-      for (i = 0; i < 4; i++) stripes += '<rect y="0" x="' + (22 + i * 16) + '" height="90" width="7"/>';
-      out += '<g clip-path="' + cp2 + '" fill="#fff" opacity=".55">' + stripes + '</g>';
-      out += g('translate(17 17) scale(.66)', headStr(ctx, col, mood));
-      out += arrow(50, 7, -90) + arrow(50, 92, 90);
-    }
+    var out = '', i, stripes = '';
+    var pf = lg(ctx, [[0, p.light], [0.45, p.main], [1, p.dark]], 0, 0, horiz ? 0 : 1, horiz ? 1 : 0);
+    // cuerpo: [x, y, w, h], palito y flechas
+    var B = horiz ? [3, 13, 82, 74] : [13, 3, 74, 82];
+    var rect = '<rect x="' + B[0] + '" y="' + B[1] + '" width="' + B[2] + '" height="' + B[3] + '" rx="30"/>';
+    out += shadow(50, 94, horiz ? 40 : 30, 4);
+    if (horiz) out += '<rect x="78" y="42" width="20" height="16" rx="7" fill="#efcf96" stroke="' + INK + '" stroke-width="2.8"/><path d="M84 46H94" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>';
+    else out += '<rect x="42" y="78" width="16" height="20" rx="7" fill="#efcf96" stroke="' + INK + '" stroke-width="2.8"/><path d="M46 84V94" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>';
+    // halo blanco para que destaque de las fichas normales
+    out += '<rect x="' + B[0] + '" y="' + B[1] + '" width="' + B[2] + '" height="' + B[3] + '" rx="30" fill="none" stroke="#fff" stroke-width="10" opacity=".55"/>';
+    out += '<rect x="' + B[0] + '" y="' + B[1] + '" width="' + B[2] + '" height="' + B[3] + '" rx="30" fill="' + pf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
+    var cp = clip(ctx, rect);
+    for (i = 0; i < 5; i++) stripes += horiz ? '<rect x="0" y="' + (14 + i * 15) + '" width="100" height="7.5"/>' : '<rect y="0" x="' + (14 + i * 15) + '" height="100" width="7.5"/>';
+    out += '<g clip-path="' + cp + '" fill="#fff" opacity=".6">' + stripes + '</g>';
+    out += '<path d="' + (horiz ? 'M14 24Q24 16 40 16' : 'M22 18Q28 8 44 7') + '" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" opacity=".9"/>';
+    out += g(horiz ? 'translate(12 12) scale(.66)' : 'translate(17 12) scale(.66)', headStr(ctx, col, mood));
+    if (horiz) out += arrow(6, 50, 180) + arrow(94, 50, 0);
+    else out += arrow(50, 6, -90) + arrow(50, 94, 90);
     return out;
   }
   function arrow(x, y, rot) {
     return g('translate(' + x + ' ' + y + ') rotate(' + rot + ')',
-      '<path d="M5 0L-4 -8L-4 8Z" fill="#fff" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/>');
+      '<path d="M6 0L-5 -10L-5 10Z" fill="#fff" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/>');
   }
 
   function coconut(ctx, cx, cy, r) {
@@ -556,8 +554,9 @@
       '<path d="M0 55Q48 47 100 55" fill="none" stroke="#fff" stroke-width="2" opacity=".55"/></g>';
     out += gloss(32, 40, 8, 4, -35, 0.35);
     // medallón con la cabeza
-    out += '<circle cx="48" cy="62" r="22" fill="#fff6ea" stroke="' + INK + '" stroke-width="2.6"/>';
-    out += g('translate(26.5 40) scale(.43)', headStr(ctx, col, mood));
+    out += '<circle cx="48" cy="61" r="26" fill="' + p.light + '" stroke="' + INK + '" stroke-width="2.8"/>';
+    var mc = clip(ctx, '<circle cx="48" cy="61" r="24.6"/>');
+    out += '<g clip-path="' + mc + '">' + g('translate(22 33) scale(.53)', headStr(ctx, col, mood)) + '</g>';
     // chispa
     out += '<path d="M81 1L84 8L91 6L87 12L93 17L85 17L84 24L80 18L73 21L76 14L70 10L78 9Z" fill="#ffd23c" stroke="#ff6a1a" stroke-width="1.6" stroke-linejoin="round"/>';
     out += '<circle cx="81" cy="12" r="2.5" fill="#fff"/>';
@@ -675,22 +674,28 @@
   function ice(hp, maxHp) {
     hp = clamp(Math.round(hp || 1), 1, 3); maxHp = clamp(Math.max(hp, Math.round(maxHp || hp)), 1, 3);
     var ctx = newCtx(), out = '';
-    var alpha = [0, 0.62, 0.8, 0.93][hp];
-    var top = ['', '#e9f8ff', '#cfeeff', '#b4e2fb'][hp], mid = ['', '#a8e0ff', '#82ccf4', '#5fb5e8'][hp], bot = ['', '#6cc0ee', '#4aa8e0', '#2f86c4'][hp];
-    var bf = lg(ctx, [[0, top], [0.55, mid], [1, bot]], 0, 0, 0.7, 1);
-    out += '<rect x="4" y="4" width="92" height="92" rx="14" fill="' + bf + '" fill-opacity="' + alpha + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    // capas (una por HP)
+    // más HP = más grueso, más azul y con más marcos
+    var top = ['', '#f2fbff', '#dcf3ff', '#c4ebff'][hp], mid = ['', '#bfe8ff', '#8fd3f7', '#5db6ea'][hp], bot = ['', '#8fd0f2', '#4aa8e0', '#2a7fc0'][hp];
+    var bf = lg(ctx, [[0, top], [0.5, mid], [1, bot]], 0, 0, 0.8, 1);
+    out += shadow(50, 95, 40, 3.5, 0.2);
+    out += '<rect x="4" y="4" width="92" height="92" rx="14" fill="' + bf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
+    // bisel interior
+    out += '<rect x="9" y="9" width="82" height="82" rx="10" fill="none" stroke="#fff" stroke-width="2.4" stroke-opacity=".75"/>';
+    // capas (una por HP extra)
     for (var i = 1; i < hp; i++) {
-      var ins = 4 + i * 10;
-      out += '<rect x="' + ins + '" y="' + ins + '" width="' + (100 - 2 * ins) + '" height="' + (100 - 2 * ins) + '" rx="' + (14 - i * 3) + '" fill="#bfe9ff" fill-opacity=".25" stroke="#fff" stroke-width="2.6" stroke-opacity=".8"/>';
-      out += '<rect x="' + (ins + 2) + '" y="' + (ins + 2) + '" width="' + (100 - 2 * ins - 4) + '" height="' + (100 - 2 * ins - 4) + '" rx="' + (12 - i * 3) + '" fill="none" stroke="#2a6f9e" stroke-width="1.2" stroke-opacity=".45"/>';
+      var ins = 6 + i * 10;
+      out += '<rect x="' + ins + '" y="' + ins + '" width="' + (100 - 2 * ins) + '" height="' + (100 - 2 * ins) + '" rx="' + (12 - i * 2) + '" fill="#ffffff" fill-opacity=".16" stroke="#ffffff" stroke-width="3" stroke-opacity=".9"/>';
+      out += '<rect x="' + (ins + 2.5) + '" y="' + (ins + 2.5) + '" width="' + (100 - 2 * ins - 5) + '" height="' + (100 - 2 * ins - 5) + '" rx="' + (10 - i * 2) + '" fill="none" stroke="#1d5f8f" stroke-width="1.4" stroke-opacity=".45"/>';
     }
-    // bisel y brillo
-    out += '<path d="M10 40V20Q10 10 20 10H60" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".85"/>';
-    out += '<path d="M90 60V80Q90 90 80 90H50" fill="none" stroke="#1d5f8f" stroke-width="3" stroke-linecap="round" opacity=".35"/>';
-    out += '<path d="M24 76L74 26M34 82L82 34" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".3"/>';
-    if (hp >= 3) out += flake(50, 48, 11, 2.6, '#fff', 0.85);
-    out += cracks(maxHp - hp, 1.6);
+    // brillo y sombra del bisel
+    out += '<path d="M12 42V22Q12 12 22 12H58" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>';
+    out += '<path d="M88 58V78Q88 88 78 88H44" fill="none" stroke="#1d5f8f" stroke-width="3" stroke-linecap="round" opacity=".35"/>';
+    out += '<path d="M26 74L72 28M38 80L80 38" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".35"/>';
+    // burbujitas
+    out += '<g fill="#fff" opacity=".8"><circle cx="70" cy="70" r="2.2"/><circle cx="76" cy="62" r="1.4"/><circle cx="24" cy="30" r="1.6"/></g>';
+    if (hp >= 3) out += flake(50, 48, 11, 2.8, '#fff', 0.9);
+    else if (hp === 2) out += flake(50, 48, 7, 2.2, '#fff', 0.75);
+    out += cracks(maxHp - hp, 1.8);
     out += hpPips(hp, maxHp);
     return wrap(ctx, 100, 100, out);
   }
@@ -743,73 +748,93 @@
   }
 
   // ---------- congelador jefe (2x2) ----------
+  // Congelador vertical de una puerta con la cara del dueño en una calcomanía.
+  // Cocardo: blanco hueso, oxidado, luz azul. Cereza: rosa con detalles dorados.
   function freezer(who, hp, maxHp) {
     var pink = who === 'cereza' || who === 'cherry';
     maxHp = Math.max(1, maxHp || hp || 1); hp = clamp(hp == null ? maxHp : hp, 0, maxHp);
     var r = hp / maxHp, stage = r > 0.75 ? 0 : r > 0.5 ? 1 : r > 0.25 ? 2 : 3;
     var ctx = newCtx(), out = '';
-    var bodyF = pink ? lg(ctx, [[0, '#ffe1ec'], [0.5, '#ffb6d0'], [1, '#e9769f']], 0, 0, 1, 0)
-      : lg(ctx, [[0, '#fbf7ee'], [0.5, '#e9e2d2'], [1, '#bfb6a2']], 0, 0, 1, 0);
-    var trim = pink ? '#ffc93c' : '#9aa4b0';
-    out += shadow(100, 194, 86, 6, 0.3);
+    var bodyF = pink ? lg(ctx, [[0, '#ffd0e2'], [0.45, '#ffb0cc'], [1, '#e0608e']], 0, 0, 1, 0)
+      : lg(ctx, [[0, '#f6f1e4'], [0.45, '#e6dfcc'], [1, '#b3a990']], 0, 0, 1, 0);
+    var doorF = pink ? lg(ctx, [[0, '#ffe6f0'], [0.55, '#ffc0d8'], [1, '#f088b0']], 0, 0, 1, 1)
+      : lg(ctx, [[0, '#fffdf6'], [0.55, '#efe9da'], [1, '#cfc6ae']], 0, 0, 1, 1);
+    var glow = pink ? '#ff5fa0' : '#38c8ff', trim = pink ? '#ffc93c' : '#a9b3bf';
+    var halo = rg(ctx, [[0, glow, 0.55], [1, glow, 0]], 0.5, 0.5, 0.5);
+    out += '<ellipse cx="100" cy="104" rx="98" ry="98" fill="' + halo + '"/>';
+    out += shadow(100, 192, 78, 6, 0.32);
     // patas
-    out += '<rect x="30" y="182" width="16" height="12" rx="3" fill="#4a4050" stroke="' + INK + '" stroke-width="3"/><rect x="154" y="182" width="16" height="12" rx="3" fill="#4a4050" stroke="' + INK + '" stroke-width="3"/>';
-    out += '<rect x="16" y="8" width="168" height="178" rx="18" fill="' + bodyF + '" stroke="' + INK + '" stroke-width="5"/>';
+    out += '<rect x="40" y="180" width="18" height="12" rx="3" fill="#4a4050" stroke="' + INK + '" stroke-width="3"/><rect x="142" y="180" width="18" height="12" rx="3" fill="#4a4050" stroke="' + INK + '" stroke-width="3"/>';
+    // cuerpo
+    out += '<rect x="26" y="10" width="148" height="174" rx="16" fill="' + bodyF + '" stroke="' + INK + '" stroke-width="5"/>';
     // rejilla inferior
-    out += '<rect x="34" y="160" width="132" height="18" rx="5" fill="' + (pink ? '#c24a7a' : '#7a7a80') + '" stroke="' + INK + '" stroke-width="3"/>';
-    out += '<path d="M44 165V173M56 165V173M68 165V173M80 165V173M92 165V173M104 165V173M116 165V173M128 165V173M140 165V173M152 165V173" stroke="' + INK + '" stroke-width="3" stroke-linecap="round" opacity=".7"/>';
+    out += '<rect x="44" y="164" width="112" height="13" rx="4" fill="' + (pink ? '#b8406e' : '#6e6a70') + '" stroke="' + INK + '" stroke-width="3"/>';
+    out += '<path d="M54 168V173M64 168V173M74 168V173M84 168V173M94 168V173M104 168V173M114 168V173M124 168V173M134 168V173M144 168V173" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>';
+    // luz por la rendija de la puerta
+    out += '<rect x="33" y="19" width="134" height="140" rx="11" fill="none" stroke="' + glow + '" stroke-width="' + (stage >= 3 ? 7 : 4) + '" opacity=".95"/>';
     // puerta
-    var doorTf = stage >= 3 ? ' transform="rotate(-2.5 30 20)"' : '';
     var door = '';
-    door += '<rect x="26" y="18" width="148" height="134" rx="12" fill="' + bodyF + '" stroke="' + INK + '" stroke-width="4"/>';
-    door += '<path d="M34 26H120" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/>';
-    // ventana con la cara
-    var win = rg(ctx, pink ? [[0, '#fff0f6'], [0.6, '#ff9ec4'], [1, '#c2185b']] : [[0, '#eafaff'], [0.6, '#7fd0ff'], [1, '#1f6fb8']], 0.5, 0.45, 0.6);
-    door += '<circle cx="96" cy="80" r="54" fill="' + trim + '" stroke="' + INK + '" stroke-width="4"/>';
-    door += '<circle cx="96" cy="80" r="46" fill="' + win + '" stroke="' + INK + '" stroke-width="3"/>';
-    var wc = clip(ctx, '<circle cx="96" cy="80" r="46"/>');
-    door += '<g clip-path="' + wc + '">' + g('translate(51 38) scale(.9)', pink ? cerezaHead(ctx, stage >= 2 ? 'scared' : 'sly') : cocardoHead(ctx, stage >= 2 ? 'scared' : 'smirk')) +
-      '<rect x="40" y="20" width="120" height="120" fill="' + (pink ? '#ffd6e6' : '#bfe9ff') + '" opacity=".22"/>' +
-      '<path d="M60 50L110 30M58 70L124 40" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".35"/></g>';
-    // manija
-    var handleTf = stage >= 2 ? ' transform="rotate(14 162 96)"' : '';
-    door += '<g' + handleTf + '><rect x="156" y="60" width="12" height="62" rx="6" fill="' + (pink ? '#ffd84a' : '#d8dde4') + '" stroke="' + INK + '" stroke-width="3.5"/><path d="M160 66V112" stroke="#fff" stroke-width="2.4" opacity=".7"/></g>';
-    // placa
-    if (pink) door += '<path d="M96 146C90 138 80 140 80 132C80 126 88 124 96 130C104 124 112 126 112 132C112 140 102 138 96 146Z" fill="#d61f4b" stroke="' + INK + '" stroke-width="2.6"/>';
-    else door += '<rect x="74" y="136" width="44" height="12" rx="6" fill="#7a4a2a" stroke="' + INK + '" stroke-width="2.6"/><g fill="#ff7eb6"><circle cx="86" cy="142" r="2.6"/></g><circle cx="96" cy="142" r="2.6" fill="#5fdcc0"/><circle cx="106" cy="142" r="2.6" fill="#ffd84a"/>';
-    // óxido / brillos
-    if (!pink) {
-      door += '<g fill="#b5652a" opacity=".55"><ellipse cx="34" cy="140" rx="6" ry="4"/><ellipse cx="166" cy="34" rx="5" ry="3"/><ellipse cx="38" cy="30" rx="3" ry="2"/><circle cx="160" cy="140" r="3"/></g>';
-      door += '<path d="M150 136q6 2 8 8M30 120q4-3 8-1" fill="none" stroke="#8a4a1e" stroke-width="1.6" opacity=".6"/>';
+    door += '<rect x="35" y="21" width="130" height="136" rx="10" fill="' + doorF + '" stroke="' + INK + '" stroke-width="4"/>';
+    door += '<path d="M44 30H130" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/><path d="M44 30V70" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".5"/>';
+    // bisagras
+    door += '<g fill="' + trim + '" stroke="' + INK + '" stroke-width="2.4"><rect x="30" y="36" width="9" height="18" rx="3"/><rect x="30" y="124" width="9" height="18" rx="3"/></g>';
+    // calcomanía con la cara del dueño
+    var stF = pink ? rg(ctx, [[0, '#fff0f6'], [0.7, '#ff9ec4'], [1, '#e04a86']], 0.5, 0.4, 0.7)
+      : rg(ctx, [[0, '#f2fbff'], [0.7, '#9fdcff'], [1, '#3a9ad8']], 0.5, 0.4, 0.7);
+    var st = '';
+    st += '<rect x="-42" y="-42" width="84" height="84" rx="20" fill="#fff" stroke="' + INK + '" stroke-width="3.4"/>';
+    st += '<rect x="-36" y="-36" width="72" height="72" rx="15" fill="' + stF + '"/>';
+    var sc = clip(ctx, '<rect x="-36" y="-36" width="72" height="72" rx="15"/>');
+    var mood = stage >= 2 ? 'scared' : (pink ? 'sly' : 'smirk');
+    st += '<g clip-path="' + sc + '">' + g('translate(-40 -37) scale(.8)', pink ? cerezaHead(ctx, mood) : cocardoHead(ctx, mood)) + '</g>';
+    // esquina despegada (viejo) o brillito (Cereza)
+    if (!pink) st += '<path d="M42 22L42 42L22 42Z" fill="#cfc6ae" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/><path d="M42 22Q30 30 22 42" fill="#fff" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/>';
+    else st += sparkle(36, -36, 7, '#fff');
+    door += g('translate(92 80) rotate(' + (pink ? 4 : -5) + ')', st);
+    // termómetro / placa
+    if (pink) {
+      door += '<path d="M92 150C86 143 76 145 76 137C76 131 84 129 92 135C100 129 108 131 108 137C108 145 98 143 92 150Z" fill="#d61f4b" stroke="' + INK + '" stroke-width="2.6"/><path d="M83 136q2-3 5-2" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".8"/>';
     } else {
-      door += sparkle(40, 36, 6, '#fff') + sparkle(158, 140, 5, '#fff') + '<g fill="#ffc93c" stroke="' + INK + '" stroke-width="1.4"><circle cx="34" cy="26" r="3"/><circle cx="166" cy="26" r="3"/><circle cx="34" cy="144" r="3"/><circle cx="166" cy="144" r="3"/></g>';
+      door += '<circle cx="64" cy="138" r="11" fill="#fff" stroke="' + INK + '" stroke-width="3"/><path d="M64 138L70 132" stroke="#d61f4b" stroke-width="2.6" stroke-linecap="round"/><circle cx="64" cy="138" r="2" fill="' + INK + '"/>';
+      door += '<rect x="84" y="132" width="40" height="12" rx="6" fill="#7a4a2a" stroke="' + INK + '" stroke-width="2.6"/><circle cx="95" cy="138" r="2.6" fill="#ff7eb6"/><circle cx="104" cy="138" r="2.6" fill="#5fdcc0"/><circle cx="113" cy="138" r="2.6" fill="#ffd84a"/>';
     }
-    // daño
+    // manija
+    var handleTf = stage >= 2 ? ' transform="rotate(12 150 90)"' : '';
+    door += '<g' + handleTf + '><rect x="144" y="56" width="12" height="62" rx="6" fill="' + (pink ? '#ffd84a' : '#d8dde4') + '" stroke="' + INK + '" stroke-width="3.4"/><path d="M148 62V110" stroke="#fff" stroke-width="2.4" opacity=".7"/></g>';
+    // óxido y abolladuras / brillos
+    if (!pink) {
+      door += '<g fill="#b5652a" opacity=".6"><ellipse cx="46" cy="104" rx="5" ry="7"/><ellipse cx="156" cy="148" rx="5" ry="3"/><circle cx="141" cy="30" r="3"/><ellipse cx="128" cy="150" rx="3" ry="2"/></g>';
+      door += '<path d="M46 98v14M157 145q3 4 1 8" stroke="#8a4a1e" stroke-width="1.6" fill="none" opacity=".6"/>';
+    } else {
+      door += sparkle(150, 136, 5, '#fff') + '<g fill="#ffc93c" stroke="' + INK + '" stroke-width="1.4"><circle cx="44" cy="30" r="3"/><circle cx="156" cy="30" r="3"/><circle cx="44" cy="148" r="3"/><circle cx="156" cy="148" r="3"/></g>';
+    }
+    // escarcha que se cuela por las orillas
+    var fr = '<path d="M35 52V31Q35 21 45 21H66L61 26L56 24L52 30L46 28L44 35L39 35L40 42L36 44Z"/>';
+    door += '<g fill="#f4fbff" stroke="' + (pink ? '#ff9ec4' : '#7cc6ef') + '" stroke-width="1.6" stroke-linejoin="round" opacity=".95">' + fr + g('matrix(-1 0 0 -1 200 178)', fr) + '</g>';
+    // daño: grietas y abolladuras según hp
+    var crack = function (d, w) {
+      return '<path d="' + d + '" fill="none" stroke="#fff" stroke-width="' + (w + 2.4) + '" stroke-linecap="round" stroke-linejoin="round"/><path d="' + d + '" fill="none" stroke="' + INK + '" stroke-width="' + w + '" stroke-linecap="round" stroke-linejoin="round"/>';
+    };
     if (stage >= 1) {
-      door += '<path d="M70 44L84 58L78 66L92 76" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M70 44L84 58L78 66L92 76" fill="none" stroke="' + INK + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
-      door += '<ellipse cx="146" cy="40" rx="10" ry="6" fill="' + INK + '" opacity=".18"/><path d="M137 36q9-4 18 2" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>';
+      door += crack('M120 22L114 36L124 44L116 56', 2);
+      door += '<ellipse cx="54" cy="70" rx="8" ry="11" fill="' + INK + '" opacity=".14"/><path d="M48 62q6-4 12 2" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>';
     }
     if (stage >= 2) {
-      door += '<path d="M28 100L44 104L40 116L56 122L50 134" fill="none" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/>';
-      door += '<path d="M120 116L132 112L136 124L148 122" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/><path d="M120 116L132 112L136 124L148 122" fill="none" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/>';
-      door += '<ellipse cx="44" cy="70" rx="9" ry="12" fill="' + INK + '" opacity=".16"/>';
+      door += crack('M36 112L52 116L48 126L62 132L58 146', 2.2);
+      door += crack('M164 96L150 104L154 116L140 122', 2.2);
+      door += '<ellipse cx="130" cy="140" rx="9" ry="6" fill="' + INK + '" opacity=".16"/>';
     }
     if (stage >= 3) {
-      door += '<path d="M106 34L118 52L108 62L124 80L112 92L126 110" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M106 34L118 52L108 62L124 80L112 92L126 110" fill="none" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/>';
+      door += crack('M88 22L96 40L84 52L100 70L90 84L104 100L94 122L108 156', 2.6);
     }
-    out += '<g' + doorTf + '>' + door + '</g>';
-    // luz azul / rosa por la rendija
-    var glow = pink ? '#ff7eb6' : '#4ad0ff';
-    out += '<path d="M28 154H172" stroke="' + glow + '" stroke-width="4" stroke-linecap="round" opacity=".9"/>';
-    if (stage >= 3) out += '<path d="M174 30V150" stroke="' + glow + '" stroke-width="5" stroke-linecap="round" opacity=".9"/>';
+    out += '<g' + (stage >= 3 ? ' transform="rotate(-3 35 157)"' : '') + '>' + door + '</g>';
     // nieve arriba + carámbanos
-    out += '<path d="M20 14Q40 2 60 10Q80 0 100 9Q122 0 142 10Q162 2 180 14Q182 22 172 20L170 30L164 20L150 22L146 34L140 21L110 22L106 30L100 21L66 22L62 32L56 21L30 22L28 28L24 20Q16 22 20 14Z" fill="#f4fbff" stroke="#7cc6ef" stroke-width="2" stroke-linejoin="round"/>';
-    if (stage >= 3) {
-      out += sparkle(178, 168, 9, '#ffd23c') + sparkle(22, 50, 7, '#ffd23c') + sparkle(150, 10, 6, '#ffd23c');
-      out += '<path d="M60 186l-6 6M150 186l6 6" stroke="#bfe9ff" stroke-width="5" stroke-linecap="round"/>';
-    } else if (stage >= 2) {
-      out += sparkle(180, 120, 7, '#ffd23c');
+    out += '<path d="M30 16Q46 4 64 12Q82 2 100 11Q120 2 138 12Q156 4 170 16Q172 24 164 22L162 32L156 22L144 24L140 36L134 23L110 24L106 32L100 23L70 24L66 34L60 23L40 24L38 30L34 22Q26 24 30 16Z" fill="#f4fbff" stroke="' + (pink ? '#ff9ec4' : '#7cc6ef') + '" stroke-width="2" stroke-linejoin="round"/>';
+    if (stage >= 2) {
+      out += '<g fill="#dff4ff" stroke="' + INK + '" stroke-width="1.8" stroke-linejoin="round"><path d="M178 150l8 4-4 8-8-3z"/><path d="M18 120l7-2 2 7-7 2z"/></g>';
+      out += sparkle(184, 120, 7, '#ffd23c');
     }
+    if (stage >= 3) out += sparkle(16, 60, 8, '#ffd23c') + sparkle(176, 40, 6, '#ffd23c') + '<path d="M70 192l-6 5M134 192l6 5" stroke="#bfe9ff" stroke-width="4" stroke-linecap="round"/>';
     return wrap(ctx, 200, 200, out);
   }
 
@@ -842,7 +867,7 @@
     music: '<path d="M9 17.5V5.5L20 3V15" fill="none" stroke="' + C + '" stroke-width="2.4" stroke-linejoin="round"/><ellipse cx="6.5" cy="17.8" rx="3.3" ry="2.7" fill="' + C + '"/><ellipse cx="17.5" cy="15.3" rx="3.3" ry="2.7" fill="' + C + '"/><path d="M9 8.5L20 6" stroke="' + C + '" stroke-width="2.4"/>',
     vibra: '<rect x="7.5" y="3" width="9" height="18" rx="2.2" fill="none" stroke="' + C + '" stroke-width="2.2"/><circle cx="12" cy="17.4" r="1.2" fill="' + C + '"/><path d="M4.5 8L2.5 10L4.5 12L2.5 14L4.5 16M19.5 8L21.5 10L19.5 12L21.5 14L19.5 16" fill="none" stroke="' + C + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
     map: '<path d="M2.5 5.5L8.5 3.5L15.5 5.5L21.5 3.5V18.5L15.5 20.5L8.5 18.5L2.5 20.5Z" fill="' + C + '" fill-opacity=".22" stroke="' + C + '" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 3.5V18.5M15.5 5.5V20.5" stroke="' + C + '" stroke-width="1.6"/><path d="M5 15Q8 10 12 13T19 8" fill="none" stroke="' + C + '" stroke-width="1.8" stroke-dasharray="2 2" stroke-linecap="round"/>',
-    album: '<path d="M4 4.5Q4 3 5.5 3H19V21H5.5Q4 21 4 19.5Z" fill="' + C + '"/><path d="M7 3V21" stroke="#fff" stroke-opacity=".5" stroke-width="1.2"/><path d="M13 16.5C10.5 14.6 9.5 13.3 9.5 11.9C9.5 10.6 10.4 9.8 11.4 9.8C12.1 9.8 12.6 10.2 13 10.7C13.4 10.2 13.9 9.8 14.6 9.8C15.6 9.8 16.5 10.6 16.5 11.9C16.5 13.3 15.5 14.6 13 16.5Z" fill="#fff"/>',
+    album: '<path fill-rule="evenodd" fill="' + C + '" d="M4 4.5Q4 3 5.5 3H19V21H5.5Q4 21 4 19.5ZM6.6 3.8H7.6V20.2H6.6ZM13 16.5C10.5 14.6 9.5 13.3 9.5 11.9C9.5 10.6 10.4 9.8 11.4 9.8C12.1 9.8 12.6 10.2 13 10.7C13.4 10.2 13.9 9.8 14.6 9.8C15.6 9.8 16.5 10.6 16.5 11.9C16.5 13.3 15.5 14.6 13 16.5Z"/>',
     settings: '<path fill-rule="evenodd" fill="' + C + '" d="' + gearPath() + '"/>',
     share: '<circle cx="18" cy="5.5" r="3.2" fill="' + C + '"/><circle cx="6" cy="12" r="3.2" fill="' + C + '"/><circle cx="18" cy="18.5" r="3.2" fill="' + C + '"/><path d="M18 5.5L6 12L18 18.5" fill="none" stroke="' + C + '" stroke-width="2.2"/>',
     flame: '<path d="M12 22C7 22 4.5 18.5 4.5 15C4.5 10.5 8.5 8.5 9 3.5C12 5.5 13 8 12.6 10.5C14 9.8 14.8 8.6 15 7C18 9.5 19.5 12.5 19.5 15.5C19.5 19 16.5 22 12 22Z" fill="#ff7a1a" stroke="' + INK + '" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21C9.8 21 8.6 19.4 8.6 17.8C8.6 15.6 10.6 14.6 11 12.6C13.6 14 15.4 16 15.4 18C15.4 19.8 14 21 12 21Z" fill="#ffd23c"/>',
@@ -852,13 +877,13 @@
     next: '<path d="M3.5 12H18M12.5 5.5L19 12L12.5 18.5" fill="none" stroke="' + C + '" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>',
     snowflake: '',
     box: '<path d="M3 7.5L12 3.5L21 7.5V17L12 21L3 17Z" fill="' + C + '" fill-opacity=".25" stroke="' + C + '" stroke-width="2" stroke-linejoin="round"/><path d="M3 7.5L12 11.5L21 7.5M12 11.5V21M7.5 5.5L16.5 9.5" fill="none" stroke="' + C + '" stroke-width="2" stroke-linejoin="round"/>',
-    cucharon: '<path d="M13.5 13.5L21 21" stroke="' + C + '" stroke-width="3.4" stroke-linecap="round"/><path d="M3.5 9.5A6.5 6.5 0 0 1 16.5 9.5Q16.5 10.5 15.5 10.5H4.5Q3.5 10.5 3.5 9.5Z" fill="' + C + '"/><path d="M4 11.5H16Q15 16 10 16Q5 16 4 11.5Z" fill="' + C + '" fill-opacity=".55"/><circle cx="7.5" cy="6.5" r="1.3" fill="#fff" opacity=".7"/>',
-    chorro: '<path d="M8 2.5H12V5H8Z" fill="' + C + '"/><path d="M6 7Q6 5 8 5H12Q14 5 14 7V20Q14 22 12 22H8Q6 22 6 20Z" fill="' + C + '"/><path d="M14 4Q19 3 20 8Q20.5 11 19 13" fill="none" stroke="' + C + '" stroke-width="2" stroke-linecap="round"/><path d="M19 15Q20.5 17 19 18.5Q17.5 17 19 15Z" fill="' + C + '"/><rect x="7.5" y="10" width="5" height="5" rx="1" fill="#fff" opacity=".6"/>',
-    batido: '<path d="M14 1.5L12 9" stroke="' + C + '" stroke-width="2.2" stroke-linecap="round"/><path d="M5 9.5Q5 6 9 6Q10 4 12.5 4.5Q15 4 16 6.5Q19 7 19 9.5Z" fill="' + C + '" fill-opacity=".55"/><path d="M5 9.5H19L17 21Q16.8 22 15.8 22H8.2Q7.2 22 7 21Z" fill="' + C + '"/><path d="M6.5 14H17.5" stroke="#fff" stroke-width="1.6" opacity=".6"/>',
+    cucharon: '<path d="M13.5 13.5L21 21" stroke="' + C + '" stroke-width="3.4" stroke-linecap="round"/><path d="M3.5 9.5A6.5 6.5 0 0 1 16.5 9.5Q16.5 10.5 15.5 10.5H4.5Q3.5 10.5 3.5 9.5Z" fill="' + C + '"/><path d="M4 11.5H16Q15 16 10 16Q5 16 4 11.5Z" fill="' + C + '" fill-opacity=".55"/>',
+    chorro: '<path d="M8 2.5H12V5H8Z" fill="' + C + '"/><path fill-rule="evenodd" fill="' + C + '" d="M6 7Q6 5 8 5H12Q14 5 14 7V20Q14 22 12 22H8Q6 22 6 20ZM7.6 10.2H12.4V15H7.6Z"/><path d="M14 4Q19 3 20 8Q20.5 11 19 13" fill="none" stroke="' + C + '" stroke-width="2" stroke-linecap="round"/><path d="M19 15Q20.5 17 19 18.5Q17.5 17 19 15Z" fill="' + C + '"/>',
+    batido: '<path d="M14 1.5L12 9" stroke="' + C + '" stroke-width="2.2" stroke-linecap="round"/><path d="M5 9.5Q5 6 9 6Q10 4 12.5 4.5Q15 4 16 6.5Q19 7 19 9.5Z" fill="' + C + '" fill-opacity=".55"/><path fill-rule="evenodd" fill="' + C + '" d="M5 9.5H19L17 21Q16.8 22 15.8 22H8.2Q7.2 22 7 21ZM6.3 13.3H17.7L17.5 14.8H6.5Z"/>',
     moves: '<path d="M4 8.5H17M13.5 4.5L18 8.5L13.5 12.5" fill="none" stroke="' + C + '" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 15.5H7M10.5 11.5L6 15.5L10.5 19.5" fill="none" stroke="' + C + '" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
     hand: '<path d="M9 13V4.5A1.75 1.75 0 0 1 12.5 4.5V11L18 12Q20 12.5 19.6 14.6L18.6 19.5Q18.2 21.5 16.2 21.5H11Q9.6 21.5 8.7 20.4L5.2 16Q4.2 14.6 5.6 13.6Q6.8 12.8 8 14Z" fill="' + C + '" stroke="' + INK + '" stroke-width="1.2" stroke-linejoin="round"/><path d="M12.5 11V15M15.5 11.6V15" stroke="' + INK + '" stroke-width="1.1" stroke-linecap="round" opacity=".6"/>',
     calendar: '<path fill-rule="evenodd" fill="' + C + '" d="M3 6.5Q3 4.5 5 4.5H19Q21 4.5 21 6.5V19.5Q21 21.5 19 21.5H5Q3 21.5 3 19.5ZM5 10V19.5H19V10Z"/><path d="M7.5 2.5V6.5M16.5 2.5V6.5" stroke="' + C + '" stroke-width="2.4" stroke-linecap="round"/><g fill="' + C + '"><rect x="7" y="12" width="3" height="2.6" rx=".6"/><rect x="10.5" y="12" width="3" height="2.6" rx=".6"/><rect x="14" y="12" width="3" height="2.6" rx=".6"/><rect x="7" y="15.6" width="3" height="2.6" rx=".6"/><rect x="10.5" y="15.6" width="3" height="2.6" rx=".6"/></g>',
-    trophy: '<path d="M7 3H17V9A5 5 0 0 1 7 9Z" fill="' + C + '"/><path d="M7 5H3.5Q3.5 10 7.6 11M17 5H20.5Q20.5 10 16.4 11" fill="none" stroke="' + C + '" stroke-width="2"/><path d="M10.5 13.5H13.5V17H10.5Z" fill="' + C + '"/><path d="M7 21Q7 17 12 17Q17 17 17 21Z" fill="' + C + '"/><path d="M9.6 5V8.6" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>',
+    trophy: '<path d="M7 3H17V9A5 5 0 0 1 7 9Z" fill="' + C + '"/><path d="M7 5H3.5Q3.5 10 7.6 11M17 5H20.5Q20.5 10 16.4 11" fill="none" stroke="' + C + '" stroke-width="2"/><path d="M10.5 13.5H13.5V17H10.5Z" fill="' + C + '"/><path d="M7 21Q7 17 12 17Q17 17 17 21Z" fill="' + C + '"/>',
     check: '<path d="M4 12.5L9.5 18L20 6.5" fill="none" stroke="' + C + '" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>'
   };
   function icon(name, opts) {
@@ -885,15 +910,28 @@
     // sombra 3D
     out += word(INK, INK, 18, 4, 8);
     out += word(tf, INK, 12, 0, 0);
+    // goteo de helado que sale de las letras (gota con bulbo; parche para unirla a la letra)
+    var drips = [[54, 26], [184, 18], [232, 30], [322, 16]], dr = '', patch = '';
+    drips.forEach(function (d) {
+      var x = d[0], L = 112 + d[1];
+      dr += '<path d="M' + (x - 7) + ' 117C' + (x - 7) + ' ' + (L - 10) + ' ' + (x - 4) + ' ' + (L - 8) + ' ' + (x - 5) + ' ' + (L - 2) + 'A5.5 5.5 0 1 0 ' + (x + 5) + ' ' + (L - 2) + 'C' + (x + 4) + ' ' + (L - 8) + ' ' + (x + 7) + ' ' + (L - 10) + ' ' + (x + 7) + ' 117Z"/>';
+      patch += '<rect x="' + (x - 5.2) + '" y="115" width="10.4" height="15"/>';
+    });
+    out += '<g fill="#ff6fa5" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round">' + dr + '</g><g fill="#ff6fa5">' + patch + '</g>';
+    out += '<g fill="#fff" opacity=".6">' + drips.map(function (d) { return '<ellipse cx="' + (d[0] - 2) + '" cy="' + (112 + d[1] - 3) + '" rx="1.6" ry="2.4"/>'; }).join('') + '</g>';
     // coco en lugar de la "o"
     out += '<circle cx="125" cy="92" r="35" fill="' + INK + '" transform="translate(4 8)"/>';
     out += coconut(ctx, 125, 92, 33);
     out += '<g fill="#2b160c"><ellipse cx="115" cy="74" rx="4" ry="3"/><ellipse cx="131" cy="72" rx="4" ry="3"/><ellipse cx="123" cy="83" rx="3.6" ry="2.8"/></g>';
     out += '<path d="M106 102Q125 118 144 102" fill="none" stroke="#f3d5a8" stroke-width="4" stroke-linecap="round" opacity=".9"/>';
     out += gloss(112, 80, 8, 4, -35, 0.35);
-    // bola de helado sobre la C
-    out += '<path d="M28 36Q40 18 60 26Q74 22 76 38Z" fill="#5fdcc0" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>';
-    out += '<circle cx="58" cy="20" r="6" fill="#d61f4b" stroke="' + INK + '" stroke-width="3"/>';
+    // conito de helado clavado junto a la C
+    out += g('translate(40 34) rotate(-24)',
+      '<path d="M-11 4L0 34L11 4Z" fill="#f2b465" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>' +
+      '<path d="M-6 9L4 22M2 7L8 16M-8 16L0 7" stroke="#b8742c" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="M-15 6Q-18 -6 -8 -10Q-6 -22 6 -20Q16 -18 15 -6Q19 2 13 6Q9 13 5 6Q0 10 -4 6Q-10 12 -15 6Z" fill="#ff8fbe" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>' +
+      '<ellipse cx="-3" cy="-11" rx="5" ry="3" fill="#fff" opacity=".7"/>' +
+      '<g fill="#fff"><rect x="3" y="-6" width="5" height="2" rx="1" fill="#5fdcc0" transform="rotate(30 5 -5)"/><rect x="-10" y="-2" width="5" height="2" rx="1" fill="#ffd84a"/><rect x="6" y="2" width="5" height="2" rx="1" fill="#b88cff" transform="rotate(-40 8 3)"/></g>');
     // cinta del subtítulo
     out += '<path d="M40 150L380 150L392 168L380 186L40 186L28 168Z" fill="#5b1e74" stroke="' + INK + '" stroke-width="5" stroke-linejoin="round"/>';
     out += '<path d="M28 168L8 160L18 176L10 190L40 186ZM392 168L412 160L402 176L410 190L380 186Z" fill="#a1286a" stroke="' + INK + '" stroke-width="4" stroke-linejoin="round"/>';
@@ -911,7 +949,7 @@
     return 'url(#' + id + ')';
   }
   function zoneKey(z) {
-    var s = String(z == null ? '' : z).toLowerCase().normalize ? String(z == null ? '' : z).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') : String(z).toLowerCase();
+    var s = String(z == null ? '' : z).toLowerCase().normalize ? String(z == null ? '' : z).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : String(z).toLowerCase();
     var num = { '1': 'heladeria', '2': 'mansion', '3': 'trastienda', '4': 'noche', '5': 'cherry', '6': 'congelador' };
     if (num[s]) return num[s];
     if (/cherry|cereza/.test(s)) return 'cherry';
@@ -921,6 +959,13 @@
     if (/noche|calle|comisaria|lluvia|policia/.test(s)) return 'noche';
     return 'heladeria';
   }
+  // Texto de neón (resplandor + tubo + núcleo claro). Fuente script con respaldos genéricos.
+  function neonText(x, y, txt, size, col) {
+    var t = '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-family="Yellowtail, Brush Script MT, Segoe Script, cursive" font-size="' + size + '" fill="none" stroke-linejoin="round"';
+    return t + ' stroke="' + col + '" stroke-width="' + f(size * 0.22) + '" opacity=".22">' + txt + '</text>' +
+      t + ' stroke="' + col + '" stroke-width="' + f(size * 0.09) + '" opacity=".85">' + txt + '</text>' +
+      t + ' stroke="#fff4f9" stroke-width="' + f(size * 0.03) + '">' + txt + '</text>';
+  }
   function background(zone) {
     var key = zoneKey(zone), ctx = newCtx(), out = '';
     var BG = {
@@ -929,29 +974,39 @@
         var o = '<rect width="400" height="800" fill="#ffd3e3"/><rect width="400" height="800" fill="' + pattern(ctx, 80, 80, cone) + '"/>';
         o += '<rect width="400" height="800" fill="' + lg(ctx, [[0, '#ffffff', 0.35], [0.5, '#ffffff', 0], [1, '#ff9ec4', 0.25]], 0, 0, 0, 1) + '"/>';
         // lámparas colgantes
-        [80, 200, 320].forEach(function (x) {
-          o += '<path d="M' + x + ' 0V60" stroke="#c78aa5" stroke-width="2"/><path d="M' + (x - 22) + ' 82Q' + x + ' 48 ' + (x + 22) + ' 82Z" fill="#bff3e1" opacity=".9"/><ellipse cx="' + x + '" cy="88" rx="26" ry="10" fill="#fff6c8" opacity=".55"/>';
+        [70, 200, 330].forEach(function (x) {
+          o += '<path d="M' + x + ' 0V70" stroke="#c78aa5" stroke-width="2"/><ellipse cx="' + x + '" cy="104" rx="40" ry="16" fill="#fff6c8" opacity=".5"/><path d="M' + (x - 26) + ' 96Q' + x + ' 56 ' + (x + 26) + ' 96Z" fill="#bff3e1" stroke="#8fdcc4" stroke-width="3"/>';
         });
-        // neón rosa
-        o += '<g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M110 200q-26 0-26 22t26 22M150 210a12 12 0 1 0 1 0M190 210q-14 0-14 12t14 12M230 210a12 12 0 1 0 1 0M270 236q12 6 18-6q-18-8-8-18q8-4 14 4" stroke="#ff6fa5" stroke-width="12" opacity=".25"/>' +
-          '<path d="M110 200q-26 0-26 22t26 22M150 210a12 12 0 1 0 1 0M190 210q-14 0-14 12t14 12M230 210a12 12 0 1 0 1 0M270 236q12 6 18-6q-18-8-8-18q8-4 14 4" stroke="#fff0f6" stroke-width="4" opacity=".8"/></g>';
-        // zócalo menta
-        o += '<rect y="560" width="400" height="240" fill="#bff3e1"/><rect y="552" width="400" height="14" fill="#fff6ea"/>';
-        o += '<g fill="none" stroke="#8fdcc4" stroke-width="4">' + [20, 120, 220, 320].map(function (x) { return '<rect x="' + x + '" y="596" width="70" height="160" rx="8"/>'; }).join('') + '</g>';
+        // letrero de neón «Coco's Scoops»
+        o += neonText(200, 250, "Coco's Scoops", 54, '#ff6fa5');
+        o += '<g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(200 300)"><path d="M-14 0L0 34L14 0M-16 0Q-18 -18 0 -20Q18 -18 16 0Z" stroke="#ff6fa5" stroke-width="10" opacity=".25"/><path d="M-14 0L0 34L14 0M-16 0Q-18 -18 0 -20Q18 -18 16 0Z" stroke="#fff0f6" stroke-width="3.5" opacity=".9"/></g>';
+        // vitrina curva con charolas de helado
+        o += '<rect y="610" width="400" height="190" fill="#bff3e1"/><rect y="600" width="400" height="16" fill="#fff6ea"/>';
+        o += '<g fill="none" stroke="#8fdcc4" stroke-width="4">' + [20, 120, 220, 320].map(function (x) { return '<rect x="' + x + '" y="640" width="60" height="130" rx="8"/>'; }).join('') + '</g>';
+        o += '<path d="M10 600V540Q10 500 60 496H340Q390 500 390 540V600Z" fill="#e8f8ff" opacity=".55" stroke="#ffffff" stroke-width="4"/>';
+        var tubs = ['#a6e34f', '#ff7a8f', '#ffc48e', '#fff0a0', '#b77ae6', '#ffab55'];
+        tubs.forEach(function (c, i) {
+          var x = 28 + i * 58;
+          o += '<path d="M' + x + ' 590V566Q' + (x + 24) + ' 548 ' + (x + 48) + ' 566V590Z" fill="' + c + '" opacity=".85"/><rect x="' + (x - 2) + '" y="586" width="52" height="10" rx="3" fill="#ffffff" opacity=".8"/>';
+        });
+        o += '<path d="M30 520Q120 506 200 508" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7" fill="none"/>';
         return o;
       },
       trastienda: function () {
         var o = '<rect width="400" height="800" fill="' + lg(ctx, [[0, '#3a3f58'], [1, '#262a3e']], 0, 0, 0, 1) + '"/>';
         o += '<ellipse cx="300" cy="420" rx="260" ry="320" fill="' + rg(ctx, [[0, '#6fd0ff', 0.45], [1, '#6fd0ff', 0]], 0.5, 0.5, 0.5) + '"/>';
-        // estanterías
+        // estanterías de acero con cajas del «inventario»
         [140, 330, 520, 710].forEach(function (y, i) {
           o += '<rect x="0" y="' + y + '" width="400" height="10" fill="#7f8aa6" opacity=".7"/>';
           for (var k = 0; k < 4; k++) {
             var x = 20 + k * 95 + (i % 2) * 30, w = 50 + ((k + i) % 3) * 10, h = 40 + ((k * 7 + i) % 3) * 16;
-            o += '<rect x="' + x + '" y="' + (y - h) + '" width="' + w + '" height="' + h + '" fill="#a98058" opacity=".55"/><path d="M' + x + ' ' + (y - h + 10) + 'h' + w + '" stroke="#7a5a3a" stroke-width="3" opacity=".5"/>';
+            o += '<rect x="' + x + '" y="' + (y - h) + '" width="' + w + '" height="' + h + '" fill="#a98058" opacity=".55"/><path d="M' + x + ' ' + (y - h + 10) + 'h' + w + 'M' + (x + w / 2) + ' ' + (y - h) + 'v10" stroke="#7a5a3a" stroke-width="3" opacity=".5"/>';
+            if ((k + i) % 3 === 1) o += '<g opacity=".45" transform="translate(' + (x + w / 2) + ' ' + (y - h / 2 + 4) + ')"><circle r="9" fill="none" stroke="#d61f4b" stroke-width="2"/><circle cx="-1" cy="2" r="4" fill="#d61f4b"/><path d="M-1 -2Q0 -6 4 -7" stroke="#d61f4b" stroke-width="1.6" fill="none"/></g>';
           }
         });
         o += '<path d="M20 0V800M380 0V800" stroke="#7f8aa6" stroke-width="10" opacity=".6"/>';
+        // rendija de luz azul del congelador
+        o += '<rect x="372" y="200" width="6" height="420" fill="#8fe4ff" opacity=".35"/><rect x="360" y="200" width="30" height="420" fill="#4ad0ff" opacity=".08"/>';
         o += '<rect width="400" height="800" fill="#1a2a50" opacity=".2"/>';
         return o;
       },
@@ -967,6 +1022,9 @@
         o += [150, 175, 200, 225, 250].map(function (x) { return '<circle cx="' + x + '" cy="' + (x === 200 ? 100 : 92) + '" r="5" fill="#fff3b0" opacity=".85"/>'; }).join('');
         o += '<ellipse cx="200" cy="96" rx="120" ry="60" fill="#ffd27a" opacity=".12"/>';
         o += '<rect y="650" width="400" height="150" fill="#2a120a" opacity=".6"/>';
+        // escritorio con copa de helado y vaso de whisky
+        o += '<path d="M40 600H360L350 640H50Z" fill="#3a1a10" opacity=".85"/><rect x="60" y="640" width="280" height="110" fill="#2e140c" opacity=".8"/><path d="M40 600H360" stroke="#e0b44a" stroke-width="3" opacity=".6"/>';
+        o += '<g opacity=".55"><path d="M250 600L246 578H266L262 600Z" fill="#ffd27a"/><path d="M130 600h20M140 600v-14M126 586Q140 596 154 586Z" stroke="#e0b44a" stroke-width="3" fill="#ff9ec4"/><circle cx="140" cy="578" r="9" fill="#ff9ec4"/></g>';
         return o;
       },
       cherry: function () {
@@ -981,19 +1039,30 @@
       },
       noche: function () {
         var o = '<rect width="400" height="800" fill="' + lg(ctx, [[0, '#141a3a'], [0.6, '#2a1f4a'], [1, '#3a2050']], 0, 0, 0, 1) + '"/>';
+        // luces de patrulla (comisaría) muy suaves
+        o += '<ellipse cx="0" cy="120" rx="200" ry="160" fill="' + rg(ctx, [[0, '#ff3b5c', 0.35], [1, '#ff3b5c', 0]], 0.5, 0.5, 0.5) + '"/>';
+        o += '<ellipse cx="400" cy="160" rx="200" ry="160" fill="' + rg(ctx, [[0, '#3b8bff', 0.35], [1, '#3b8bff', 0]], 0.5, 0.5, 0.5) + '"/>';
         // edificios
         o += '<path d="M0 300H60V220H120V270H170V180H240V250H290V200H350V260H400V800H0Z" fill="#20193a"/>';
         var wins = '';
-        for (var y = 240; y < 520; y += 40) for (var x = 15; x < 400; x += 45) if ((x * 7 + y) % 3 === 0) wins += '<rect x="' + x + '" y="' + y + '" width="14" height="18" fill="#ffd27a" opacity=".25"/>';
+        for (var y = 240; y < 400; y += 40) for (var x = 15; x < 400; x += 45) if ((x * 7 + y) % 3 === 0) wins += '<rect x="' + x + '" y="' + y + '" width="14" height="18" fill="#ffd27a" opacity=".25"/>';
         o += wins;
-        // fachada con toldo y letrero de neón
-        o += '<rect x="40" y="420" width="320" height="300" fill="#4a1e2a" opacity=".85"/>';
-        o += '<path d="M30 420H370L360 460H40Z" fill="#ff9ec4" opacity=".55"/><path d="M70 420L66 460M130 420L128 460M190 420V460M250 420L252 460M310 420L314 460" stroke="#fff" stroke-width="18" opacity=".25"/>';
-        o += '<g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M118 350q-22 0-22 20t22 20M150 362a11 11 0 1 0 1 0M182 362q-12 0-12 11t12 11M212 362a11 11 0 1 0 1 0M238 352v8M262 388q10 5 16-5q-16-7-7-16q7-4 12 4M300 352l10 36l10-36M305 352a8 8 0 1 0 1 0" stroke="#ff6fa5" stroke-width="14" opacity=".3"/>' +
-          '<path d="M118 350q-22 0-22 20t22 20M150 362a11 11 0 1 0 1 0M182 362q-12 0-12 11t12 11M212 362a11 11 0 1 0 1 0M238 352v8M262 388q10 5 16-5q-16-7-7-16q7-4 12 4M300 352l10 36l10-36M305 352a8 8 0 1 0 1 0" stroke="#ffd6e8" stroke-width="4"/></g>';
-        o += '<rect x="80" y="490" width="240" height="160" rx="6" fill="#ffb6d0" opacity=".2"/>';
-        // charcos y lluvia
-        o += '<rect y="720" width="400" height="80" fill="#151030"/><ellipse cx="200" cy="760" rx="150" ry="14" fill="#ff6fa5" opacity=".18"/>';
+        // fachada de ladrillo
+        var brick = '<rect width="40" height="20" fill="#5a2230"/><path d="M0 0.5H40M0 10.5H40M20 0V10M0 10V20M40 10V20" stroke="#3a1420" stroke-width="1.4"/>';
+        o += '<rect x="30" y="380" width="340" height="340" fill="' + pattern(ctx, 40, 20, brick) + '" opacity=".85"/>';
+        // letrero con neón
+        o += '<rect x="56" y="392" width="288" height="78" rx="14" fill="#1a1028" stroke="#ff6fa5" stroke-width="3" opacity=".9"/>';
+        o += neonText(200, 446, "Coco's Scoops", 44, '#ff6fa5');
+        // toldo a rayas rosa y blanco
+        var aw = '';
+        for (var k = 0; k < 8; k++) aw += '<path d="M' + (30 + k * 42.5) + ' 488H' + (51 + k * 42.5) + 'L' + (49 + k * 42.5) + ' 528H' + (28 + k * 42.5) + 'Z" fill="#fff0f6" opacity=".8"/>';
+        o += '<path d="M24 488H376L372 528H28Z" fill="#ff8fbe" opacity=".8"/>' + aw;
+        o += '<path d="M28 528' + [0, 1, 2, 3, 4, 5, 6, 7].map(function (k) { return 'q21 16 42.5 0'; }).join('') + 'V528Z" fill="#ff8fbe" opacity=".8"/>';
+        // vitrina iluminada y puerta
+        o += '<rect x="56" y="560" width="190" height="130" rx="6" fill="#ffb6d0" opacity=".28"/><rect x="270" y="556" width="74" height="164" rx="6" fill="#1a1028" opacity=".7"/>';
+        o += '<path d="M70 640Q100 600 140 610" stroke="#fff" stroke-width="5" opacity=".2" fill="none" stroke-linecap="round"/>';
+        // banqueta, charcos y lluvia
+        o += '<rect y="720" width="400" height="80" fill="#151030"/><ellipse cx="160" cy="762" rx="130" ry="12" fill="#ff6fa5" opacity=".2"/><ellipse cx="330" cy="782" rx="60" ry="7" fill="#3b8bff" opacity=".2"/>';
         var rain = '<path d="M10 0l-6 22M50 40l-6 22M30 80l-6 22" stroke="#9fd6f5" stroke-width="1.6" opacity=".35"/>';
         o += '<rect width="400" height="800" fill="' + pattern(ctx, 60, 110, rain) + '"/>';
         return o;
