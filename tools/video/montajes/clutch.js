@@ -1,5 +1,5 @@
 /* Video: «Nivel ¡Drama!: lo gané en el ÚLTIMO movimiento». Toma: tools/video/tomas/nivel.cjs --var 23:31:22:26:60
-   (nivel 23, el de más hielo; las 4 últimas jugadas del bot). La última junta dos Bombas y rompe todo lo que quedaba. */
+   (nivel 23, el de más hielo; las 4 últimas jugadas del bot). La última cambia una Paleta con una Bomba (combo) y rompe lo que quedaba. */
 (function () {
   'use strict';
   var K = window.K, C = K.C, F = K.F, W = K.W, H = K.H, E = K.E;
@@ -43,7 +43,7 @@
         if (ev.villano) K.popTexto(t, ev.villano, 'Cherry: ¡más cajas! 📦', W / 2, 500, { size: 66, fill: C.pink, strokeW: 14, hasta: ev.villano + 1.4 });
         if (ev.combo) {
           K.flash(t, ev.combo, 0.3, '#fff', 0.5);
-          K.popTexto(t, ev.combo + 0.02, '¡BOMBA + BOMBA!', W / 2, 520, { size: 104, fill: C.gold, strokeW: 22, rot: -0.04, hasta: (ev.win || ev.combo + 2) });
+          K.popTexto(t, ev.combo + 0.02, '¡PALETA + BOMBA!', W / 2, 520, { size: 104, fill: C.gold, strokeW: 22, rot: -0.04, hasta: (ev.win || ev.combo + 2) });
         }
         if (ev.win) K.popTexto(t, ev.win, '¡EN EL ÚLTIMO!', W / 2, 520, { size: 116, fill: '#9be35a', strokeW: 24, rot: -0.04 });
         return;

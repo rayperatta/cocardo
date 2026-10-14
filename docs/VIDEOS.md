@@ -141,19 +141,104 @@ otro gancho) en vez de cambiar de idea.
 
 ## 6. Videos listos
 
-| # | Archivo | Idea | Duración | Escena |
+Todos en 1080×1920, 30 fps, H.264 + AAC (≈ -14 LUFS; el ASMR queda en -17 por sus silencios), sin marca de agua. Los de juego usan el juego real grabado
+fotograma a fotograma; ninguna jugada es falsa (las encuentra `tools/video/plan.cjs` con el mismo motor).
+
+| # | Archivo | Gancho (primer segundo) | Dur. | Montaje |
 |---|---|---|---|---|
-| 1 | `01-asi-suena-cocardo.mp4` | D1 «Así suena mi juego de Cocardo» | 20,2 s | `tools/video/sonidos.html` |
+| 1 | `01-asi-suena-cocardo.mp4` | «Así suena mi juego de Cocardo (sin grabar ni un sonido)» | 20 s | `sonidos.html` |
+| 2 | `02-trailer.mp4` | «¿Cocardo… en VIDEOJUEGO?» sobre las 18 cascadas, luego tráiler de cine | 32 s | `trailer.js` |
+| 3 | `03-mejor-jugada.mp4` | «Probé 472.206 jugadas… y esta fue la MEJOR» | 24 s | `cascada.js` |
+| 4 | `04-acertijo-abc.mp4` | «Solo 1 jugada rescata a Lima. ¿A, B o C?» | 23 s | `acertijo.js` |
+| 5 | `05-perdi-por-uno.mp4` | «Perdí por UN hielo… esto debí hacer» | 26 s | `casi.js` |
+| 6 | `06-congelador.mp4` | «Le rompí el congelador a Cocardo en 8 jugadas» | 26 s | `congelador.js` |
+| 7 | `07-personajes.mp4` | «Hice a TODOS los personajes de Cocardo para mi juego» | 25 s | `personajes.js` |
+| 8 | `08-combos.mp4` | «Todos los combos de Cocardo, del PEOR al MEJOR» | 19 s | `combos.js` |
+| 9 | `09-traicion-cherry.mp4` | «Cherry descubrió el secreto… y todo cambió» | 29 s | `cherry.js` |
+| 10 | `10-ultimo-movimiento.mp4` | «NIVEL ⚠️ ¡DRAMA! quedan 4 movimientos» | 17 s | `clutch.js` |
+| 11 | `11-rescate-6-de-6.mp4` | «Rescaté a TODAS: las 6 frutas congeladas» | 20 s | `rescates.js` |
+| 12 | `12-asmr-hielo.mp4` | «ASMR 🧊 rompiendo hielo (sube el volumen)» | 16 s | `hielo.js` |
+| 13 | `13-nivel-final.mp4` | «El NIVEL FINAL de mi juego de Cocardo» | 38 s | `final.js` |
 
-**Video 1, texto del post:**
+### Textos para publicar (TikTok e Instagram)
 
+Cada texto: frase gancho, pregunta para comentar, aviso de juego de fans y 5-6 etiquetas. Sin mencionar a la creadora.
+
+1. **Sonidos.** Hice TODOS los sonidos de mi juego de Cocardo sin grabar nada: cada uno es puro código 🥥🍦 La risa de
+   Cherry me da miedo… ¿qué sonido le falta? 👇 Juego de fans (no oficial), gratis en la web: link en el perfil.
+   `#cocardo #frutinovela #lanievedelima #cocosscoops #juegosindie #gamedev`
+2. **Tráiler.** La frutinovela… ¡ahora se juega! 🥥🍦 Cocardo: ¡Rescate Helado! — 30 niveles, 16 personajes y Cherry
+   tramando algo. Gratis en la web, link en el perfil. ¿Lo jugarías? 👇 Juego de fans (no oficial).
+   `#cocardo #frutinovela #lanievedelima #cocosscoops #juegosindie #videojuegos`
+3. **Mejor jugada.** Probé 472.206 jugadas en mi juego de Cocardo y esta fue la mejor: 18 cascadas seguidas… y faltó UN
+   hielo 😭 ¿Cuál es tu récord? 👇 Juego de fans (no oficial), gratis en la web.
+   `#cocardo #frutinovela #satisfying #match3 #juegosindie #lanievedelima`
+4. **Acertijo.** Último movimiento: solo UNA jugada rescata a Lima. ¿A, B o C? Comenta ANTES de ver la respuesta 👇
+   Juego de fans (no oficial), gratis en la web.
+   `#cocardo #frutinovela #acertijo #reto #match3 #lanievedelima`
+5. **Perdí por uno.** Perdí por UN hielo 😭 y Cocardo se rió en mi cara. Rebobiné y esto es lo que debí hacer… ¿te ha
+   pasado? 👇 Juego de fans (no oficial), gratis en la web.
+   `#cocardo #frutinovela #casi #match3 #juegosindie #lanievedelima`
+6. **Congelador.** «¡Mi congelador no! ¡Costó cuatro mil pesos!» 🥶 Le rompí el congelador viejo a Cocardo en 8
+   jugadas y liberé a Lima. ¿A quién rescato después? 👇 Juego de fans (no oficial), gratis en la web.
+   `#cocardo #frutinovela #lanievedelima #lima #match3 #juegosindie`
+7. **Personajes.** Hice a los 16 personajes de Cocardo para mi juego 🥥🍒🍌 ¿Quién es tu favorito? 👇 Juego de fans (no
+   oficial), gratis en la web.
+   `#cocardo #frutinovela #lanievedelima #cherry #fanart #juegosindie`
+8. **Combos.** Todos los combos de mi juego de Cocardo, del PEOR al MEJOR 🍦 El #1 se lleva TODO el tablero. ¿Cuál es
+   tu favorito? 👇 Juego de fans (no oficial), gratis en la web.
+   `#cocardo #frutinovela #satisfying #match3 #combos #lanievedelima`
+9. **Cherry.** Cherry descubrió el secreto de Cocardo… y todo cambió 🍒 «No me hizo socia. Yo vi una oportunidad.»
+   ¿Team Cocardo o Team Cherry? 👇 Juego de fans (no oficial), gratis en la web.
+   `#cocardo #cherry #frutinovela #lanievedelima #telenovela #juegosindie`
+10. **Último movimiento.** Nivel ⚠️ ¡DRAMA!: 4 movimientos, Cherry llenando todo de cajas… y lo gané en el ÚLTIMO 😮‍💨
+    ¿Cuál es tu nivel más difícil? 👇 Juego de fans (no oficial), gratis en la web.
+    `#cocardo #frutinovela #clutch #match3 #juegosindie #lanievedelima`
+11. **Rescates.** Rescaté a las 6 frutas congeladas 🧊 Lima, Fresa, Durazna, Naranja, Banana… y Uva en el último
+    movimiento. ¿Cuál es tu favorita? 👇 Juego de fans (no oficial), gratis en la web.
+    `#cocardo #frutinovela #lanievedelima #rescate #match3 #juegosindie`
+12. **ASMR.** ASMR de hielo 🧊🔊 (sube el volumen). Cada crujido está hecho con código. ¿Otro? 👇 Juego de fans (no
+    oficial), gratis en la web.
+    `#asmr #satisfying #cocardo #frutinovela #icebreaking #juegosindie`
+13. **Final.** ⚠️ SPOILER: así termina mi juego de Cocardo. El congelador rosa de Cherry, Uva en el último movimiento… y
+    «¿segunda temporada?» 😭 ¿La quieres? 👇 Juego de fans (no oficial), gratis en la web.
+    `#cocardo #frutinovela #lanievedelima #final #cherry #juegosindie`
+
+### Orden de publicación sugerido (2 por día: 13-14 h y 19-21 h, hora de México)
+
+| Día | Mediodía | Noche |
+|---|---|---|
+| 1 | 2 Tráiler (fijarlo en el perfil) | 4 Acertijo |
+| 2 | 3 Mejor jugada | 7 Personajes |
+| 3 | 6 Congelador | 5 Perdí por uno |
+| 4 | 8 Combos | 9 Cherry |
+| 5 | 12 ASMR | 10 Último movimiento |
+| 6 | 1 Sonidos | 11 Rescates |
+| 7 | 13 Nivel final | — |
+
+El 4 y el 9 piden comentar (A/B/C, Team Cocardo o Team Cherry): responder comentarios con video es lo que más alarga
+la vida de esos posts.
+
+## 7. Cómo se rehacen
+
+Las capturas pesan (unos 300 KB por fotograma), así que no se suben al repositorio; se regeneran idénticas:
+
+```bash
+# 1) tomas (lista completa en el encabezado de cada archivo de tools/video/tomas/)
+node tools/video/capturar.cjs tools/video/tomas/cascada.cjs cap/cascada
+node tools/video/capturar.cjs tools/video/tomas/acertijo.cjs cap/acertijo2-C --var C
+node tools/video/capturar.cjs tools/video/tomas/historia.cjs cap/hist-pre10 --var pre10
+node tools/video/capturar.cjs tools/video/tomas/nivel.cjs cap/hielo12 --var 12:1:0:8:60
+# 2) montaje → MP4 (las carpetas de cap/ se llaman como en `tomas:` de cada montaje)
+node tools/video/grabar.cjs "tools/video/montaje.html?m=montajes/cascada.js" dist/videos/03-mejor-jugada.mp4 --cap cap
 ```
-Hice TODOS los sonidos de mi juego de Cocardo sin grabar nada: cada uno es puro código 🥥🍦
-La risa de Cherry me da miedo… ¿qué sonido le falta? 👇
-Juego de fans (no oficial). Pronto gratis en la web.
-#cocardo #frutinovela #lanievedelima #cocosscoops #juegosindie #gamedev
-```
 
-Estructura: risa de Cocardo (portada y gancho desde el fotograma 0), risa de Cherry, golpe al congelador, hielo,
-cascada x1 → x8 hasta «¡¡TELENOVELA!!», rescate y tres estrellas, derrota con risa de Cocardo, «tan-tan-TAAAN» con
-«Continuará...» y cierre con la cumbia y la pregunta para comentar. El final enlaza con el inicio (la risa).
+Tomas que usa cada montaje: `cascada` (cascada); `acertijo2-A/B/C` (acertijo); `casi-pierde`, `casi-gana` (casi13);
+`congelador10`, `hist-pre10`, `hist-post10`; `combo-pp/bb/pb/cp/cb/cc`; `hielo12` (nivel 12:1:0:8:60); `clutch23`
+(nivel 23:31:22:26:60); `cherry17` (nivel 17:1:3:6:30), `rosa25` (nivel 25:19:9:11:60), `hist-cliff15`,
+`hist-pre16`, `hist-pre17`, `hist-cliff25`; `rescate15`, `rescate19` (rescate 15/19), `final30`, `hist-pre30`,
+`hist-ending`; `portada`, `hist-pre2`.
+
+Detalles que importan: la captura usa el juego sin «movimiento reducido» (efectos completos) y suaviza solo en video
+el destello blanco del juego, que al acelerar o ralentizar se encadena y además dispara avisos de fotosensibilidad.
+La portada del juego trae un pie con el nombre de la creadora: en el tráiler queda fuera de cuadro.

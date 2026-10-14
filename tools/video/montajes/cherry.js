@@ -32,9 +32,14 @@
     },
     capas: function (ctx, t) {
       if (t < T[3]) {
-        K.sombraArriba(0.6, 560);
-        K.palabras(t, 0.05, 'Cherry descubrió el secreto', W / 2, 270, { size: 80, maxW: 1000, ritmo: 0.07 });
-        K.popTexto(t, 0.75, '…y todo cambió 🍒', W / 2, 385, { size: 96, fill: C.pink, strokeW: 18, rot: -0.03 });
+        // el «¡TAN-TAN-TAAAN!» del juego (T[1]..T[2]) va solo, sin textos encima
+        if (t < T[1]) {
+          K.sombraArriba(0.6, 560);
+          K.palabras(t, 0.05, 'Cherry descubrió el secreto', W / 2, 290, { size: 80, maxW: 1000, ritmo: 0.07 });
+        } else if (t >= T[2]) {
+          K.sombraArriba(0.6, 520);
+          K.popTexto(t, T[2] + 0.05, '…y todo cambió 🍒', W / 2, 300, { size: 104, fill: C.pink, strokeW: 20, rot: -0.03 });
+        }
         return;
       }
       if (t < T[5]) {

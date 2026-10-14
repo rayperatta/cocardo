@@ -6,7 +6,7 @@
   var HIST = { z: 1, x: 540, y: 1410 };
   var t = 0, T = {};
   function sig(n, d) { T[n] = t; t += d; }
-  sig('negro', 1.6); sig('portada', 2.4); sig('compre', 2.5); sig('viejo', 2.15); sig('lima', 2.4); sig('mapa', 1.7);
+  sig('avance', 1.25); sig('negro', 1.35); sig('portada', 2.4); sig('compre', 2.5); sig('viejo', 2.15); sig('lima', 2.4); sig('mapa', 1.7);
   // montaje al compás (la cumbia entra en T.mont)
   sig('mont', 0);
   var MONT = [
@@ -22,6 +22,8 @@
   var DUR = t;
 
   var clips = [
+    // avance: el clímax de las 18 cascadas como primer fotograma (en TikTok nada de abrir en negro)
+    { toma: 'cas', de: T.avance, a: T.negro, src: 8.3, vel: [[0, 0.5]], trans: 'golpe', cam: [[0, { z: 1.15, x: 540, y: 1000 }]] },
     { toma: 'por', de: T.portada, a: T.compre, src: 0.1, cam: [[T.portada, { z: 1.12, x: 540, y: 820 }], [T.compre, { z: 1.05, x: 540, y: 860 }]], vineta: 0.3 },
     { toma: 'pre2', de: T.compre, a: T.viejo, src: 0, vel: [[0, 1.2]], libre: true, cam: [[T.compre, HIST]], trans: 'barrido', vineta: 0.3 },
     { toma: 'pre2', de: T.viejo, a: T.lima, src: 5.2, vel: [[0, 1.05]], libre: true, cam: [[T.viejo, HIST]], trans: 'golpe', vineta: 0.3 },
@@ -37,7 +39,7 @@
 
   function cine(t) {
     // barras de cine en la apertura y la historia; se abren en el montaje
-    var k = t < T.mont ? 1 : t < T.cherry ? 1 - K.p(t, T.mont, T.mont + 0.3, E.out) : t < T.tarjeta ? K.p(t, T.cherry, T.cherry + 0.3, E.out) : 0;
+    var k = t < T.negro ? 0 : t < T.mont ? 1 : t < T.cherry ? 1 - K.p(t, T.mont, T.mont + 0.3, E.out) : t < T.tarjeta ? K.p(t, T.cherry, T.cherry + 0.3, E.out) : 0;
     K.cine(k);
   }
 
@@ -46,20 +48,22 @@
     tomas: { por: 'portada', pre2: 'hist-pre2', pre10: 'hist-pre10', cas: 'cascada', cong: 'congelador10', cc: 'combo-cc', ch17: 'cherry17', f30: 'final30', cl15: 'hist-cliff15' },
     clips: clips,
     capas: function (ctx, tt) {
+      if (tt < T.negro) {
+        K.sombraArriba(0.75, 600);
+        K.popTexto(tt, 0, '¿Cocardo…', W / 2, 300, { size: 110, fill: C.cream, strokeW: 22, sinPop: true });
+        K.popTexto(tt, 0.35, '…en VIDEOJUEGO?', W / 2, 425, { size: 104, fill: C.gold, strokeW: 22, rot: -0.03 });
+        return;
+      }
       if (tt < T.portada) {
         ctx.fillStyle = '#0c0410'; ctx.fillRect(0, 0, W, H);
-        var a = K.p(tt, 0.15, 0.6) * (1 - K.p(tt, 1.35, 1.6));
+        var a = K.p(tt, T.negro, T.negro + 0.2) * (1 - K.p(tt, T.portada - 0.2, T.portada));
         ctx.save(); ctx.globalAlpha = a;
-        K.texto('En una heladería en quiebra…', W / 2, H / 2 - 40, { font: F.script, size: 92, fill: C.cream, stroke: C.drama, strokeW: 10, maxW: 980 });
+        K.texto('En una heladería en quiebra…', W / 2, H / 2 - 40, { font: F.script, size: 112, fill: C.cream, stroke: C.drama, strokeW: 12, maxW: 1000 });
         ctx.restore();
         cine(tt);
         return;
       }
-      if (tt < T.compre) {
-        K.popTexto(tt, T.portada + 0.6, 'una frutinovela… ¡jugable!', W / 2, 1460, { font: F.script, size: 84, fill: C.cream, stroke: C.drama, strokeW: 12 });
-        cine(tt);
-        return;
-      }
+      if (tt < T.compre) { cine(tt); return; }
       if (tt < T.mapa) {
         if (tt >= T.lima) {
           K.sombraArriba(0.5, 480);
@@ -96,8 +100,8 @@
     },
     audio: {
       juego: 1,
-      extra: [['drama', {}, 0.08, 0.9], ['drama', {}, T.continua + 0.02, 0.7]],
-      sfx: [['subida', T.mapa - 0.4, { dur: 1.9, v: 0.6 }], ['golpe', T.mont, { v: 0.8 }], ['whoosh', T.portada - 0.05, {}], ['whoosh', T.compre - 0.05, { v: 0.6 }],
+      extra: [['drama', {}, T.negro + 0.02, 0.9], ['drama', {}, T.continua + 0.02, 0.7]],
+      sfx: [['golpe', 0.0, { v: 0.6 }], ['rayon', T.negro - 0.03, { v: 0.7 }], ['subida', T.mapa - 0.4, { dur: 1.9, v: 0.6 }], ['golpe', T.mont, { v: 0.8 }], ['whoosh', T.portada - 0.05, {}], ['whoosh', T.compre - 0.05, { v: 0.6 }],
         ['whoosh', T.lima - 0.05, { v: 0.6 }], ['whoosh', T.mapa - 0.05, {}], ['rayon', T.cherry - 0.02, { v: 0.8 }], ['whoosh', T.tarjeta - 0.05, {}]]
         .concat(MONT.map(function (m) { return ['whoosh', m.de - 0.05, { v: 0.6 }]; })),
       musica: [{ t0: T.portada, t1: T.mont, desde: 0, gain: 0.45, fadeIn: 0.4, fadeOut: 0.05 },
