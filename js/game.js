@@ -1731,7 +1731,9 @@
   function startTutorial(teach, key) {
     var t = { teach: teach, key: key, move: null, booster: null, hud: false, els: [] };
     var text = TEACH[teach] || safe(function () { return Story().tips[G.level.id]; }, null) || TEACH.swap;
-    if ((teach === 'cucharon' || teach === 'chorro' || teach === 'batido') && boosterUsable(teach)) t.booster = teach;
+    var isBooster = teach === 'cucharon' || teach === 'chorro' || teach === 'batido';
+    if (isBooster && !boosterUsable(teach)) return;   // sin esa ayuda disponible no hay nada que enseñar
+    if (isBooster) t.booster = teach;
     else if (teach === 'villano' || teach === 'cereza' || teach === 'dosvillanos') t.hud = true;
     else t.move = findTeachMove(teach);
     if (!t.booster && !t.hud && !t.move) return;
