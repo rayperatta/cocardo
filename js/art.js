@@ -532,7 +532,7 @@
 
   // Colores de sabor saturados para las especiales: [claro, principal, oscuro]
   var POP = { L: ['#ecffa8', '#86e01e', '#3a8c0c'], F: ['#ffb4c0', '#ff2a4a', '#ae0828'], B: ['#fff8b8', '#ffd414', '#cc9200'],
-    U: ['#ecd0ff', '#a33ef8', '#5410b4'], N: ['#ffdcaa', '#ff7a0e', '#c44600'], D: ['#ffe8cc', '#ff8a72', '#e2406a'] };
+    U: ['#ecd0ff', '#a33ef8', '#5410b4'], N: ['#ffdcaa', '#ff7a0e', '#c44600'], D: ['#ffd8b4', '#ff7458', '#dc2c58'] };
   // Halo blanco suave detrás de las especiales (las hace saltar a la vista sobre las fichas normales)
   function halo(ctx, cx, cy, r, col) {
     return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + rg(ctx, [[0, col || '#fff', 0.95], [0.55, col || '#fff', 0.55], [1, col || '#fff', 0]], 0.5, 0.5, 0.5) + '"/>';
@@ -548,8 +548,8 @@
       '<path d="M47 80V92M53 83V89" stroke="#c48c48" stroke-width="1.6" stroke-linecap="round"/>';
     v += '<path d="' + POPSICLE + '" fill="none" stroke="#fff" stroke-width="8.5" stroke-linejoin="round"/>';
     v += '<path d="' + POPSICLE + '" fill="' + lg(ctx, [[0, c[0]], [0.3, c[1]], [0.75, c[1]], [1, c[2]]], 0, 0, 1, 0) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    for (i = 0; i < 4; i++) st += '<rect x="' + (17 + i * 19) + '" y="0" width="9.5" height="100"/>';
-    v += '<g clip-path="' + clip(ctx, '<path d="' + POPSICLE + '"/>') + '"><g fill="#fff" opacity=".9">' + st + '</g>' +
+    for (i = 0; i < 4; i++) st += '<rect x="' + (18.5 + i * 19) + '" y="0" width="7" height="100"/>';
+    v += '<g clip-path="' + clip(ctx, '<path d="' + POPSICLE + '"/>') + '"><g fill="#fff" stroke="' + c[2] + '" stroke-width="1.6" stroke-opacity=".8">' + st + '</g>' +
       '<path d="M13 69H87" stroke="' + c[2] + '" stroke-width="5" opacity=".5"/></g>';
     v += '<path d="M20 30Q21 12 36 8" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>';
     v += arrow(50, 10, -90) + arrow(23, 89, 90) + arrow(77, 89, 90);
@@ -808,7 +808,7 @@
     // destellos de escarcha
     out += sparkle(10, 10, 5, '#fff') + sparkle(91, 66, 4.5, '#fff') + sparkle(90, 10, 3.5, '#fff');
     // vida: píldoras grandes arriba
-    var w = 14, gap = 4, x0 = 50 - (maxHp * w + (maxHp - 1) * gap) / 2;
+    var w = maxHp > 3 ? 10 : 14, gap = maxHp > 3 ? 3 : 4, x0 = 50 - (maxHp * w + (maxHp - 1) * gap) / 2;
     for (var k = 0; k < maxHp; k++) {
       var on = k < hp, x = f(x0 + k * (w + gap));
       out += '<rect x="' + x + '" y="5" width="' + w + '" height="8.4" rx="4.2" fill="' + (on ? '#fff' : '#2a5f86') + '" stroke="' + INK + '" stroke-width="2"' + (on ? '' : ' opacity=".7"') + '/>';
