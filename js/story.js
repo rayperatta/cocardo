@@ -378,6 +378,16 @@
     },
   };
 
+  // Burbuja de la víctima al salir de su bloque de hielo en el tablero.
+  var rescueLines = {
+    lima: '¡Libre! Ya no más congelador.',
+    fresa: '¡Prima, ya voy! ¡Ya no soy sabor de fresa!',
+    durazna: '¿Helado gratis? ¡Mejor libertad gratis!',
+    naranja: '¡Libre! ¿Alguien quiere panecitos?',
+    uva: '¡Libre otra vez! Y esta vez, para siempre.',
+    banana: '¡Libre! ¿Dónde está mi hermano?',
+  };
+
   var cascadeText = ['', '', '¡Rico!', '¡Delicioso!', '¡Escandaloso!', '¡DRAMÁTICO!', '¡¡TELENOVELA!!'];
 
   // Álbum: 16 cartas. unlock 'level' = se desbloquea al ganar ese nivel (justo antes de la escena que
@@ -440,6 +450,7 @@
     forLevel: forLevel,
     tips: tips,
     taunts: taunts,
+    rescueLines: rescueLines,
     cascadeText: cascadeText,
     album: album,
     villainFor: villainFor,

@@ -457,6 +457,7 @@ test('Story: burlas, textos de cascada y álbum de 16', () => {
   assert.ok(all('cocardo').includes('Mañana habrá un sabor nuevo.'));
   assert.ok(all('cocardo').includes('Habrá que raspar un poquito más.'));
   assert.ok(all('cereza').includes('Te dije que valían el triple.'));
+  for (const v of VICTIMS) assert.ok(Story.rescueLines[v] && Story.rescueLines[v].length <= 50, `rescueLines.${v}`);
   assert.deepEqual(Story.cascadeText, ['', '', '¡Rico!', '¡Delicioso!', '¡Escandaloso!', '¡DRAMÁTICO!', '¡¡TELENOVELA!!']);
 
   assert.equal(Story.album.length, 16);
