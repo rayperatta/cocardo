@@ -1191,6 +1191,10 @@ svg { display: block; }
   color: var(--cherry);
 }
 .d-near b { font-weight: 400; font-size: 32px; }
+.d-nm { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.d-near.multi { gap: 4px; font-size: 22px; }
+.d-near.multi b { font-size: 26px; }
+.d-near.multi .d-icon { width: 30px; height: 30px; }
 .d-icon { display: inline-block; width: 42px; height: 42px; }
 .d-icon svg { width: 100%; height: 100%; }
 .d-goals { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 8px; margin: 8px 0 0; }

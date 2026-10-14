@@ -220,6 +220,7 @@
     });
     if (name !== 'daily') stopDailyTimer();
     if (renderers[name]) renderers[name]();
+    if (name === 'map' && queuedScenes.length) later(flushQueuedScenes, 0);
     if (name === 'game') {
       requestAnimationFrame(function () { gameCall('resize'); });
     }
@@ -1581,10 +1582,44 @@
     }
     var sess = session || { levelId: result.levelId, daily: !!result.daily, level: getLevel(result.levelId) };
     if (sess.ended) return;
+    if (result.interrupted) { recordInterrupted(result, sess); return; }
     sess.ended = true;
     closeOverlay('pause', true);
     if (sess.daily || result.daily) dailyEnd(result, sess);
     else campaignEnd(result, sess);
+  }
+
+  // Resultado ya decidido que el tablero entrega al detenerse o reiniciarse (stop/restart/start llegaron
+  // antes que onEnd): se guarda igual (estrellas, desbloqueo, rescates, intento oficial del reto) pero sin
+  // Victoria/Derrota; las escenas pendientes (post/cliffhanger/final) se juegan la próxima vez que se vea el
+  // mapa. La sesión no se da por terminada: tras restart() sigue con la partida nueva (en el reto diario esa
+  // ya cuenta como práctica, porque el intento oficial quedó guardado).
+  function recordInterrupted(result, sess) {
+    if (sess.daily || result.daily) { recordDaily(result, sess); return; }
+    if (!result.won) return;
+    var id = result.levelId || sess.levelId;
+    var sum = recordCampaignWin(result, id);
+    if (sum.pending && sum.pending.length) queuedScenes.push({ id: id, list: sum.pending.slice() });
+  }
+
+  var queuedScenes = [];
+  function sceneSeen(p) {
+    var seen = data().seen;
+    if (typeof p === 'string') return !!seen[p];
+    if (p && p.cliff) return !!seen[p.cliff];
+    if (p && p.ending) return !!seen.ending;
+    return true;
+  }
+  // Escenas de una victoria interrumpida: se juegan en el mapa en cuanto no haya otra capa abierta
+  function flushQueuedScenes() {
+    if (current !== 'map' || stack.length) return;
+    while (queuedScenes.length) {
+      var q = queuedScenes.shift();
+      var list = q.list.filter(function (p) { return !sceneSeen(p); });
+      if (!list.length) continue;
+      playScenes(list, function () { afterScenes(q.id, list); }, q.id);
+      return;
+    }
   }
 
   // Calcula y guarda estrellas, récord, desbloqueo, rescates y premios. Devuelve el resumen para la Victoria.
@@ -1634,6 +1669,12 @@
   }
 
   function dailyEnd(result, sess) {
+    var sum = recordDaily(result, sess);
+    if (result.won) showVictory(result, sess, sum);
+    else showDefeat(result, sess, sum);
+  }
+  // Guarda el intento del reto (solo el primero terminado del día es oficial). Devuelve el resumen.
+  function recordDaily(result, sess) {
     var d = data();
     var key = sess.dailyKey || keyOf(dateParts(0));
     var official = !sess.practice && !d.daily.results[key];
@@ -1655,8 +1696,7 @@
       persist();
     }
     sum.streak = currentStreak();
-    if (result.won) showVictory(result, sess, sum);
-    else showDefeat(result, sess, sum);
+    return sum;
   }
   // Clave del día anterior a una clave YYYYMMDD
   function prevKey(key) {
@@ -1821,6 +1861,7 @@
     // se vuelve a pintar: las escenas recién vistas cambian el aviso de próximo rescate
     if (current !== 'map') show('map');
     else renderMap();
+    if (queuedScenes.length) later(flushQueuedScenes, 300);
     var nextId = Math.min(count, id + 1);
     if (hadCliff && id < count) {
       var ch = chapterOf(nextId);
@@ -1862,13 +1903,17 @@
     var villain = villainFor(id);
     var nm = result.nearMiss;
     var prog = goalProgress(result, lv);
-    var open = prog ? prog.filter(function (g) { return g.left > 0; }) : null;
     var headline;
     if (nm && nm.remaining > 0) {
-      var nLeft = nm.remaining | 0;
-      // el ícono solo cuando falta un único objetivo (si no, el número suma varios y el ícono confunde)
-      var ic = (!open || open.length === 1) ? nearIcon(nm.icon, lv) : '';
-      headline = '<p class="d-near">¡Casi! Te ' + (nLeft === 1 ? 'falta' : 'faltan') + ' <b>' + nLeft + '</b>' + (ic ? '<span class="d-icon">' + ic + '</span>' : '') + '</p>';
+      // cada meta pendiente con SU número y su ícono (nearMiss.goals); sin lista, la meta principal
+      var near = (nm.goals && nm.goals.length ? nm.goals : [{ remaining: nm.remaining, icon: nm.icon }])
+        .filter(function (g) { return (g.remaining | 0) > 0; });
+      if (!near.length) near = [{ remaining: nm.remaining, icon: nm.icon }];
+      var one = near.length === 1 && (near[0].remaining | 0) === 1;
+      headline = '<p class="d-near' + (near.length > 1 ? ' multi' : '') + '">¡Casi! Te ' + (one ? 'falta' : 'faltan') + ' ' + joinEs(near.map(function (g) {
+        var ic = nearIcon(g.icon || (g.type ? g : null), lv);
+        return '<span class="d-nm"' + (g.title ? ' title="' + esc(g.title) + '"' : '') + '><b>' + (g.remaining | 0) + '</b>' + (ic ? '<span class="d-icon">' + ic + '</span>' : '') + '</span>';
+      })) + '</p>';
     } else {
       headline = '<p class="d-near">¡Te quedaste sin movimientos!</p>';
     }
@@ -1914,6 +1959,12 @@
       leaveGame();
       show(act === 'daily' ? 'daily' : 'map');
     });
+  }
+
+  // «a», «a y b», «a, b y c»
+  function joinEs(parts) {
+    if (parts.length < 2) return parts.join('');
+    return parts.slice(0, -1).join(', ') + ' y ' + parts[parts.length - 1];
   }
 
   function rescueLine(who) {
