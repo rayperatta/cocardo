@@ -524,7 +524,7 @@
             }).join('') + '</div>' +
           '</div>' +
           '<p class="title-tag">Una frutinovela de helados</p>' +
-          '<button class="title-start" data-autofocus>Toca para empezar</button>' +
+          '<button class="title-start" data-autofocus><span>Toca para empezar</span></button>' +
         '</div>' +
         '<footer class="disclaimer">Juego de fans, no oficial. Inspirado en la frutinovela viral <i>La Nieve de Lima</i> (@frutitaenlatada).</footer>' +
       '</div>';
@@ -917,6 +917,7 @@
       ['left', 'right'].forEach(function (sd) {
         if (slots[sd]) slots[sd].el.classList.toggle('speaking', slots[sd] === speaking);
       });
+      stage.classList.toggle('duo', !!(slots.left && slots.right));
     }
 
     function stopTyping() {

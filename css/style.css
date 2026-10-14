@@ -116,6 +116,8 @@ svg { display: block; }
 }
 .screen-in { animation: screenIn .32s cubic-bezier(.2, .9, .3, 1) both; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+/* el tablero mide su tamaño al arrancar: solo fundido, sin transformaciones */
+#screen-game.screen-in { animation-name: fadeIn; animation-duration: .25s; }
 
 /* Columna de la app (móvil: pantalla completa; escritorio: centrada) */
 .col {
@@ -495,7 +497,18 @@ svg { display: block; }
   font-family: var(--font-display);
   font-size: 24px;
   color: var(--drama);
-  animation: pulse 1.3s ease-in-out infinite;
+  position: relative;
+}
+/* el botón no se mueve (área de toque estable); late su texto y un anillo */
+.title-start span { display: inline-block; animation: pulse 1.3s ease-in-out infinite; }
+.title-start::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 4px solid #fff;
+  animation: ring 1.3s ease-out infinite;
+  pointer-events: none;
 }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
 .disclaimer {
@@ -769,34 +782,6 @@ svg { display: block; }
 .map-hand.from-right svg { transform: rotate(-90deg); animation: pokeR .9s ease-in-out infinite; }
 @keyframes pokeL { 0%, 100% { transform: rotate(90deg) translateY(0); } 50% { transform: rotate(90deg) translateY(-9px); } }
 @keyframes pokeR { 0%, 100% { transform: rotate(-90deg) translateY(0); } 50% { transform: rotate(-90deg) translateY(-9px); } }
-.map-pin {
-  position: absolute;
-  z-index: 6;
-  width: 44px; height: 54px;
-  margin: -88px 0 0 -22px;
-  display: grid;
-  place-items: center;
-  padding-bottom: 10px;
-  color: var(--ice-deep);
-  background: #fff;
-  border: 3px solid var(--ink);
-  border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
-  clip-path: none;
-  box-shadow: 0 4px 0 rgba(43, 22, 48, .4);
-  animation: pin 1s ease-in-out infinite;
-  pointer-events: none;
-}
-.map-pin::after {
-  content: '';
-  position: absolute;
-  bottom: -12px; left: 50%;
-  width: 16px; height: 16px;
-  background: #fff;
-  border-right: 3px solid var(--ink);
-  border-bottom: 3px solid var(--ink);
-  transform: translateX(-50%) rotate(45deg);
-}
-@keyframes pin { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
 .rescue-banner {
   position: absolute;
@@ -832,7 +817,7 @@ svg { display: block; }
 .rb-face svg { width: 120%; height: 120%; margin: -6% 0 0 -10%; }
 .rb-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.1; }
 .rb-txt small { font-size: 12px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--ice-deep); }
-.rb-txt b { font-family: var(--font-display); font-weight: 400; font-size: 19px; }
+.rb-txt b { font-family: var(--font-display); font-weight: 400; font-size: 18px; line-height: 1.1; }
 .rb-flake { color: var(--ice-deep); animation: spin 6s linear infinite; }
 
 .chapter-banner {
@@ -1184,6 +1169,9 @@ svg { display: block; }
 .story-portrait.left { left: -4%; --from: -60px; }
 .story-portrait.right { right: -4%; --from: 60px; }
 .story-portrait.right svg { transform: scaleX(-1); }
+.story-stage.duo .story-portrait { width: min(66vw, 350px, 46vh); }
+.story-stage.duo .story-portrait.left { left: -6%; }
+.story-stage.duo .story-portrait.right { right: -6%; }
 .story-portrait.speaking { filter: drop-shadow(0 10px 0 rgba(43, 22, 48, .35)); transform: scale(1); z-index: 2; }
 .story-portrait.out { animation: portraitOut .24s ease-in both; }
 .story-portrait.mood-pop { animation: moodPop .32s cubic-bezier(.2, 1.6, .4, 1); }
@@ -1204,6 +1192,7 @@ svg { display: block; }
   box-shadow: 0 7px 0 rgba(43, 22, 48, .5), 0 18px 40px rgba(0, 0, 0, .35);
   animation: popIn .35s cubic-bezier(.2, 1.4, .4, 1) both;
 }
+.story-box:focus-visible { outline: none; }
 .story-box.narrator { background: linear-gradient(180deg, #4a1b5e, var(--drama)); color: var(--cream); }
 .story-box.narrator .story-text { font-style: italic; }
 .story-name {
@@ -1536,7 +1525,8 @@ svg { display: block; }
 .danger-card { display: flex; flex-direction: column; gap: 10px; padding: 16px !important; }
 .danger-card small { font-size: 12px; opacity: .7; }
 .wipe-btn { width: 100%; }
-.wipe-btn.armed { animation: wobble .5s ease-in-out infinite; --c1: #ff3d64; --c2: #b8102f; --c3: #7a0a20; }
+.wipe-btn.armed { --c1: #ff3d64; --c2: #b8102f; --c3: #7a0a20; animation: alarm .5s ease-in-out infinite alternate; }
+@keyframes alarm { from { filter: brightness(1); } to { filter: brightness(1.35) saturate(1.2); } }
 
 /* ---------- aviso y destello ---------- */
 
