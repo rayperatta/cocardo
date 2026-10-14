@@ -2008,6 +2008,7 @@
   // Lecciones de especiales en dos pasos: 1) crear el especial, 2) usarlo (si no, muchos nunca lo disparan)
   var SPECIAL_TEACH = { paleta: { ph: 1, pv: 1 }, bomba: { bomba: 1 }, copa: { copa: 1 } };
   var TEACH_USE = '¡Ahora deslízala para usarla!';
+  var TEACH_PREP = '¡Primero acércale frutas de su mismo sabor!';
   function startTutorial(teach, key) {
     var t = { teach: teach, key: key, stage: 1, move: null, booster: null, hud: false, els: [], token: null, acked: false };
     var text = TEACH[teach] || safe(function () { return Story().tips[G.level.id]; }, null) || TEACH.swap;
@@ -2075,6 +2076,7 @@
         var low = lowestSlot(t.token.c);
         if (low > t.token.r) R.guide = { c: t.token.c, r0: t.token.r, r1: low };
       }
+      if (t.focus && !spot.some(function (q) { return same(q, t.focus); })) spot.push(t.focus);
       R.spotlight = spot;
       if (hand) {
         hand.className = 'cg-hand cg-hand-swipe';
@@ -2139,11 +2141,11 @@
     var t = G.tutorial, s = G.state;
     if (t) {
       if (!(t.move || t.hud || t.acked || kind === 'swap')) return;   // la lección de potenciador espera a que lo use
-      if (s.status === 'playing' && t.stage === 1 && SPECIAL_TEACH[t.teach]) {
+      if (s.status === 'playing' && SPECIAL_TEACH[t.teach] && (t.stage === 1 || t.prep)) {
         markSeen(t.key);
-        var sm = specialMove(t.teach);
-        if (sm && sm.move) { specialStep(t, sm); return; }
-        if (sm && sm.wait) G.pendingSpecial = { teach: t.teach, key: t.key, tries: 5 };
+        var sm = specialMove(t.teach, !t.prep);
+        if (sm && (sm.move || sm.prep)) { specialStep(t, sm); return; }
+        if (sm && sm.wait && t.stage === 1) G.pendingSpecial = { teach: t.teach, key: t.key, tries: 5 };
       }
       endTutorial();
       return;
@@ -2151,7 +2153,7 @@
     var ps = G.pendingSpecial;
     if (!ps) return;
     if (s.status !== 'playing' || --ps.tries < 0) { G.pendingSpecial = null; return; }
-    var sm2 = specialMove(ps.teach);
+    var sm2 = specialMove(ps.teach, false);
     if (sm2 && sm2.move) {
       G.pendingSpecial = null;
       var t2 = { teach: ps.teach, key: ps.key, stage: 1, move: null, booster: null, hud: false, els: [], token: null, acked: false };
@@ -2160,8 +2162,18 @@
       specialStep(t2, sm2);
     } else if (!sm2 || sm2.none) G.pendingSpecial = null;
   }
-  // Mejor jugada que usa un especial del tipo enseñado. {move} | {wait} (existe pero no tiene jugada) | {none}
-  function specialMove(teach) {
+  // ¿El especial (por id) tiene una jugada válida en este estado?
+  function usableIds(st, ids) {
+    var cells = [];
+    st.grid.forEach(function (row, r) { row.forEach(function (cl, c) { if (cl && cl.p && ids[cl.p.id] && !cl.p.frost) cells.push({ r: r, c: c }); }); });
+    if (!cells.length) return false;
+    var mv = safe(function () { return Engine().validMoves(st); }, []);
+    return mv.some(function (m) { return cells.some(function (q) { return same(q, m.a) || same(q, m.b); }); });
+  }
+  // Mejor jugada que usa un especial del tipo enseñado: {move}; si todavía no se puede usar y allowPrep, una
+  // jugada que lo deja listo ({prep}: se simula con el estado real, así que el paso siguiente está asegurado);
+  // {wait} si existe pero no hay ninguna de las dos; {none} si no hay especial
+  function specialMove(teach, allowPrep) {
     var types = SPECIAL_TEACH[teach], s = G.state, E = Engine();
     if (!types || !s) return null;
     var cells = [];
@@ -2170,7 +2182,18 @@
     var moves = safe(function () { return E.validMoves(s); }, []).filter(function (m) {
       return cells.some(function (q) { return same(q, m.a) || same(q, m.b); });
     });
-    if (!moves.length) return { wait: true };
+    if (!moves.length) {
+      if (!allowPrep) return { wait: true };
+      var ids = {};
+      cells.forEach(function (q) { ids[s.grid[q.r][q.c].p.id] = 1; });
+      var prep = safe(function () { return E.validMoves(s); }, []).filter(function (m) {
+        var res = safe(function () { return E.applySwap(s, m.a, m.b); }, null);
+        return !!(res && res.turnInfo.valid && res.state.status === 'playing' && usableIds(res.state, ids));
+      });
+      if (!prep.length) return { wait: true };
+      var bp = safe(function () { return bestScored(scoreMoves(s, prep)); }, null);
+      return { prep: bp ? { a: bp.m.a, b: bp.m.b } : prep[0], cell: cells[0] };
+    }
     var scored = safe(function () { return scoreMoves(s, moves); }, null);
     if (!scored) return { move: moves[0] };
     if (teach === 'copa') {
@@ -2187,8 +2210,9 @@
     return best ? { move: { a: best.m.a, b: best.m.b } } : { move: moves[0] };
   }
   function specialStep(t, sm) {
-    t.stage = 2; t.acked = false; t.move = sm.move; t.token = null;
-    tutorialText(TEACH_USE);
+    t.stage = 2; t.acked = false; t.prep = !sm.move; t.move = sm.move || sm.prep; t.token = null;
+    t.focus = t.prep ? sm.cell || null : null;   // al preparar, el especial también queda iluminado
+    tutorialText(t.prep ? TEACH_PREP : TEACH_USE);
     if (t.tip) { t.tip.classList.remove('cg-ok', 'cg-tip-above', 'cg-tip-mid'); void t.tip.offsetWidth; t.tip.classList.add('cg-bump'); }
     if (!t.hand) addHand(t);
     placeTutorial();

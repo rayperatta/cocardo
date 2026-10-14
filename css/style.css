@@ -618,6 +618,17 @@ svg { display: block; }
 .zone-sub { font-family: var(--font-script); font-size: 20px; color: var(--gold); text-shadow: 0 2px 0 var(--ink); line-height: 1.1; }
 .zone-lock { position: absolute; top: -12px; right: -12px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--ice); border: 2px solid var(--cream); }
 .map-road { position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none; overflow: visible; }
+/* el letrero de neón del fondo de la heladería quedaba detrás del nodo jefe: en el mapa lo pinta ui.js aparte */
+.zone-ch1 .zone-bg svg text { display: none; }
+.map-neon {
+  position: absolute;
+  z-index: 1;
+  width: min(46%, 230px);
+  transform: translate(-50%, -50%) rotate(-7deg);
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(255, 111, 165, .55));
+}
+.map-neon svg { width: 100%; height: auto; overflow: visible; }
 
 .node {
   position: absolute;

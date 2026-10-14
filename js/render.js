@@ -375,14 +375,17 @@
       var S = img.width, padPx = Math.ceil(S * 0.14), W = S + padPx * 2, out = null;
       try {
         var sil = document.createElement('canvas'); sil.width = sil.height = W;
-        var g = sil.getContext('2d'), d = Math.max(1, S * 0.035);
+        var g = sil.getContext('2d'), d = Math.max(1, S * 0.04);
         for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4; g.drawImage(img, padPx + Math.cos(a) * d, padPx + Math.sin(a) * d, S, S); }
         g.globalCompositeOperation = 'source-in';
         g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, W);
         out = document.createElement('canvas'); out.width = out.height = W;
         var o = out.getContext('2d');
-        o.shadowColor = 'rgba(255,255,255,0.95)'; o.shadowBlur = S * 0.09;
+        // contorno blanco nítido con halo cálido (se lee igual sobre el damero crema y sobre fondos oscuros)
+        o.shadowColor = 'rgba(255,196,60,0.95)'; o.shadowBlur = S * 0.1;
         o.drawImage(sil, 0, 0); o.drawImage(sil, 0, 0);
+        o.shadowColor = 'rgba(255,255,255,1)'; o.shadowBlur = S * 0.04;
+        o.drawImage(sil, 0, 0);
         out.padK = W / S;
       } catch (e) { out = null; }
       glows[gk] = out;

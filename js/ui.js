@@ -740,12 +740,13 @@
       var first = ch.levels && ch.levels[0];
       var locked = first > d.unlocked;
       var sub = (story().chapterTitles && story().chapterTitles[z.idx]) || '';
-      html += '<div class="zone' + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
+      html += '<div class="zone zone-ch' + esc(ch.id) + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
         '<div class="zone-bg">' + zoneBg(ch.zone || ch.id) + '</div>' +
         '<div class="zone-head" style="top:' + (z.headTop + 34) + 'px"><span class="zone-num">Capítulo ' + ch.id + '</span><b class="zone-name">' + esc(ch.name) + '</b>' +
         (sub ? '<small class="zone-sub">' + esc(sub) + '</small>' : '') + (locked ? '<span class="zone-lock">' + icon('lock', 18) + '</span>' : '') + '</div>' +
         '</div>';
     });
+    html += mapNeonHtml(geo);
     html += '<svg class="map-road" aria-hidden="true"></svg>';
     geo.nodes.forEach(function (n) {
       var lv = getLevel(n.id) || {};
@@ -812,6 +813,25 @@
     requestAnimationFrame(function () { scrollMapTo(cur, false); });
   }
   renderers.map = renderMap;
+
+  // Letrero de neón «Coco's Scoops»: el fondo de la heladería lo trae justo detrás del nodo jefe del capítulo 1
+  // (el retrato lo tapa). En el mapa se oculta el del fondo (css: .zone-ch1 .zone-bg text) y se pinta aquí, en
+  // el hueco libre entre los nodos 4 y 5, del lado contrario al nodo 4.
+  function mapNeonHtml(geo) {
+    var mine = geo.nodes.filter(function (n) { return n.chIdx === 0; });
+    if (mine.length < 5) return '';
+    var a = mine[3], b = mine[4];
+    var x = a.xf <= 0.5 ? 0.73 : 0.27;
+    var y = (a.y + b.y) / 2 + 30;
+    var t = '<text x="110" y="47" textLength="196" lengthAdjust="spacingAndGlyphs"';
+    var word = "Coco's Scoops";
+    return '<div class="map-neon" style="left:' + (x * 100) + '%;top:' + Math.round(y) + 'px" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 66"><g font-family="Yellowtail, Brush Script MT, Segoe Script, cursive" font-size="42" text-anchor="middle" fill="none" stroke-linejoin="round">' +
+      t + ' stroke="#ff6fa5" stroke-width="10" opacity=".25">' + word + '</text>' +
+      t + ' stroke="#ff6fa5" stroke-width="4" opacity=".9">' + word + '</text>' +
+      t + ' stroke="#fff4f9" stroke-width="1.4">' + word + '</text>' +
+      '</g></svg></div>';
+  }
 
   // Camino curvo (Catmull-Rom -> Bézier) entre los nodos, en píxeles
   function drawRoad() {
