@@ -402,13 +402,14 @@
 
   // ---------- congelado / silueta ----------
   function frostFX(c, H) {
-    var out = '', i, a, p, b = '';
-    for (i = 0; i < 7; i++) {
-      a = -158 + i * 22.6;
-      p = onHead(H, a, 0.97);
-      b += '<ellipse transform="translate(' + pt(p) + ') rotate(' + f(a + 90) + ')" rx="' + (i % 2 ? 12 : 14) + '" ry="7" fill="#f6fcff"/>';
+    var out = '', i, p, cap = [], drips = '';
+    for (i = 0; i <= 10; i++) {
+      p = onHead(H, -166 + i * 15.2, 0.97);
+      cap.push(p);
+      if (i % 2) drips += '<ellipse cx="' + Math.round(p[0]) + '" cy="' + Math.round(p[1] + 6) + '" rx="4.2" ry="6"/>';
     }
-    out += G('', b, ' stroke="#7fb8e0" stroke-width="1.6"');
+    var cd = smooth(cap, true);
+    out += G('', drips, ' fill="#f6fcff" stroke="#6aa8d6" stroke-width="1.6"') + S(cd, '#6aa8d6', 13) + S(cd, '#f6fcff', 10) + S(cd, '#fff', 3, ' transform="translate(0 -2)"');
     var ice = '', list = [[H.cx - 15, H.chin - 3, 12], [H.cx - 2, H.chin, 18], [H.cx + 12, H.chin - 3, 11],
       [44, H.sh + 2, 11], [56, H.sh - 2, 15], [144, H.sh - 2, 14], [157, H.sh + 2, 10]];
     p = onHead(H, 180, 0.98); list.push([p[0] + 4, p[1], 14]);
@@ -735,8 +736,8 @@
       return G('translate(100 54) rotate(' + a + ')', P('M' + (-w) + ' 0Q' + f(-w * 0.9) + ' ' + f(-L * 0.6) + ' 0 ' + (-L) + 'Q' + f(w * 0.9) + ' ' + f(-L * 0.6) + ' ' + w + ' 0Z', fill, 2.6) +
         S('M0 -4L0 ' + f(-L * 0.8), '#8fe07a', 1.4, op(0.7)));
     }
-    [[-58, 40], [-36, 50], [-14, 58], [10, 58], [32, 50], [56, 40]].forEach(function (q) { o += lf(q[0], q[1], 7, dk); });
-    [[-72, 32], [-48, 42], [-25, 50], [0, 54], [24, 48], [46, 42], [70, 32]].forEach(function (q) { o += lf(q[0], q[1], 6.5, lt); });
+    [[-60, 44], [-38, 54], [-15, 62], [10, 62], [33, 54], [58, 44]].forEach(function (q) { o += lf(q[0], q[1], 7, dk); });
+    [[-74, 34], [-50, 44], [-26, 52], [-2, 56], [24, 50], [48, 44], [74, 34]].forEach(function (q) { o += lf(q[0], q[1], 6.5, lt); });
     return o;
   }
   function suitBody(c) {
@@ -756,7 +757,7 @@
     name: 'Don Piña', fruit: 'piña', color: '#f2b632',
     role: 'Empresario millonario: «Necesito 500 litros… 500 por sabor».',
     normal: { e: { lid: [0.24, 0.18], curve: 0.15 }, b: [[1, 0, 0], [-2, -2, 1]] },
-    F: { x: 100, ey: 104, ex: 20, er: [11, 12], iris: '#6a3a14', irisL: '#e0a868', irisD: '#2a1208', lash: 0, brow: '#5a3010', bw: 6.6, bg: 7, arch: 2.5,
+    F: { x: 100, ey: 104, ex: 20, er: [12, 13], iris: '#6a3a14', irisL: '#e0a868', irisD: '#2a1208', lash: 0, brow: '#5a3010', bw: 6.6, bg: 7, arch: 2.5,
       my: 139, mw: 14, lips: null, mouth: 'smirk', nose: 'strong', ny: 121, nosec: '#9a5c08', blush: '#ff8a40', blushOp: 0.2, tintPath: PINA_HEAD },
     H: { cx: 100, cy: 100, rx: 56, ry: 58, t: 42, chin: 157, sh: 162 },
     draw: function (c, M, v, F) {
@@ -822,19 +823,22 @@
     F: wF(PAL.banana, {}), H: { cx: 100, cy: 88, rx: 70, ry: 70, t: 18, chin: 142, sh: 166 },
     draw: function (c, M, v, F) {
       var p = PAL.banana, o = '';
-      [[-150, 1.25], [-122, 1.3], [-96, 1.3], [-70, 1.3], [-44, 1.3], [-20, 1.25], [12, 1.2], [36, 1.15]].forEach(function (q) {
-        var a = q[0] * Math.PI / 180;
-        o += peel(100 + Math.cos(a) * 30, 86 + Math.sin(a) * 30, q[0] + 90, q[1], q[0] < -90, p);
-        if (q[0] > -90 && q[0] < 0) o += peel(200 - (100 + Math.cos(a) * 30), 86 + Math.sin(a) * 30, -(q[0] + 90), q[1], true, p);
+      var ang = [-90, -66, -42, -18, 8, 34, 58];
+      [true, false].forEach(function (back) {
+        ang.forEach(function (d, i) {
+          if ((i > 4) !== back) return;
+          var r = d * Math.PI / 180, x = Math.cos(r) * 30, y = 92 + Math.sin(r) * 30, sc = i > 4 ? 1.05 : 1.12;
+          o += peel(100 + x, y, d + 90, sc, false, p);
+          if (d !== -90) o += peel(100 - x, y, -(d + 90), sc, true, p);
+        });
       });
-      o += peel(56, 150, 200, 1.1, true, p) + peel(144, 150, 160, 1.1, false, p);
       o += womanBody(c, p, tankTop(c, '#fffaf0', '#e6dcc8', 'tank', null, 9) + necklace(2));
       o += P(FACE_W, skinG(c, p), SW);
       o += gloss(78, 72, 11, 5.5, -32, 0.6);
       o += S(dots([[70, 118], [76, 122], [66, 124], [130, 118], [124, 122], [134, 124], [96, 110], [104, 110], [100, 106]]), '#b07a3a', 2.8, op(0.75));
       o += faceAll(c, F, M);
       o += hoop(57, 128, 6) + hoop(143, 128, 6);
-      o += peel(84, 62, -58, 0.8, true, p) + peel(116, 62, 58, 0.8, false, p) + peel(100, 56, 0, 0.62, false, p);
+      o += peel(86, 64, -54, 0.78, true, p) + peel(114, 64, 54, 0.78, false, p);
       return o;
     }
   };
@@ -861,7 +865,7 @@
       o += P(FACE_W, skinG(c, p), SW);
       o += S(FRESA_SEEDS, '#ffe680', 3.4) + gloss(78, 72, 11, 5.5, -32, 0.55);
       o += faceAll(c, F, M);
-      o += P('M57 98C54 66 74 46 100 46C126 46 146 66 143 98C140 86 138 78 134 70L128 66L122 72L114 60L106 70L98 58L90 70L82 60L74 70L68 64C62 72 58 84 57 98Z', hf, SW);
+      o += P('M57 98C54 66 74 44 100 44C126 44 146 66 143 98C140 86 138 76 134 66L128 60L122 66L114 54L106 64L98 53L90 64L82 54L74 64L68 58C62 68 58 84 57 98Z', hf, SW);
       var lk = 'M60 84C54 112 54 150 48 186L60 184C64 150 64 114 66 92Z';
       o += P(lk, hf, 4) + P(lk, hf, 4, ' transform="matrix(-1 0 0 1 200 0)"');
       o += hoop(57, 128, 6) + hoop(143, 128, 6);
@@ -942,12 +946,13 @@
     return l.concat([[38, 136, 16], [42, 164, 15], [50, 188, 13], [162, 136, 16], [158, 164, 15], [150, 188, 13], [100, 30, 18], [76, 36, 16], [124, 36, 16]]);
   })();
   function spiral(x, y, r) {
-    return 'M' + f(x - r * 0.15) + ' ' + f(y) + 'a' + f(r * 0.28) + ' ' + f(r * 0.28) + ' 0 1 1 ' + f(r * 0.42) + ' ' + f(r * 0.22) + 'a' + f(r * 0.55) + ' ' + f(r * 0.55) + ' 0 1 1 ' + f(-r * 0.86) + ' ' + f(-r * 0.5);
+    return 'M' + ip(x - r * 0.15, y) + 'a' + ip(r * 0.28, r * 0.28) + ' 0 1 1 ' + ip(r * 0.42, r * 0.22) + 'a' + ip(r * 0.55, r * 0.55) + ' 0 1 1 ' + ip(-r * 0.86, -r * 0.5);
   }
+  function cc(q, dr) { return '<circle cx="' + Math.round(q[0]) + '" cy="' + Math.round(q[1]) + '" r="' + f(q[2] - dr) + '"/>'; }
   function curls(c, list, fill, col) {
     var a = '', b = '', s = '';
-    list.forEach(function (q) { a += C(q[0], q[1], q[2], fill, 4.4); b += C(q[0], q[1], q[2] - 2.2, fill); s += spiral(q[0], q[1], q[2]); });
-    return a + b + S(s, col, 2.4);
+    list.forEach(function (q) { a += cc(q, 0); b += cc(q, 2.2); s += spiral(q[0], q[1], q[2]); });
+    return G('', a, ' fill="' + fill + '" stroke="' + INK + '" stroke-width="4.4"') + G('', b, ' fill="' + fill + '"') + S(s, col, 2.4);
   }
   function muffinBag(c) {
     var o = P('M62 166L138 166L142 206H58Z', lg(c, [[0, '#d9a86a'], [1, '#b07a40']], 0, 0, 0, 1), 3.4);
@@ -1119,14 +1124,14 @@
   var BRO_FACE = sym([0, 66], [[28, 66, 46, 82, 46, 106], [46, 134, 30, 154, 0, 156]]);
   function florets(c, list, fill) {
     var a = '', b = '', d = [];
-    list.forEach(function (q) { a += C(q[0], q[1], q[2], fill, 4.2); b += C(q[0], q[1], q[2] - 2, fill); d.push([q[0] - q[2] * 0.3, q[1] - q[2] * 0.2], [q[0] + q[2] * 0.35, q[1] + q[2] * 0.1], [q[0] - q[2] * 0.05, q[1] + q[2] * 0.4]); });
-    return a + b + S(dots(d), '#1d5a22', 4.4, op(0.55));
+    list.forEach(function (q) { a += cc(q, 0); b += cc(q, 2); d.push([q[0] - q[2] * 0.3, q[1] - q[2] * 0.2], [q[0] + q[2] * 0.35, q[1] + q[2] * 0.1], [q[0] - q[2] * 0.05, q[1] + q[2] * 0.4]); });
+    return G('', a, ' fill="' + fill + '" stroke="' + INK + '" stroke-width="4.2"') + G('', b, ' fill="' + fill + '"') + S(dots(d), '#1d5a22', 4.4, op(0.55));
   }
   CH.brocoli = {
     name: 'El repartidor', fruit: 'brócoli', color: '#3f9a3a',
     role: 'Entrega el congelador grande: «¿Para qué quiere tanto espacio?».',
     normal: { b: [[-3, 0, 1], [1, 1, 0]] },
-    F: { x: 100, ey: 104, ex: 19, er: [10.5, 11], iris: '#4a2e14', irisL: '#c89a60', lash: 0, brow: '#1f5a22', bw: 6.6, bg: 5, arch: 2,
+    F: { x: 100, ey: 104, ex: 19, er: [10.5, 11], iris: '#4a2e14', irisL: '#c89a60', lash: 0, brow: '#123a14', bw: 7.4, bg: 5, arch: 2,
       my: 132, mw: 11, lips: null, mouth: 'smile', nose: 'strong', ny: 120, nosec: '#5a8a30', blush: '#ff9a7a', blushOp: 0.25, tintPath: BRO_FACE },
     H: { cx: 100, cy: 92, rx: 62, ry: 66, t: 22, chin: 168, sh: 162 },
     draw: function (c, M, v, F) {
@@ -1143,7 +1148,7 @@
   };
 
   // ---------- La reportera ----------
-  var REP = { skin: '#ffbf4a', light: '#fff0b8', dark: '#e8862a', hair: '#2f7a34', hairL: '#6cbf4a', hairD: '#154a1c', iris: '#5a3014', irisL: '#d8a060', brow: '#2a5a26', lips: '#e8485a', blush: '#ff8a5a' };
+  var REP = { skin: '#ffc04a', light: '#fff0b8', dark: '#e8862a', hair: '#d2581e', hairL: '#ff8f40', hairD: '#7a240a', iris: '#5a3014', irisL: '#d8a060', brow: '#2a5a26', lips: '#e8485a', blush: '#ff8a5a' };
   function microphone(c) {
     var o = G('rotate(-12 64 180)', '<rect x="59" y="168" width="10" height="44" rx="3" fill="#1e1a24" stroke="' + INK + '" stroke-width="2.6"/>' +
       '<rect x="54" y="160" width="20" height="16" rx="2" fill="#ff6fa5" stroke="' + INK + '" stroke-width="2.6"/>' +
@@ -1157,8 +1162,8 @@
     F: wF(REP, { mw: 11.5 }), H: H_W,
     draw: function (c, M, v, F) {
       var hf = hairG(c, REP), o = '';
-      o += P(smooth([[100, 28], [136, 30], [160, 52], [166, 86], [162, 118], [168, 146], [150, 156], [100, 144], [50, 156], [32, 146], [38, 118], [34, 86], [40, 52], [64, 30]]), hf, SW);
-      o += S('M44 70q-6 30 0 66M156 70q6 30 0 66', '#ffb347', 3, op(0.7));
+      o += P(smooth([[100, 26], [136, 30], [158, 52], [164, 86], [160, 118], [172, 146], [156, 158], [136, 148], [100, 140], [64, 148], [44, 158], [28, 146], [40, 118], [36, 86], [42, 52], [64, 30]]), hf, SW);
+      o += S('M48 64q-10 34 -6 70q2 10 -8 14M152 64q10 34 6 70q-2 10 8 14', '#4caf50', 4.4, op(0.9));
       var bl = lg(c, [[0, '#ffffff'], [1, '#dcd8e4']], 0, 0, 0, 1);
       o += womanBody(c, REP, '');
       o += P('M82 158L100 192L118 158Z', '#3f9a3a', 2.4);
@@ -1166,7 +1171,8 @@
       o += P('M82 156L68 170L78 176L72 182L96 206H100Z', '#f0eef6', 2.4) + P('M118 156L132 170L122 176L128 182L104 206H100Z', '#f0eef6', 2.4);
       o += P(FACE_W, skinG(c, REP), SW) + gloss(78, 72, 11, 5.5, -32, 0.5);
       o += faceAll(c, F, M);
-      o += P('M57 104C52 70 70 44 100 42C132 40 150 66 143 100C136 76 118 62 96 62C84 62 72 66 66 76C62 84 59 94 57 104Z', hf, SW) + S('M80 52q16 -8 34 -4', '#ffb347', 3, op(0.8)) + S('M120 50q16 6 20 24', REP.hairL, 2.6, op(0.8));
+      o += P('M57 104C52 70 72 42 104 40C132 38 150 62 143 98C138 80 130 64 118 52C106 64 88 64 74 76C66 84 60 94 57 104Z', hf, SW) +
+        S('M112 46C96 52 80 58 68 76M126 46q14 10 16 32', '#4caf50', 4, op(0.9)) + S('M100 46q-14 4 -24 12', REP.hairL, 2.4, op(0.8));
       o += hoop(57, 128, 5) + hoop(143, 128, 5);
       return o + microphone(c);
     }

@@ -1526,7 +1526,9 @@
       }).then(function () {
         if (gen !== G.gen) return;
         var hf = Engine().heladoFinal(G.state);
-        var pc = { prev: G.state, speed: 0.75, hf: true, cancelled: false };
+        // velocidad adaptable: con muchos movimientos sobrantes el Helado Final no debe pasar de ~7 s
+        var hfSpeed = Math.min(0.75, Math.max(0.3, 7000 / (Math.max(1, G.state.movesLeft) * 1200)));
+        var pc = { prev: G.state, speed: hfSpeed, hf: true, cancelled: false };
         G.state = hf.state;
         if (G.hfSkip) { applyInstant(); return; }
         G.player = pc;
