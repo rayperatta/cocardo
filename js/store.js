@@ -63,6 +63,11 @@
   function isLocked(levelId) { return selling() && L().isLevelLocked(levelId, isFull()); }
   function code() { var lic = data().license; return lic && lic.code ? lic.code : null; }
   function canVerify() { return !!(E().subtle && L().PUBLIC_KEY); }
+  // ¿Corre dentro de itch.io? (el juego vive en un iframe de itch.zone; la compra está en la misma página)
+  function onItch() {
+    var loc = E().location;
+    return !!(loc && /(^|\.)itch\.(zone|io)$/.test(String(loc.hostname || '')));
+  }
 
   function setLicense(lic) {
     var d = data();
@@ -241,13 +246,18 @@
       row.appendChild(button('st-secondary', 'Ya tengo un código', function () { render('redeem', opts); }));
       row.appendChild(button('st-secondary', 'Ahora no', close));
       card.appendChild(row);
+      if (onItch()) {
+        card.appendChild(el('p', 'st-hint', 'Estás jugando en itch.io: también puedes comprar con el botón «Buy Now» ' +
+          'de esta misma página, debajo del juego.'));
+      }
       card.appendChild(copyBox(config.buyUrl, '¿No se abre? Copiar enlace de pago'));
       footer(card, true);
     },
 
     redeem: function (card, opts) {
       header(card, 'Versión completa', 'Canjear código');
-      card.appendChild(el('p', 'st-lead', 'Pega aquí el código o el enlace que te llegó después de pagar.'));
+      card.appendChild(el('p', 'st-lead', 'Pega aquí el código de tu compra. En itch.io lo ves en tu página de descarga, ' +
+        'con el botón «Get key».'));
       var ta = el('textarea', 'st-input');
       ta.rows = 3;
       ta.placeholder = 'AQEAAA…';
@@ -378,6 +388,7 @@
     isLocked: isLocked,
     code: code,
     canVerify: canVerify,
+    onItch: onItch,
     redeem: redeem,
     onChange: onChange,
     open: open,

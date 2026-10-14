@@ -242,6 +242,15 @@ test('Store: init revisa la licencia guardada (anulada -> se quita; sin crypto -
   assert.equal(Store.isFull(), false, 'un código inválido guardado se quita');
 }));
 
+test('Store: detecta cuando corre dentro de itch.io', withStore(async () => {
+  const { env } = fakeEnv();
+  for (const [host, want] of [['html-classic.itch.zone', true], ['v6p9d9t4.ssl.hwcdn.itch.zone', true], ['fan.itch.io', true],
+    ['fan.example', false], ['itch.zone.example.com', false], ['', false]]) {
+    Store._setEnv(Object.assign({}, env, { location: Object.assign({}, env.location, { hostname: host }) }));
+    assert.equal(Store.onItch(), want, host);
+  }
+}));
+
 test('Store: setFull (debug) enciende y apaga la versión completa', withStore(async () => {
   Store._setEnv(fakeEnv().env);
   Store.setFull(true);

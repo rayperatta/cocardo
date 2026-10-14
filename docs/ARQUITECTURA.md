@@ -396,6 +396,7 @@ Cocardo.Store = {              // js/store.js + css/store.css — browser; uses 
   isLocked(levelId) -> boolean,           // selling() && License.isLevelLocked(levelId, isFull())
   code() -> string | null,
   canVerify() -> boolean,
+  onItch() -> boolean,         // running inside itch.io's iframe (codes are pasted there; '#licencia=' links don't reach it)
   redeem(text) -> Promise<result>,        // same result as License.verify; on ok writes Save.license and calls save()
   onChange(fn(full)) -> unsubscribe,
   open(view, { reason:'cliff'|'lock'|'settings', onClose(full) }),   // view: 'paywall'|'redeem'|'success'|'status'

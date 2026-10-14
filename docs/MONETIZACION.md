@@ -14,7 +14,7 @@ las interfaces en `docs/ARQUITECTURA.md` §14.
 | **Lo que se compra** | Niveles 11 al 30 (capítulos 3 a 6 y el final) y un marco dorado «Socio de la heladería» en el Álbum. |
 | **Anuncios** | **No.** Se vuelve a evaluar cuando pase la ola, y solo con licencia de la creadora. |
 | **Donaciones** | Enlace opcional «Invítame un helado». No desbloquea nada. |
-| **Dónde se cobra** | itch.io, que entrega a cada comprador uno de nuestros códigos únicos («External keys»). Plan B: Payhip. |
+| **Dónde se cobra** | itch.io, en un solo proyecto: el juego se juega gratis en la página y la misma página vende la versión completa, entregando a cada comprador uno de nuestros códigos únicos («External keys»). Plan B: Payhip. |
 | **Permiso** | **Obtenido.** La creadora de la serie dio permiso explícito por correo (14 de octubre de 2026). El correo lo guarda quien publica, fuera del repo. |
 | **Créditos** | «Juego de fans hecho con permiso de la creadora», sin nombrarla (lo decidió quien publica). Nunca «oficial». |
 
@@ -23,7 +23,7 @@ las interfaces en `docs/ARQUITECTURA.md` §14.
 | | Estado |
 |---|---|
 | Clave pública de producción en `js/core/license.js` | ✅ Lista |
-| `config.buyUrl`: página de venta en itch.io | ⏳ Pendiente: crear la página (§6) |
+| `config.buyUrl`: página de venta en itch.io | ⏳ Pendiente: crear la página (guía en §6) |
 | `config.contact`: correo para dudas y reembolsos | ⏳ Pendiente: lo pasa quien publica |
 | Precio `US$1,99` y aviso de fans en `js/store.js` | ✅ Listos |
 | Clave privada y primer lote de 1.000 códigos (series 1 a 1.000) | ✅ Entregados a quien publica, fuera del repo |
@@ -94,7 +94,7 @@ Que la serie esté hecha con IA **no** resuelve el problema: guiones, nombres y 
    Consulten a un abogado de propiedad intelectual antes de firmar o si llega un reclamo.
 
 **Además, antes de cobrar:**
-- Un dominio propio o el juego alojado en itch.io: GitHub Pages no admite comercio.
+- El juego, alojado en itch.io (o en un dominio propio): GitHub Pages no admite comercio.
 - Un correo de contacto visible para reembolsos y reclamos (en México, LFPC art. 76 bis).
 - Un aviso de privacidad breve.
 - Cero rastreadores.
@@ -123,8 +123,9 @@ Todos los textos están en `js/store.js`. Para verlos, abre `tools/store-preview
 - **Código:** 94 caracteres en base64url (70 bytes): formato, producto, número de serie y una firma **ECDSA P-256**.
   El juego solo lleva la **clave pública** y verifica con WebCrypto (`crypto.subtle`), que funciona en `file://`, en
   GitHub Pages, en itch.io y en el artifact. Nadie puede fabricar códigos leyendo el código fuente.
-- **Entrega:** el código suelto (para pegar) o el enlace `https://…/#licencia=<código>`. El juego lo canjea al abrir y lo
-  borra de la barra de direcciones. El hash nunca llega al servidor.
+- **Entrega:** en itch.io, el código suelto, que el jugador pega (botón «Get key» de su página de descarga). Fuera de
+  itch.io también sirve el enlace `https://…/#licencia=<código>`: el juego lo canjea al abrir y lo borra de la barra de
+  direcciones. El hash nunca llega al servidor.
 - **Revocación:** cada código tiene un número de serie. Los códigos filtrados o reembolsados se agregan a
   `License.REVOKED` en la siguiente versión, y el juego vuelve a revisar el código guardado en cada arranque.
 - **Honestidad:** nada de esto impide que alguien edite localStorage o abra la consola, porque los 30 niveles van en el
@@ -133,38 +134,105 @@ Todos los textos están en `js/store.js`. Para verlos, abre `tools/store-preview
 - **Límite:** el progreso vive en el navegador. El navegador interno de TikTok no comparte datos con Chrome, así que el
   código vale en cualquier navegador, pero el progreso no lo sigue. Por eso se ofrece «Copiar mi código».
 
-## 6. Cómo activar la venta (cuando haya permiso)
+## 6. Cómo activar la venta: tienda en itch.io
 
-Hacerlo en la computadora de quien publica el juego, nunca en el repo:
+**Ya hecho:**
+- La clave de producción está en el juego.
+- Quien publica recibió (fuera del repo) la clave privada `cocardo-licencia.pem` y los códigos 1 a 1.000, en
+  `cocardo-codigos-itch-001-1000.txt` (uno por línea) y en un CSV con su serie.
 
-```bash
-# 1. Clave privada (una sola vez). Respáldala: si se pierde, no se pueden firmar más códigos.
-node tools/license.cjs keygen --out ~/.cocardo/licencia.pem
-#    -> imprime la línea PUBLIC_KEY: pégala en js/core/license.js
+**Falta:** la página de itch.io y el correo de contacto.
 
-# 2. Lote de códigos únicos para la tienda (registra las series en ~/.cocardo/licencias.csv)
-node tools/license.cjs batch --key ~/.cocardo/licencia.pem --from 1 --count 500 \
-  --csv ~/.cocardo/lote-001.csv --url https://TU-SITIO/cocardo/
+**Un solo proyecto.** En itch.io, los juegos HTML5 siempre se juegan gratis en el navegador, incluso cuando el proyecto
+es pagado: la página muestra «Run game» junto a «Buy Now». Eso calza con el modelo. La compra da acceso a una clave
+externa (nuestro código), que el jugador **pega** dentro del juego. En itch.io el enlace `#licencia=` no le llega al
+juego, porque este corre en un iframe de `itch.zone`.
 
-# Un código suelto (regalo, reposición) y verificación
-node tools/license.cjs sign   --key ~/.cocardo/licencia.pem --serial 9001 --note "regalo a Fulana"
-node tools/license.cjs verify "<código o enlace>" --key ~/.cocardo/licencia.pem
-```
+### Pasos
+1. **Cuenta y cobro.**
+   - En *Seller settings*, elegir **«Collected by itch.io, paid later»**: itch.io es el comerciante, cobra el IVA y
+     asume los contracargos.
+   - Hacer la **entrevista fiscal** (*Account settings → Tax information*; suele ser el W-8BEN) con el número
+     tributario. Perú no tiene tratado con EE. UU.: puede haber retención de 30 % sobre las ventas a EE. UU.; consultar
+     con un contador.
+   - Agregar **PayPal** (lo más simple con pocas ventas) o Payoneer para retirar.
+2. **Crear la página:** *Dashboard → Create new game*, con *Kind of project* **HTML**. Agregar una portada de 630×500 y
+   de 3 a 5 capturas. La página nace privada.
+3. **Subir el juego web:**
+   - generar el archivo con `node tools/build-single.cjs dist/index.html` (cuando exista `index.html`);
+   - subir `index.html` o un ZIP con `index.html` en la raíz;
+   - marcarlo para jugar en el navegador;
+   - en *Embed options*, activar *Mobile friendly* y *Fullscreen button*, con un tamaño vertical de **405×720**
+     (orientación Portrait si aparece).
+4. **Archivo para compradores** (itch.io no vende sin al menos un archivo descargable): subir
+   `Cocardo-completo-offline.zip` con el mismo `index.html` para jugar sin conexión. No marcarlo como
+   Windows, Mac ni Linux.
+5. **Precio:** *Pricing → Paid →* **1.99**. Es un precio mínimo: el comprador puede pagar más. El cobro es solo en
+   dólares. Por defecto itch.io se queda con 10 % y la pasarela con unos US$0,30 + 2,9 %, así que quedan unos US$1,43
+   por venta.
+6. **Cargar los códigos:** *Edit game → Distribute → External keys*, tipo **Other**. Pegar el contenido de
+   `cocardo-codigos-itch-001-1000.txt`. Conviene probar primero con 2 o 3 códigos, porque no está documentado si
+   acepta `-` y `_` ni el largo máximo.
+   - Cada comprador obtiene una clave, incluidos los compradores anteriores a la carga.
+   - Cuando queden menos de 100, generar otro lote (ver abajo).
+7. **Instrucciones para el comprador**, en el campo de instrucciones de descarga (aparece en su página de descarga):
+   > ¡Gracias por apoyar este juego de fans! Toca «Get key» y copia tu código. Vuelve a la página del juego, abre
+   > cualquier nivel con candado (o Ajustes → Versión completa → «Ya tengo un código») y pégalo. Guarda el código: te
+   > sirve en cualquier celular o navegador. ¿Problemas? Escríbenos a CORREO.
+8. **Descripción de la página.** Incluir: «Juego de fans hecho con permiso de la creadora. Inspirado en la frutinovela
+   viral». No hay que nombrarla ni decir «oficial». No marcar contenido adulto, y declarar el uso de IA si se usó.
+9. **Configurar el juego** en `js/store.js`:
+   - `buyUrl`: la URL de la página, `https://USUARIO.itch.io/JUEGO`;
+   - `contact`: el correo.
 
-3. **Tienda:** en itch.io, crear el producto a US$1,99 con «paga más si quieres» y subir la columna `codigo` (o
-   `enlace`) del CSV como claves externas. El juego acepta las dos formas. En Payhip, cargar la lista como claves de
-   licencia propias.
-4. **Configurar** `Cocardo.Store.config` en `js/store.js`:
-   - `buyUrl`: página de la tienda;
-   - `price`: `'US$1,99'`;
-   - `contact`: correo para reembolsos y reclamos;
-   - `donateUrl`: opcional.
+   `price` ya es `'US$1,99'`. Al poner los dos, se encienden los candados. Correr `node --test tests/*.test.js`,
+   volver a generar el archivo y subirlo.
+10. **Probar una compra:** *Distribute → Download keys*, crear un grupo de 1 llave con acceso a claves externas y dejar
+    la página en *Public restricted*. Canjear ese código en el juego y **anular su serie** después (agregarla a
+    `License.REVOKED`), porque gasta un código real.
+11. **Publicar:** visibilidad **Public**.
 
-   Con `PUBLIC_KEY` y `buyUrl` puestos, se encienden los candados.
-5. **Comprobar:** `node --test tests/*.test.js` y abrir `tools/store-preview.html`.
+### Día a día
+- **Reembolsos:** *Earnings → Payments →* el pago *→ Issue refund…* (lo aprueba itch.io). En
+  `itch.io/dashboard/purchases?refunded` se ve qué código recibió el comprador. Agregar su serie a `License.REVOKED`. No
+  anular nunca códigos vigentes: quitar un acceso pagado viola las reglas de itch.io.
+- **Cobros:** el saldo se libera 7 días después de cada venta, con un mínimo de US$5 y unos 10 a 14 días de revisión.
+  Conviene un retiro al mes, porque las ventas sin retirar en 12 meses pierden 10 % mensual.
+- **Más códigos** (en una computadora con Node.js y el repo, o pidiéndoselo a Claude con la carpeta privada):
+  ```bash
+  node tools/license.cjs batch --key RUTA/cocardo-licencia.pem --from 1001 --count 1000 \
+    --csv RUTA/cocardo-codigos-1001-2000.csv --txt RUTA/cocardo-codigos-itch-1001-2000.txt
+  node tools/license.cjs sign   --key RUTA/cocardo-licencia.pem --serial 5001 --note "regalo"   # un código suelto
+  node tools/license.cjs verify "<código>"                                                     # revisar un código
+  ```
+  El registro `licencias.csv` (junto a la clave) evita repetir series.
+- **Apagar la venta** (por ejemplo, si llega un reclamo): vaciar `buyUrl`. Todo queda gratis para todos y los
+  compradores no pierden nada.
+- **Si el juego también se aloja fuera de itch.io** (dominio propio): ahí sí funciona el enlace `#licencia=`. Se generan
+  los códigos con `--url https://SITIO/` y el CSV trae una columna `enlace`.
 
-**Apagar la venta** (por ejemplo, si llega un reclamo): vaciar `buyUrl`. Todo queda gratis para todos y los compradores
-no pierden nada. **Anular un código:** agregar su serie a `License.REVOKED`.
+### Dudas abiertas
+- **El correo de compra:** si incluye el código o solo el enlace a la página de descarga.
+- **El archivo de relleno:** si basta un PDF en vez del juego descargable (las guías de itch.io se contradicen).
+- **Impuestos:** el alcance real de la retención para Perú y los impuestos peruanos; consultar a soporte y a un
+  contador.
+- **El iframe de itch.io:** no permite escribir en el portapapeles. «Copiar mi código» cae en un cuadro de texto
+  seleccionado, y Safari podría borrar lo guardado: el jugador puede volver a pegar su código.
+
+Fuentes de esta sección:
+- https://itch.io/docs/creators/html5
+- https://itch.io/docs/creators/payments
+- https://itch.io/docs/creators/pricing
+- https://itch.io/docs/creators/download-keys
+- https://itch.io/docs/creators/getting-started
+- https://itch.io/docs/creators/quality-guidelines
+- https://itch.io/docs/creators/how-buying-works
+- https://itch.io/docs/legal/terms
+- https://itch.io/updates/manage-your-external-keys
+- https://itch.io/updates/more-embed-options-for-html5-games
+- https://itch.io/t/32896/attaching-a-product-key-to-your-software
+- https://itch.io/t/312740/how-can-i-quickly-issue-a-refund-to-a-customer
+- https://www.irs.gov/businesses/international-businesses/united-states-income-tax-treaties-a-to-z
 
 ## 7. Qué falta en el resto del juego (Shell)
 
