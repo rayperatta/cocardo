@@ -40,6 +40,25 @@
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
+    watchPixelRatio(onResize);
+  }
+
+  // Cambio de densidad de píxeles sin cambio de tamaño (mover la ventana a otro monitor, zoom del navegador):
+  // ni «resize» ni el ResizeObserver avisan, así que se escucha la consulta de resolución actual y se
+  // vuelve a armar con el nuevo valor cada vez que cambia.
+  function watchPixelRatio(cb) {
+    if (!window.matchMedia) return;
+    var mq = null;
+    try { mq = window.matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)'); } catch (e) { mq = null; }
+    if (!mq) return;
+    function onChange() {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else if (mq.removeListener) mq.removeListener(onChange);
+      cb();
+      watchPixelRatio(cb);
+    }
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

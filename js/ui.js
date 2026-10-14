@@ -127,13 +127,14 @@
     try { lv = L && typeof L.get === 'function' ? L.get(id) : null; } catch (e) { lv = null; }
     return lv || levelList()[id - 1] || null;
   }
+  // Respaldo por si Cocardo.Levels no cargó: mismos nombres, zonas y colores que js/core/levels.js
   var DEFAULT_CHAPTERS = [
-    { id: 1, name: 'La nieve de Lima', zone: 'Heladería', color: '#ff6fa5' },
-    { id: 2, name: 'Necesitamos un nuevo sabor', zone: 'Mansión de Piña', color: '#f2b632' },
-    { id: 3, name: 'Voy a ampliar el menú', zone: 'Trastienda', color: '#4aa8e0' },
-    { id: 4, name: 'Cherry conoce el negocio', zone: 'Comisaría', color: '#5b1e74' },
-    { id: 5, name: 'La fuga', zone: 'Heladería de Cereza', color: '#d61f4b' },
-    { id: 6, name: 'Se acabó el sabor', zone: 'Gran Congelador', color: '#33b679' },
+    { id: 1, name: 'La nieve de Lima', zone: "Coco's Scoops", color: '#ff6fa5' },
+    { id: 2, name: 'Necesitamos un nuevo sabor', zone: 'La oficina de Don Piña', color: '#a1286a' },
+    { id: 3, name: 'Voy a ampliar el menú', zone: 'La trastienda', color: '#4aa8e0' },
+    { id: 4, name: 'Cherry conoce el negocio', zone: 'El vecindario de Cherry', color: '#d61f4b' },
+    { id: 5, name: 'La fuga', zone: 'La noche de la tormenta', color: '#5b1e74' },
+    { id: 6, name: 'Se acabó el sabor', zone: 'Los congeladores', color: '#2a6fb0' },
   ];
   function chapters() {
     var ch = Cocardo.Levels && Cocardo.Levels.chapters;
@@ -237,10 +238,28 @@
     if (typeof content === 'string') o.innerHTML = content;
     else if (content) o.appendChild(content);
     overlayRoot().appendChild(o);
-    var entry = { name: name, el: o, onEsc: opts.onEsc || null, prevFocus: doc.activeElement };
+    var entry = { name: name, el: o, onEsc: opts.onEsc || null, prevFocus: doc.activeElement, openedAt: now(), downInside: false };
     stack.push(entry);
+    if (opts.guard) guardClicks(entry);
     focusFirst(o);
     return o;
+  }
+  // Capas que se abren justo después de un toque (nodo del mapa, carta del Álbum, toque que salta la
+  // celebración del tablero): el segundo toque de un doble toque no debe cerrarlas ni pulsar sus botones.
+  // Se ignoran los clics de puntero en los primeros GUARD_MS y los que no empezaron (pointerdown) dentro de
+  // la capa. Teclado y click() programático (detail 0) siempre pasan.
+  var GUARD_MS = 350;
+  function guardClicks(entry) {
+    var o = entry.el;
+    o.addEventListener('pointerdown', function () { entry.downInside = true; }, true);
+    o.addEventListener('click', function (ev) {
+      var stray = ev.detail > 0 && (now() - entry.openedAt < GUARD_MS || !entry.downInside);
+      entry.downInside = false;
+      if (stray) {
+        ev.stopImmediatePropagation();
+        ev.preventDefault();
+      }
+    }, true);
   }
   function focusFirst(o) {
     var f = o.querySelector('[data-autofocus]') || o.querySelector('button, [tabindex="0"], textarea');
@@ -363,7 +382,7 @@
   /* ---------- fecha local / reto diario ---------- */
 
   var DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  var DAYS_SHORT = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+  var DAYS_SHORT = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
   var MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
   function dateParts(offsetDays) {
@@ -452,7 +471,7 @@
       var who = (level.rescue && level.rescue[0]) || 'lima';
       var hp = level.friendHP || 2;
       var names = (level.rescue || []).map(nameOf);
-      return { icon: art('friend', who, hp, hp), n: countLayout(level, 'R'), label: names.length ? 'Rescata a ' + names.join(' y ') : 'Rescate', type: t };
+      return { icon: art('friend', who, hp, hp), n: countLayout(level, 'R'), label: names.length ? 'Rescata a ' + names.join(' y a ') : 'Rescate', type: t };
     }
     if (t === 'token') {
       var skin = (level.tokens && level.tokens.skin) || 'prueba';
@@ -554,9 +573,31 @@
     sec.classList.add('title-out');
     later(function () {
       leaving = false;
+      if (isFreshStart()) {
+        // la Portada se queda desvanecida bajo la historia (que es opaca) hasta que entra el tablero
+        later(function () { sec.classList.remove('title-out'); }, 700);
+        firstSession();
+        return;
+      }
       sec.classList.remove('title-out');
       show('map');
     }, reducedMotion() ? 0 : 260);
+  }
+
+  // Guardado nuevo: sin estrellas y sin haber visto la historia del nivel 1
+  function isFreshStart() {
+    var d = data();
+    if (d.unlocked > 1 || d.stars.some(function (x) { return (x | 0) > 0; })) return false;
+    var pre = scenesFor(1).pre;
+    return !(pre && d.seen[pre]);
+  }
+  // Primera sesión: Portada -> historia pre1 -> tablero del nivel 1 (sin mapa ni tarjeta de intro;
+  // el tutorial del tablero ya explica la jugada)
+  function firstSession() {
+    var go = function () { startLevel(1); };
+    var pre = scenesFor(1).pre;
+    if (pre && script(pre)) playScene(pre, go, { level: 1 });
+    else go();
   }
 
   /* ===================================================================== */
@@ -648,6 +689,15 @@
 
   function totalStars() { return data().stars.reduce(function (a, b) { return a + (b | 0); }, 0); }
 
+  // Escena en la que congelan a cada víctima: antes de verla, el mapa no la nombra (sin spoilers)
+  var CAPTURE_SCENE = { lima: 'cliff5', fresa: 'pre6', durazna: 'pre12', uva: 'pre14', banana: 'pre14', naranja: 'pre19' };
+  function captureSeen(who) {
+    var key = CAPTURE_SCENE[who];
+    var d = data();
+    if (!key || d.rescued.indexOf(who) >= 0) return true;
+    return !!d.seen[key];
+  }
+
   function nextRescue() {
     var d = data();
     var list = levelList();
@@ -719,8 +769,9 @@
         var side = n.xf <= 0.5 ? 1 : -1;
         lv.rescue.forEach(function (who, k) {
           var freed = d.rescued.indexOf(who) >= 0;
-          html += '<div class="rescue-bubble' + (freed ? ' freed' : '') + '" style="left:calc(' + (n.xf * 100) + '% + ' + (side * (boss ? 78 : 66) + side * k * 46) + 'px);top:' + (n.y - 6 + k * 10) + 'px" title="' + esc(nameOf(who)) + '">' +
-            portrait(who, freed ? 'feliz' : 'asustado', freed ? {} : { frozen: true }) + '</div>';
+          var known = captureSeen(who);
+          html += '<div class="rescue-bubble' + (freed ? ' freed' : '') + (known ? '' : ' unknown') + '" style="left:calc(' + (n.xf * 100) + '% + ' + (side * (boss ? 78 : 66) + side * k * 46) + 'px);top:' + (n.y - 6 + k * 10) + 'px" title="' + esc(known ? nameOf(who) : '???') + '">' +
+            portrait(who, freed ? 'feliz' : (known ? 'asustado' : 'normal'), freed ? {} : (known ? { frozen: true } : { silhouette: true })) + '</div>';
         });
       }
     });
@@ -743,7 +794,7 @@
     if (nr) {
       // niveles por jugar contando el actual (actual 9, rescate en 10 -> «faltan 2 niveles»)
       var left = nr.level - cur + 1;
-      var names = nr.all.map(nameOf).join(' y ');
+      var names = nr.all.every(captureSeen) ? nr.all.map(nameOf).join(' y ') : '???';
       var when = left <= 1 ? '¡en este nivel!' : 'faltan ' + left + ' niveles';
       banner.innerHTML = '<span class="rb-face">' + portrait(nr.who, 'normal', { silhouette: true }) + '</span>' +
         '<span class="rb-txt"><small>Próximo rescate</small><b>' + esc(names) + ' · ' + esc(when) + '</b></span>' +
@@ -821,7 +872,8 @@
   /*                               HISTORIA                                */
   /* ===================================================================== */
 
-  // Efectos de sonido de los guiones ({sfx:'clac'} etc.)
+  // Efectos de sonido de los guiones ({sfx:'clac'} etc.). La palabra en pantalla sale de Cocardo.Story.effects
+  // (fuente única); estas palabras son solo el respaldo si la historia no la trae.
   var SFX = {
     clac: { word: '¡CLAC!', sound: 'drama', flash: 'ice', shake: true },
     drama: { word: '¡TAN, TAN, TAAAN!', sound: 'drama', flash: 'drama', shake: false },
@@ -831,6 +883,14 @@
     sirena: { word: '¡UIU-UIU!', sound: 'drama', flash: 'siren', shake: false },
   };
 
+  function sfxWord(name) {
+    var e = story().effects;
+    var fx = e && e[name];
+    return (fx && typeof fx.text === 'string' && fx.text) || '';
+  }
+
+  var TYPE_CPS = 50;   // letras por segundo de la máquina de escribir
+
   // Reproduce un guion de Cocardo.Story.scripts[key]. opts: { level, extraCards:[...], zone }
   function playStory(key, done, opts) {
     opts = opts || {};
@@ -838,6 +898,7 @@
     if (opts.extraCards) {
       opts.extraCards.forEach(function (c) { lines.push(c); });
     }
+    if (opts.cardsOnly) lines = cliffCards(lines);
     if (!lines.length) { if (done) done(); return; }
     var lvId = opts.level || 0;
     var ch = lvId ? chapterOf(lvId) : null;
@@ -941,7 +1002,7 @@
     }
 
     function typeTick() {
-      var n = Math.floor((now() - t0) * 30 / 1000);
+      var n = Math.floor((now() - t0) * TYPE_CPS / 1000);
       if (n <= shown) return;
       var prevShown = shown;
       shown = Math.min(full.length, n);
@@ -986,7 +1047,7 @@
       if (line.sfx) {
         // efecto de sonido de historieta («¡CLAC!», «¡CRASH!»...) con destello y sacudida
         var fx = SFX[line.sfx] || { word: String(line.text || line.sfx).toUpperCase(), sound: 'drama', flash: 'white', shake: true };
-        fxEl.innerHTML = '<span class="sfx-word sfx-' + esc(line.sfx) + '">' + esc(line.text || fx.word) + '</span>';
+        fxEl.innerHTML = '<span class="sfx-word sfx-' + esc(line.sfx) + '">' + esc(line.text || sfxWord(line.sfx) || fx.word) + '</span>';
         fxEl.classList.remove('sfx-on');
         void fxEl.offsetWidth;
         fxEl.classList.add('sfx-on');
@@ -1066,18 +1127,50 @@
       '</div>');
   }
 
+  /* ---------- «Omitir historias» (settings.skipStory) ---------- */
+
+  function skipStoriesOn() { return !!(data().settings && data().settings.skipStory); }
+  // Escena normal (antes/después del nivel): con «Omitir historias» se da por vista y se sigue.
+  // Los cliffhangers (solo su tarjeta) y el final se juegan siempre: ver playScenes.
+  function playScene(key, done, opts) {
+    if (!key || !script(key)) { if (done) done(); return; }
+    if (skipStoriesOn()) {
+      data().seen[key] = true;
+      persist();
+      if (done) done();
+      return;
+    }
+    playStory(key, done, opts);
+  }
+  // Solo las tarjetas de cliffhanger, con la cara del último que habló (como en el guion completo)
+  function cliffCards(lines) {
+    var out = [];
+    var who = null, mood = 'normal';
+    lines.forEach(function (l) {
+      if (!l) return;
+      if (l.card) {
+        if (/continuar/i.test(l.card)) out.push(l.who || !who ? l : { card: l.card, who: who, mood: mood });
+        else if (/fin de la temporada|segunda temporada/i.test(l.card)) out.push(l);
+      } else if (l.who && knownChar(l.who)) {
+        who = l.who;
+        mood = l.mood || 'normal';
+      }
+    });
+    return out;
+  }
+
   // Juega una lista de escenas en orden: claves de guion o { cliff:key } / { ending:true }
   function playScenes(list, done, lvId) {
     list = (list || []).slice();
     function step() {
       if (!list.length) { if (done) done(); return; }
       var s = list.shift();
-      if (typeof s === 'string') { playStory(s, step, { level: lvId }); return; }
+      if (typeof s === 'string') { playScene(s, step, { level: lvId }); return; }
       if (s.cliff) {
         // diálogo del cliffhanger + tarjeta «CONTINUARÁ...» (si el guion no la trae)
         var lines = script(s.cliff) || [];
         var hasCard = lines.some(function (l) { return l && l.card; });
-        playStory(s.cliff, step, { level: lvId, extraCards: hasCard ? null : [{ card: 'CONTINUARÁ...' }] });
+        playStory(s.cliff, step, { level: lvId, extraCards: hasCard ? null : [{ card: 'CONTINUARÁ...' }], cardsOnly: skipStoriesOn() });
         return;
       }
       if (s.ending) {
@@ -1116,25 +1209,35 @@
     return mounted;
   }
 
-  // Desde el mapa: historia previa (la primera vez) y luego la intro del nivel
-  function openLevel(id) {
+  // Desde el mapa: historia previa (la primera vez) y luego la intro del nivel.
+  // opts.direct (botón «Siguiente»): si el nivel no estrena mecánica ni potenciador, sin tarjeta de intro:
+  // historia (si no se ha visto) -> tablero.
+  function openLevel(id, opts) {
+    opts = opts || {};
     var lv = getLevel(id);
-    if (!lv) { toast('Este nivel aún se está horneando…'); return; }
+    if (!lv) { toast('Este nivel aún se está congelando…'); return; }
     var fresh = unlockBoostersFor(id);
     var sc = scenesFor(id);
-    if (sc.pre && !data().seen[sc.pre] && script(sc.pre)) {
-      playStory(sc.pre, function () { showIntro(id, fresh); }, { level: id });
-    } else {
+    function next() {
+      if (opts.direct && !needsIntro(lv, fresh)) { startLevel(id); return; }
+      if (current !== 'map') show('map');
       showIntro(id, fresh);
     }
+    if (sc.pre && !data().seen[sc.pre] && script(sc.pre)) playScene(sc.pre, next, { level: id });
+    else next();
   }
+  // El tablero enseña la mecánica del nivel (tutorial con mano guía) la primera vez que se juega
+  function boardTeaches(lv) { return !!(lv && lv.teach && !data().seen['teach' + lv.id]); }
+  function needsIntro(lv, fresh) { return (fresh && fresh.length > 0) || boardTeaches(lv); }
 
-  function boostersHtml(daily) {
+  function boostersHtml(daily, fresh) {
     var d = data();
     if (daily) return '<p class="intro-note">' + icon('lock', 16) + ' Sin potenciadores en el Reto Diario</p>';
     return '<div class="boosters">' + BOOSTERS.map(function (b) {
       var un = d.boostersUnlocked[b.id];
-      return '<div class="booster' + (un ? '' : ' locked') + '" title="' + esc(b.name) + '">' +
+      var isNew = fresh && fresh.indexOf(b.id) >= 0;
+      return '<div class="booster' + (un ? '' : ' locked') + (isNew ? ' fresh' : '') + '" title="' + esc(b.name) + '">' +
+        (isNew ? '<span class="b-new">¡Nuevo!</span>' : '') +
         '<span class="b-icon">' + icon(b.id, 30) + '</span>' +
         (un ? '<b class="b-count">' + (d.boosters[b.id] | 0) + '</b>' : '<span class="b-lock">' + icon('lock', 14) + '</span>') +
         '<small>' + esc(un ? b.name : 'Nivel ' + b.level) + '</small></div>';
@@ -1148,32 +1251,32 @@
     var d = data();
     var ch = chapterOf(id);
     var helper = helperFor(id);
-    var tip = tipFor(id);
+    // si el tablero va a enseñar la mecánica con su tutorial, el consejo de la tarjeta sobra (y no cabe)
+    var tip = boardTeaches(lv) ? '' : tipFor(id);
     var stars = d.stars[id - 1] | 0;
     var best = d.best[id - 1] | 0;
+    var fresh = freshBoosters || [];
     var badges = '';
     if (isFinale(id)) badges += '<span class="badge badge-boss">' + (id === levelCount() ? '¡Gran final!' : 'Final de capítulo') + '</span>';
     if (lv.hard) badges += '<span class="badge badge-drama">¡Drama!</span>';
-    var fresh = (freshBoosters || []).map(function (b) {
-      return '<div class="reward reward-booster"><span class="r-icon">' + icon(b, 34) + '</span><span><small>¡Nuevo potenciador!</small><b>' + esc(boosterName(b)) + ' ×3</b></span></div>';
-    }).join('');
+    // fila compacta: capítulo + (estrellas y récord solo si ya se jugó)
+    var meta = '<p class="intro-chapter">' + esc(ch ? 'Capítulo ' + ch.id + ' · ' + ch.name : '') + '</p>';
+    var starsRow = (stars || best) ? '<div class="intro-stars">' + starsHtml(stars, 'mid-star') + (best ? '<small>Récord: ' + best.toLocaleString('es-MX') + '</small>' : '') + '</div>' : '';
     var o = openOverlay('intro',
       '<div class="card pop intro-card" style="--zc:' + esc(ch && ch.color || '#ff6fa5') + '">' +
         '<button class="close-btn" data-act="close" aria-label="Volver al mapa">' + icon('close', 22) + '</button>' +
         '<div class="ribbon"><span>Nivel ' + id + '</span></div>' +
         '<h2 class="intro-name">' + esc(lv.name || '') + '</h2>' +
-        '<p class="intro-chapter">' + esc(ch ? 'Capítulo ' + ch.id + ' · ' + ch.name : '') + '</p>' +
+        meta +
         (badges ? '<div class="badges">' + badges + '</div>' : '') +
-        '<div class="intro-stars">' + starsHtml(stars, 'mid-star') + (best ? '<small>Récord: ' + best.toLocaleString('es-MX') + '</small>' : '') + '</div>' +
+        starsRow +
         '<h3 class="sec-title">Objetivos</h3>' + goalsHtml(lv) +
         '<div class="moves-pill">' + icon('moves', 22) + '<b>' + (lv.moves | 0) + '</b> movimientos</div>' +
         (tip ? '<div class="tip"><span class="tip-face">' + portrait(helper, 'feliz', helperFrozen(id) ? { frozen: true } : {}) + '</span><p class="tip-bubble"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '') +
-        fresh +
-        '<h3 class="sec-title">Potenciadores</h3>' + boostersHtml(false) +
+        '<h3 class="sec-title">Potenciadores</h3>' + boostersHtml(false, fresh) +
         '<div class="btn-row"><button class="btn btn-pink btn-big" data-act="play" data-autofocus>' + icon('play', 26) + ' ¡A jugar!</button></div>' +
       '</div>',
-    { label: 'Nivel ' + id, onEsc: function () { closeOverlay('intro'); } });
-    if (fresh) play('booster');
+    { label: 'Nivel ' + id, guard: true, onEsc: function () { closeOverlay('intro'); } });
     o.addEventListener('click', function (ev) {
       var t = ev.target.closest('[data-act]');
       if (!t && ev.target === o) { closeOverlay(o); return; }
@@ -1182,6 +1285,39 @@
       if (act === 'close') closeOverlay(o);
       else if (act === 'play') { closeOverlay(o, true); startLevel(id); }
     });
+    // el potenciador nuevo se celebra en su propia ventana, encima de la tarjeta
+    if (fresh.length) showBoosterPop(fresh);
+  }
+
+  var BOOSTER_DESC = {
+    cucharon: 'Rompe una fruta o un bloque sin gastar movimiento.',
+    chorro: 'Limpia una fila entera de un solo chorro.',
+    batido: 'Revuelve todo el tablero cuando no ves jugadas.',
+  };
+  function showBoosterPop(list) {
+    if (isOpen('unlock')) closeOverlay('unlock', true);
+    var rays = '';
+    for (var i = 0; i < 12; i++) rays += '<i style="--r:' + (i * 30) + 'deg"></i>';
+    var items = list.map(function (b) {
+      return '<div class="unlock-item">' +
+        '<span class="unlock-icon"><span class="unlock-rays" aria-hidden="true">' + rays + '</span>' + icon(b, 72) + '<b class="unlock-count">×3</b></span>' +
+        '<b class="unlock-name">' + esc(boosterName(b)) + '</b>' +
+        '<p class="unlock-desc">' + esc(BOOSTER_DESC[b] || '') + '</p></div>';
+    }).join('');
+    var title = list.length > 1 ? '¡Nuevos potenciadores!' : '¡Nuevo potenciador!';
+    var o = openOverlay('unlock',
+      '<div class="card pop unlock-card">' +
+        '<div class="ribbon ribbon-gold"><span>¡Regalo!</span></div>' +
+        '<p class="unlock-title">' + esc(title) + '</p>' +
+        items +
+        '<div class="btn-row"><button class="btn btn-pink btn-big" data-act="ok" data-autofocus>¡Genial!</button></div>' +
+      '</div>',
+    { label: title, guard: true, onEsc: function () { closeOverlay('unlock'); } });
+    play('booster');
+    o.addEventListener('click', function (ev) {
+      if (ev.target === o || ev.target.closest('[data-act="ok"]')) closeOverlay(o);
+    });
+    return o;
   }
 
   function randomSeed() { return (Math.floor(Math.random() * 0xffffffff) >>> 0) || 1; }
@@ -1190,7 +1326,7 @@
   function startLevel(id, opts) {
     opts = opts || {};
     var lv = opts.level || getLevel(id);
-    if (!lv) { toast('Este nivel aún se está horneando…'); return false; }
+    if (!lv) { toast('Este nivel aún se está congelando…'); return false; }
     closeAllOverlays();
     if (!opts.daily) unlockBoostersFor(id);
     if (session && !session.ended) gameCall('stop');
@@ -1234,9 +1370,26 @@
 
   /* ---------- pausa ---------- */
 
+  // El tablero dice si se puede pausar (no durante el Helado Final ni la celebración, ni con el resultado
+  // ya decidido por el motor aunque la animación siga). Sin Game.canPause, se mira el estado del motor.
+  function resultDecided() {
+    var st = gameCall('_state');
+    return !!(st && st.status && st.status !== 'playing');
+  }
+  function gameCanPause() {
+    var g = game();
+    if (g && typeof g.canPause === 'function') {
+      try { if (!g.canPause()) return false; } catch (e) { /* se sigue con la comprobación de respaldo */ }
+    }
+    return !resultDecided();
+  }
+
   function showPause() {
     if (current !== 'game' || !session || session.ended) return;
     if (isOpen('pause')) return;
+    // también cubre visibilitychange: con el turno ganador o perdedor ya decidido no se abre la Pausa,
+    // así Mapa/Reiniciar no pueden tirar el resultado (el temporizador del final entrega onEnd)
+    if (!gameCanPause()) return;
     gameCall('pause');
     var lv = session.level || {};
     var title = session.daily ? 'Reto #' + session.dailyNum : 'Nivel ' + session.levelId;
@@ -1258,6 +1411,8 @@
       if (!t) return;
       if (t.hasAttribute('data-toggle')) { flipToggle(t); return; }
       var act = t.getAttribute('data-act');
+      // defensa extra: si el resultado ya está decidido, Mapa/Reiniciar solo reanudan para que llegue onEnd
+      if ((act === 'restart' || act === 'map') && (resultDecided() || !session || session.ended)) { resumeFromPause(); return; }
       if (act === 'resume') resumeFromPause();
       else if (act === 'restart') { closeOverlay(o, true); gameCall('restart'); gameCall('resume'); }
       else if (act === 'map') { closeOverlay(o, true); leaveGame(); show('map'); }
@@ -1384,7 +1539,7 @@
       if (D && D.campaignShareText) return D.campaignShareText({ levelId: id, stars: stars, rescued: names });
     } catch (e) { console.error('[Cocardo.Daily.campaignShareText]', e); }
     return '🥥 Cocardo: ¡Rescate Helado!\nNivel ' + id + ' ' + '⭐'.repeat(stars) +
-      (names.length ? ' ¡Rescaté a ' + names.join(' y ') + '!' : '') + ' ¿Puedes tú?';
+      (names.length ? ' ¡Rescaté a ' + names.join(' y a ') + '!' : '') + ' ¿Puedes tú?';
   }
 
   /* ---------- Victoria ---------- */
@@ -1411,6 +1566,11 @@
       return '<div class="rescue-row"><span class="rr-face">' + portrait(w, 'feliz') + '</span><span class="rr-txt"><small>¡Libre del hielo!</small><b>¡Rescataste a ' + esc(nameOf(w)) + '!</b></span><span class="rr-hearts" aria-hidden="true"><i></i><i></i><i></i></span></div>';
     }).join('');
     var title = daily ? '¡Reto superado!' : VICTORY_TITLES[stars - 1];
+    // protagonista de la tarjeta: la fruta rescatada (fila de rescate) o, si no hubo rescate, el villano llorando
+    var villain = villainFor(id);
+    var cry = tauntFor(villain, 'win') || (villain === 'cereza' ? '¿¡Mi inventario!?' : '¡Mi sabor estrella!');
+    var heroHtml = rescued.length ? '' :
+      '<div class="v-hero"><span class="v-hero-face">' + portrait(villain, 'llorando') + '</span><p class="v-hero-bubble">' + esc(cry) + '</p></div>';
     var sub = daily ? 'Reto #' + (sess.dailyNum || '') + (sum.practice ? '' : ' · ¡Racha ' + (sum.streak | 0) + '!') : 'Nivel ' + id + (sess.level && sess.level.name ? ' · ' + sess.level.name : '');
     var btns;
     if (daily) {
@@ -1439,26 +1599,28 @@
           return '<span class="v-star v-star-' + k + '" data-i="' + k + '"><span class="v-empty">' + icon('starEmpty', 64) + '</span><span class="v-full">' + icon('star', 64) + '</span></span>';
         }).join('') + '</div>' +
         '<div class="v-score"><small>Puntos</small><b class="js-score">0</b>' + (sum.record ? '<span class="badge badge-record">¡Nuevo récord!</span>' : '') + '</div>' +
+        heroHtml +
         rescueHtml +
         (sum.rewards || []).map(rewardHtml).join('') +
         '<div class="btn-col">' + btns + '</div>' +
       '</div>',
-    { label: title });
-    // estrellas que se estampan una por una
+    { label: title, guard: true });
+    // estrellas que se estampan una por una (~0,3 s cada una)
     var rm = reducedMotion();
-    var base = rm ? 150 : 450;
+    var base = rm ? 120 : 250;
+    var gap = rm ? 100 : 300;
     for (var k = 0; k < stars; k++) {
       (function (k2) {
         later(function () {
           var s = $('.v-star-' + k2, o);
           if (s) s.classList.add('on');
           play('star', { i: k2 });
-        }, base + k2 * (rm ? 120 : 380));
+        }, base + k2 * gap);
       })(k);
     }
-    if (rescued.length) later(function () { play('rescue'); }, base + stars * 380 + 200);
-    if ((sum.rewards || []).length) later(function () { play('booster'); }, base + stars * 380 + 600);
-    countUp($('.js-score', o), result.score | 0, rm ? 0 : 900, base);
+    if (rescued.length) later(function () { play('rescue'); }, base + stars * gap + 150);
+    if ((sum.rewards || []).length) later(function () { play('booster'); }, base + stars * gap + 450);
+    countUp($('.js-score', o), result.score | 0, rm ? 0 : 550, base);
 
     o.addEventListener('click', function (ev) {
       var t = ev.target.closest('[data-act]');
@@ -1473,31 +1635,35 @@
       if (act === 'daily') { show('daily'); return; }
       if (act === 'map') {
         show('map');
-        playScenes(pend, function () { afterScenes(id, pend, false); }, id);
+        playScenes(pend, function () { afterScenes(id, pend); }, id);
         return;
       }
       if (act === 'next') {
-        show('map');
-        playScenes(pend, function () { afterScenes(id, pend, true); }, id);
+        var cliffy = pend.some(function (p) { return p && (p.cliff || p.ending); });
+        if (cliffy || id >= count) {
+          // fin de capítulo: escenas y mapa con el rótulo del capítulo nuevo
+          show('map');
+          playScenes(pend, function () { afterScenes(id, pend); }, id);
+        } else {
+          // sin pasar por el mapa: escena posterior (si hay) -> siguiente nivel
+          playScenes(pend, function () { openLevel(id + 1, { direct: true }); }, id);
+        }
       }
     });
   }
 
-  // Tras las escenas: mapa actualizado y, si toca, la siguiente intro
-  function afterScenes(id, pend, goNext) {
+  // Tras las escenas: mapa actualizado y, después de un cliffhanger, el rótulo del capítulo nuevo
+  function afterScenes(id, pend) {
     var count = levelCount();
     var hadCliff = pend.some(function (p) { return p && (p.cliff || p.ending); });
+    // se vuelve a pintar: las escenas recién vistas cambian el aviso de próximo rescate
     if (current !== 'map') show('map');
+    else renderMap();
     var nextId = Math.min(count, id + 1);
     if (hadCliff && id < count) {
       var ch = chapterOf(nextId);
       if (ch) later(function () { chapterBanner(ch); }, 200);
       later(function () { scrollMapTo(nextId, true); }, 120);
-      return;
-    }
-    if (goNext && id < count) {
-      later(function () { scrollMapTo(nextId, true); }, 60);
-      later(function () { if (current === 'map' && !stack.length) openLevel(nextId); }, reducedMotion() ? 150 : 650);
     }
   }
 
@@ -1533,13 +1699,26 @@
     var lv = sess.level || getLevel(id) || {};
     var villain = villainFor(id);
     var nm = result.nearMiss;
+    var prog = goalProgress(result, lv);
+    var open = prog ? prog.filter(function (g) { return g.left > 0; }) : null;
     var headline;
     if (nm && nm.remaining > 0) {
-      var ic = nearIcon(nm.icon, lv);
-      headline = '<p class="d-near">¡Casi! Te faltan <b>' + (nm.remaining | 0) + '</b>' + (ic ? '<span class="d-icon">' + ic + '</span>' : '') + '</p>';
+      var nLeft = nm.remaining | 0;
+      // el ícono solo cuando falta un único objetivo (si no, el número suma varios y el ícono confunde)
+      var ic = (!open || open.length === 1) ? nearIcon(nm.icon, lv) : '';
+      headline = '<p class="d-near">¡Casi! Te ' + (nLeft === 1 ? 'falta' : 'faltan') + ' <b>' + nLeft + '</b>' + (ic ? '<span class="d-icon">' + ic + '</span>' : '') + '</p>';
     } else {
       headline = '<p class="d-near">¡Te quedaste sin movimientos!</p>';
     }
+    // avance de cada objetivo (ícono + hecho/meta) y un consejo corto del ayudante para la mecánica del nivel
+    var progHtml = prog && prog.length ? '<div class="d-goals" aria-label="Objetivos">' + prog.map(function (g) {
+      return '<span class="d-goal' + (g.left > 0 ? '' : ' done') + '" title="' + esc(g.label) + '"><span class="dg-icon">' + g.icon + '</span>' +
+        '<b class="dg-n">' + g.done + '<small>/' + g.target + '</small></b>' + (g.left > 0 ? '' : '<span class="dg-ok">' + icon('check', 14) + '</span>') + '</span>';
+    }).join('') + '</div>' : '';
+    var helper = helperFor(id);
+    var tip = tipFor(id);
+    var tipHtml = tip ? '<div class="d-tip"><span class="d-tip-face">' + portrait(helper, 'normal', helperFrozen(id) ? { frozen: true } : {}) + '</span>' +
+      '<p class="d-tip-text"><b>' + esc(nameOf(helper)) + ':</b> ' + esc(tip) + '</p></div>' : '';
     var taunt = tauntFor(villain, 'lose') || tauntFor(villain, 'low') || (villain === 'cereza' ? 'Ay, qué fresquito te está quedando todo.' : '¡Se te derritió el tiempo!');
     var daily = !!(sum.daily);
     var btns = daily
@@ -1556,10 +1735,12 @@
         '<div class="d-villain"><div class="d-face">' + portrait(villain, 'carcajada') + '</div>' +
           '<p class="d-bubble">' + esc(taunt) + '</p></div>' +
         headline +
+        progHtml +
+        tipHtml +
         (sum.rewards || []).map(rewardHtml).join('') +
         '<div class="btn-col">' + btns + '</div>' +
       '</div>',
-    { label: 'Derrota' });
+    { label: 'Derrota', guard: true });
     later(function () { play('laugh', { who: villain }); }, reducedMotion() ? 50 : 350);
     o.addEventListener('click', function (ev) {
       var t = ev.target.closest('[data-act]');
@@ -1570,6 +1751,26 @@
       if (act === 'retry') { replay(); return; }
       leaveGame();
       show(act === 'daily' ? 'daily' : 'map');
+    });
+  }
+
+  // Avance de los objetivos al terminar: result.goals si el tablero lo trae; si no, el estado final del motor
+  function goalProgress(result, lv) {
+    var goals = Array.isArray(result.goals) ? result.goals : null;
+    if (!goals) {
+      var st = gameCall('_state');
+      if (st && Array.isArray(st.goals) && (st.levelId == null || st.levelId === lv.id)) goals = st.goals;
+    }
+    if (!goals || !goals.length) return null;
+    var defs = lv.goals || [];
+    return goals.map(function (g, i) {
+      var def = defs[i] || g;
+      var gi = goalInfo(def, lv);
+      var target = Math.max(0, (g.target != null ? g.target : gi.n) | 0);
+      var left = clamp(g.remaining | 0, 0, target);
+      var label = gi.label;
+      if (gi.type === 'token') label = gi.label === 'Ayuda a Uva' ? 'Uva' : 'Pruebas';
+      return { icon: gi.icon, label: label, done: target - left, target: target, left: left };
     });
   }
 
@@ -1621,7 +1822,7 @@
       var state;
       if (res) {
         state = '<div class="daily-result ' + (res.won ? 'won' : 'lost') + '">' +
-          '<b>' + (res.won ? '¡Superado! ' + '⭐'.repeat(res.stars || 1) : '❌ No salió esta vez') + '</b>' +
+          '<b>' + (res.won ? '¡Superado! ' + '⭐'.repeat(clamp(res.stars | 0, 1, 3)) : '❌ No salió esta vez') + '</b>' +
           '<span>' + (res.movesUsed | 0) + '/' + (res.movesTotal | 0) + ' movs · ' + (res.score | 0).toLocaleString('es-MX') + ' pts</span></div>' +
           (res.text ? '<pre class="share-preview">' + esc(res.text) + '</pre>' : '');
       } else {
@@ -1639,7 +1840,7 @@
                 '<button class="btn btn-gold" data-act="play">' + icon('retry', 22) + ' Jugar de práctica</button>'
               : '<button class="btn btn-pink btn-big" data-act="play" data-autofocus>' + icon('play', 24) + ' ¡Jugar reto!</button>') +
           '</div>' +
-          '<p class="intro-note">' + icon('lock', 14) + ' Sin potenciadores · Jugar te da +1 potenciador</p>' +
+          '<p class="intro-note">' + icon('lock', 14) + ' Sin potenciadores · Tu primer intento te da +1 potenciador</p>' +
         '</div>' +
         '<div class="card streak-card">' +
           '<div class="streak-main">' + icon('flame', 40) + '<b>' + currentStreak() + '</b><span>' + (currentStreak() === 1 ? 'día de racha' : 'días de racha') + '</span></div>' +
@@ -1776,7 +1977,7 @@
         (!frozen && e.quote ? '<blockquote class="ad-quote">«' + esc(String(e.quote).replace(/^[«"]|[»"]$/g, '')) + '»</blockquote>' : '') +
         '<div class="btn-row"><button class="btn btn-pink" data-act="close" data-autofocus>Cerrar</button></div>' +
       '</div>',
-    { label: e.name || nameOf(e.id), onEsc: function () { closeOverlay('card'); } });
+    { label: e.name || nameOf(e.id), guard: true, onEsc: function () { closeOverlay('card'); } });
     o.addEventListener('click', function (ev) {
       if (ev.target === o || ev.target.closest('[data-act="close"]')) closeOverlay(o);
     });
@@ -1787,7 +1988,7 @@
   /* ===================================================================== */
 
   function toggleHtml(key, label, on, sub, iconName) {
-    var icons = { sound: on ? 'sound' : 'mute', music: 'music', vibra: 'vibra', motion: 'snowflake' };
+    var icons = { sound: on ? 'sound' : 'mute', music: 'music', vibra: 'vibra', motion: 'snowflake', skipStory: 'next' };
     return '<button class="toggle" role="switch" aria-checked="' + (on ? 'true' : 'false') + '" data-toggle="' + key + '">' +
       '<span class="t-icon">' + icon(iconName || icons[key] || 'check', 24) + '</span>' +
       '<span class="t-label">' + esc(label) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
@@ -1830,13 +2031,16 @@
           toggleHtml('music', 'Música', s.music, 'Cumbia heladera') +
           toggleHtml('vibra', 'Vibración', s.vibra, 'En celulares compatibles') +
           toggleHtml('motion', 'Movimiento reducido', reducedMotion(), s.motion === 'auto' ? 'Automático (según tu sistema)' : 'Menos zooms y sacudidas') +
+          toggleHtml('skipStory', 'Omitir historias', !!s.skipStory, 'Solo verás los «Continuará» y el final') +
         '</div>' +
         '<div class="card settings-card danger-card">' +
           '<button class="btn btn-cherry wipe-btn" data-act="wipe">Borrar progreso</button>' +
-          '<small>Se borran estrellas, rescates y rachas. No se puede deshacer.</small>' +
+          '<small>Se borran estrellas, rescates, potenciadores y rachas. No se puede deshacer.</small>' +
         '</div>' +
         '<footer class="disclaimer in-card">Juego de fans, no oficial. Inspirado en la frutinovela viral <i>La Nieve de Lima</i> (@frutitaenlatada).' +
-        (Cocardo.Save.isPersistent && !Cocardo.Save.isPersistent() ? '<br><b>Ojo:</b> este navegador no deja guardar; tu progreso dura hasta cerrar la página.' : '') + '</footer>' +
+        (Cocardo.Save.isForeign && Cocardo.Save.isForeign()
+          ? '<br><b>Ojo:</b> hay un guardado de una versión más nueva del juego. Esta copia no lo toca: lo que juegues aquí no se guarda.'
+          : (Cocardo.Save.isPersistent && !Cocardo.Save.isPersistent() ? '<br><b>Ojo:</b> este navegador no deja guardar; tu progreso dura hasta cerrar la página.' : '')) + '</footer>' +
       '</div></div>';
     if (!sec.dataset.wired) {
       sec.dataset.wired = '1';

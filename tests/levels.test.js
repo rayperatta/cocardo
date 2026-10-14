@@ -75,9 +75,13 @@ test('Levels: colores 4-6 válidos y metas de color dentro del nivel', () => {
     [...lvl.colors].forEach((c) => assert.ok(COLORS.includes(c), `L${lvl.id} color ${c}`));
     // en el mismo orden que la tabla de colores
     assert.equal(lvl.colors, [...COLORS].filter((c) => lvl.colors.includes(c)).join(''), `L${lvl.id} orden de colores`);
-    lvl.goals.filter((g) => g.type === 'color').forEach((g) => {
+    const colorGoals = lvl.goals.filter((g) => g.type === 'color');
+    colorGoals.forEach((g) => {
       assert.ok(lvl.colors.includes(g.color), `L${lvl.id} meta de color ${g.color} fuera del nivel`);
       assert.ok(Number.isInteger(g.n) && g.n > 0);
+      // metas que se leen de un vistazo: hasta 30 por sabor, hasta 25 si el pedido es de 3 sabores
+      const cap = colorGoals.length >= 3 ? 25 : 30;
+      assert.ok(g.n <= cap, `L${lvl.id}: meta ${g.color}×${g.n} > ${cap}`);
     });
   }
 });
@@ -179,6 +183,21 @@ test('Levels: villanos canónicos (Cocardo escarcha, Cherry encajona) y dueños 
   Levels.list.filter((l) => l.chapter < 4).forEach((l) => assert.ok(l.villains.every((v) => v.who === 'cocardo'), `L${l.id}`));
   // capítulos 1 y parte del 2 sin villano: se aprende a jugar primero
   for (let id = 1; id <= 8; id++) assert.equal(Levels.get(id).villains.length, 0, `L${id}`);
+});
+
+test('Levels: en los jefes con rescate, los amigos empiezan encajados (el rescate llega al final)', () => {
+  // ninguna casilla jugable al lado de una R: solo se llega a ella rompiendo el congelador, el hielo de al
+  // lado o con un especial, así que no se libera en las primeras jugadas
+  for (const lvl of Levels.list.filter((l) => l.boss && l.rescue)) {
+    lvl.layout.forEach((row, r) => [...row].forEach((ch, c) => {
+      if (ch !== 'R') return;
+      const near = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
+        .map(([y, x]) => (lvl.layout[y] || '')[x])
+        .filter((v) => v !== undefined);
+      assert.ok(near.includes('C'), `L${lvl.id}: R(${r},${c}) no está junto al congelador`);
+      assert.ok(near.every((v) => /[#123KRC]/.test(v)), `L${lvl.id}: R(${r},${c}) tiene una casilla jugable al lado`);
+    }));
+  }
 });
 
 test('Levels: rescates del canon (cada víctima se rescata una sola vez)', () => {

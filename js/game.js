@@ -20,13 +20,13 @@
       act: ['¡Fresquito, fresquito!', '¡A congelar se ha dicho!', '¡Jajaja! ¡Al congelador!'],
     },
     cereza: {
-      start: ['Esta heladería es mía, cariño.', '¿Pruebas? ¿Qué pruebas?'],
+      start: ['Esto va a ser un imperio, cariño.', 'Deja de temblar y piensa.'],
       low: ['Ay, qué fresquito te está quedando todo.', 'Tic, tac, mi amor…'],
       act: ['Una cajita más, cariño.', '¡Al inventario!', 'Ji, ji, ji…'],
     },
   };
   var RESCUE_LINES = {
-    lima: '¡Libre! ¡Ese coco me encerró!', fresa: '¡Gracias! ¡Ya siento mis semillitas!', durazna: '¡Siento las pelusitas otra vez!',
+    lima: '¡Libre! Ya no más congelador.', fresa: '¡Gracias! ¡Ya siento mis semillitas!', durazna: '¡Siento las pelusitas otra vez!',
     naranja: '¡Libre! ¡Y con toda mi pulpa!', uva: '¡Libre otra vez! ¡Y para siempre!', banana: '¡Gracias! ¿Y mi hermano?',
   };
   // Textos del tutorial en voz del ayudante de Story.helperFor(id): Lima (capítulos 1-3; en 6-10 habla
@@ -39,13 +39,13 @@
     copa: '¡5 en línea: Copa Arcoíris! Cámbiala con cualquier fruta.',
     hp2: 'Psst… este hielo es más grueso: ¡pégale dos veces!',
     pedido: '¡Pedido de Piña! Junta todos los sabores del ticket.',
-    cucharon: 'Psst… toca el Cucharón y luego una ficha: ¡la rompe sin gastar movimiento!',
+    cucharon: 'Psst… toca el Cucharón y luego una fruta: ¡la rompe sin gastar movimiento!',
     escarcha: 'Psst… la escarcha no deja mover la fruta. ¡Combínala para soltarla!',
     villano: 'Psst… Cocardo escarcha una fruta cada pocos turnos. ¡Mira su cuenta!',
     congelador: 'Combina junto al congelador para romperlo… ¡y junto a mi bloque para sacarme!',
     chorro: 'Te presto mi Chorro de Lima: ¡tócalo y elige una fila!',
     colores6: '¡Seis sabores! Busca bien tus jugadas.',
-    batido: '¿Atorado? Mi Batido de Fresa revuelve todo el tablero.',
+    batido: '¿Sin jugadas? Mi Batido de Fresa revuelve todo el tablero.',
     cajas: 'Las cajas de Cherry se rompen como el hielo: ¡combina a su lado!',
     cereza: 'Cherry convierte frutas en cajas. ¡Ojo con su cuenta!',
     dosvillanos: '¡Son los dos a la vez! Vigila las dos cuentas.',
@@ -53,12 +53,13 @@
     pruebas: 'Baja las pruebas hasta el fondo: ¡yo las reúno!',
   };
   var BOOSTERS = [
-    { type: 'cucharon', name: 'Cucharón', unlock: 7, prompt: 'Toca una ficha o un bloque' },
+    { type: 'cucharon', name: 'Cucharón', unlock: 7, prompt: 'Toca una fruta o un bloque' },
     { type: 'chorro', name: 'Chorro', unlock: 11, prompt: 'Toca una fila para limpiarla' },
     { type: 'batido', name: 'Batido', unlock: 14, prompt: 'Toca el tablero para revolver' },
   ];
   var ZONES = ['heladeria', 'mansion', 'trastienda', 'noche', 'cherry', 'congelador'];
-  var GOAL_LABEL = { ice: 'Hielo', crate: 'Cajas', rescue: 'Rescate', token: 'Fichas', boss: 'Congelador' };
+  var GOAL_LABEL = { ice: 'Hielo', crate: 'Cajas', rescue: 'Rescate', token: 'Pruebas', boss: 'Congelador' };
+  var TOKEN_LABEL = { uva: 'Uva', prueba: 'Pruebas' };
   var COLOR_NAME = { L: 'Lima', F: 'Fresa', B: 'Banana', U: 'Uva', N: 'Naranja', D: 'Durazna' };
 
   // ---------- utilidades ----------
@@ -208,6 +209,8 @@
     G.seed = (G.opts.seed !== undefined && G.opts.seed !== null) ? G.opts.seed : ((Math.random() * 4294967296) >>> 0);
     G.daily = !!(G.opts.daily || level.daily);
     G.state = Engine().createGame(level, G.seed);
+    G.work0 = goalWork(G.state).map(function (x) { return Math.max(1, x); });
+    G.hintCache = null; G.pendingSpecial = null; G.endDelivered = false; G.lastResult = null;
     G.turns = []; G.lowTaunt = false; G.desyncs = 0; G.lastDiff = null;
     G.phase = 'intro'; G.paused = false; G.sel = null; G.cursor = null; G.armed = null; G.press = null;
     G.scoreShown = 0; G.scoreTarget = 0; G.movesShown = null;
@@ -222,6 +225,7 @@
     resize();
     G.R.load(G.state);
     G.R.fzBadge = null;
+    G.R.exits = !!G.state.tokens;   // niveles con fichas: marcas de salida bajo cada columna
     updateVillainBadges();
     var keys = G.R.keysFor(G.state, level);
     var t0 = now();
@@ -343,7 +347,25 @@
       return '';
     }, '');
   }
-  function goalTitle(g) { return g.type === 'color' ? COLOR_NAME[g.color] : GOAL_LABEL[g.type] || ''; }
+  function tokenSkin() { var lv = G.level || {}; return (G.state && G.state.tokens && G.state.tokens.skin) || (lv.tokens && lv.tokens.skin) || 'uva'; }
+  function goalTitle(g) {
+    if (g.type === 'color') return COLOR_NAME[g.color];
+    if (g.type === 'token') return TOKEN_LABEL[tokenSkin()] || GOAL_LABEL.token;
+    return GOAL_LABEL[g.type] || '';
+  }
+  // Rescate con varios amigos: una carita por cada uno que falta (el último rescatado queda si ya no falta nadie)
+  function rescueLeft() {
+    var lv = G.level || {};
+    return (lv.rescue || []).filter(function (w) { return !G.state || G.state.rescued.indexOf(w) < 0; });
+  }
+  function goalIconHtml(g) {
+    if (g.type !== 'rescue') return goalIconSvg(g);
+    var left = rescueLeft();
+    if (left.length <= 1) return goalIconSvg(g);
+    return '<span class="cg-faces" data-n="' + left.length + '">' + left.map(function (w) {
+      return '<span class="cg-face">' + safe(function () { return Art().friend(w, 2, 2); }, '') + '</span>';
+    }).join('') + '</span>';
+  }
   function buildGoals() {
     var E = G.els, goals = G.state.goals;
     E.goals.innerHTML = '';
@@ -364,7 +386,8 @@
     goals.forEach(function (g, i) {
       var chip = el('div', 'cg-goal cg-goal-' + g.type);
       chip.title = goalTitle(g);
-      chip.innerHTML = '<span class="cg-goal-ic">' + goalIconSvg(g) + '</span><span class="cg-goal-n"></span><span class="cg-goal-ok">' + icon('check') + '</span>';
+      chip.innerHTML = '<span class="cg-goal-ic">' + goalIconHtml(g) + '</span><span class="cg-goal-n"></span><span class="cg-goal-ok">' + icon('check') + '</span>';
+      if (g.type === 'rescue') chip.classList.toggle('cg-multi', rescueLeft().length > 1);
       ((ticket && g.type === 'color') ? row : E.goals).appendChild(chip);
       var entry = { i: i, el: chip, ic: chip.querySelector('.cg-goal-ic'), n: chip.querySelector('.cg-goal-n'), shown: null };
       G.goals.push(entry);
@@ -383,10 +406,19 @@
       g.el.classList.remove('cg-bump'); void g.el.offsetWidth; g.el.classList.add('cg-bump');
       if (v <= 0) sfx('star', { i: 1 });
     }
-    if (G.state && G.state.goals[i] && G.state.goals[i].type === 'rescue') {
-      var svg = goalIconSvg(G.state.goals[i]);
-      if (svg && v > 0) g.ic.innerHTML = svg;
+    if (G.state && G.state.goals[i] && G.state.goals[i].type === 'rescue' && v > 0) {
+      var html = goalIconHtml(G.state.goals[i]);
+      if (html) g.ic.innerHTML = html;
+      g.el.classList.toggle('cg-multi', rescueLeft().length > 1);
     }
+  }
+  // Golpe al congelador: el contador de la meta del jefe salta en el momento del impacto
+  function goalHit(type) {
+    G.goals.forEach(function (g) {
+      var sg = G.state && G.state.goals[g.i];
+      if (!sg || sg.type !== type) return;
+      g.el.classList.remove('cg-hit'); void g.el.offsetWidth; g.el.classList.add('cg-hit');
+    });
   }
   function setMoves(n, silent) {
     if (G.movesShown === n) return;
@@ -514,7 +546,8 @@
     var b = el('div', 'cg-banner ' + (cls || ''));
     b.innerHTML = '<div class="cg-banner-t"></div>' + (sub ? '<div class="cg-banner-s"></div>' : '');
     b.querySelector('.cg-banner-t').textContent = text;
-    if (sub) b.querySelector('.cg-banner-s').textContent = sub;
+    // sub: texto, o { html } armado aquí mismo (íconos de metas, nunca texto de afuera)
+    if (sub) { var se = b.querySelector('.cg-banner-s'); if (sub.html) se.innerHTML = sub.html; else se.textContent = sub; }
     var c = boardPt(G.R.side / 2, G.R.side / 2);
     b.style.top = c.y + 'px';
     ov.appendChild(b);
@@ -540,8 +573,13 @@
     var t = el('div', 'cg-toast ' + (cls || ''));
     t.textContent = text;
     var p = boardPt(G.R.side / 2, G.R.side - 8);
-    t.style.left = p.x + 'px'; t.style.top = p.y + 'px';
     ov.appendChild(t);
+    // centrado sobre el tablero pero siempre dentro de la pantalla (el ancho real se mide ya insertado)
+    var rw = G.root.clientWidth || rootRect().width, tw = t.offsetWidth;
+    var x = Math.max(8 + tw / 2, Math.min(rw - 8 - tw / 2, p.x));
+    if (tw + 16 > rw) x = rw / 2;
+    var y = Math.max(t.offsetHeight + 8, p.y);
+    t.style.left = Math.round(x) + 'px'; t.style.top = Math.round(y) + 'px';
     clearTimeout(G.toastTimer);
     if (ms !== 0) G.toastTimer = setTimeout(function () { t.classList.add('cg-out'); setTimeout(function () { t.remove(); }, 250); }, ms || 1400);
     return t;
@@ -590,7 +628,7 @@
       btn.type = 'button';
       btn.setAttribute('data-type', b.type);
       btn.innerHTML = '<span class="cg-boost-ic">' + icon(b.type) + '</span><span class="cg-boost-name">' + b.name + '</span>' +
-        '<span class="cg-boost-n">0</span><span class="cg-boost-lock">' + icon('lock') + '</span>';
+        '<span class="cg-boost-n">0</span><span class="cg-boost-lock">' + icon('lock') + '<span class="cg-boost-at">Nivel ' + b.unlock + '</span></span>';
       btn.addEventListener('click', function (e) { if (e.detail > 0) btn.blur(); onBoosterClick(b.type); });
       bar.appendChild(btn);
     });
@@ -600,6 +638,10 @@
     return { count: d.boosters[type] || 0, unlocked: !!d.boostersUnlocked[type] };
   }
   function updateBoosters() {
+    // sin ningún potenciador desbloqueado la barra no aparece (no hay nada que hacer con ella); después, los
+    // bloqueados quedan como adelanto con el nivel en que se ganan
+    var any = BOOSTERS.some(function (b) { return boosterInfo(b.type).unlocked; });
+    G.root.classList.toggle('cg-noboost', !any);
     BOOSTERS.forEach(function (b) {
       var btn = G.els.boosters.querySelector('.cg-boost-' + b.type);
       if (!btn) return;
@@ -619,7 +661,7 @@
     if (G.phase !== 'play' || G.paused) return;
     var b = BOOSTERS.filter(function (x) { return x.type === type; })[0], inf = boosterInfo(type);
     var btn = G.els.boosters.querySelector('.cg-boost-' + type);
-    var why = G.daily ? 'Sin ayudas en el Reto Diario' : !inf.unlocked ? 'Se desbloquea en el nivel ' + b.unlock : inf.count <= 0 ? '¡Ya no te quedan!' : null;
+    var why = G.daily ? 'Sin potenciadores en el Reto Diario' : !inf.unlocked ? 'Se desbloquea en el nivel ' + b.unlock : inf.count <= 0 ? '¡Ya no te quedan!' : null;
     if (why) {
       sfx('invalid'); toast(why);
       if (btn) { btn.classList.remove('cg-no'); void btn.offsetWidth; btn.classList.add('cg-no'); }
@@ -673,8 +715,13 @@
   //  Entrada
   // =====================================================================
   function canPlay() { return G.phase === 'play' && !G.paused; }
-  // Con el nivel ya decidido (Helado Final, celebración) un toque salta la animación: no se abre la Pausa
-  function pausable() { return G.phase === 'intro' || G.phase === 'play' || G.phase === 'resolve'; }
+  // Con el nivel ya decidido no se abre la Pausa: ni en el Helado Final o la celebración (un toque salta la
+  // animación) ni durante la jugada que lo decidió (el motor ya dice won/lost mientras el tablero aún la anima).
+  // La Shell lo consulta como Cocardo.Game.canPause() antes de abrir la Pausa (botón, Escape, pestaña oculta).
+  function pausable() {
+    if (!(G.phase === 'intro' || G.phase === 'play' || G.phase === 'resolve')) return false;
+    return !G.state || G.state.status === 'playing';
+  }
   function markInput() { clearHint(); armHint(); }
   function evPt(e) {
     var rect = G.els.canvas.getBoundingClientRect();
@@ -694,8 +741,11 @@
   function onDown(e) {
     if (e.button !== undefined && e.button > 0) return;
     e.preventDefault();
+    // un segundo dedo mientras el primero sigue apoyado se ignora (si no, la primera ficha quedaba agrandada)
+    if (G.press && G.press.id !== e.pointerId) return;
     markInput();
     if (!canPlay()) return;
+    releasePressed();
     var pt = evPt(e);
     G.press = { id: e.pointerId, x: pt.x, y: pt.y, cell: pt.cell, fired: false };
     try { G.els.canvas.setPointerCapture(e.pointerId); } catch (err) { /* nada */ }
@@ -760,7 +810,12 @@
     G.R.tween(obj, { ox: 0.08 }, 45, 'out');
     G.R.tween(obj, { ox: -0.08 }, 70, 'inOut', 45);
     G.R.tween(obj, { ox: 0 }, 60, 'out', 115);
-    if (p && p.frost) { sfx('frost'); G.R.tween(p, { flash: 0.6 }, 60, 'out'); G.R.tween(p, { flash: 0 }, 200, 'out', 60); }
+    if (p && p.frost) {
+      sfx('frost'); G.R.tween(p, { flash: 0.6 }, 60, 'out'); G.R.tween(p, { flash: 0 }, 200, 'out', 60);
+      // la primera vez se explica por qué no se mueve (una sola vez por partida guardada)
+      var d = data();
+      if (!d.seen.tipFrost && !G.armed) { d.seen.tipFrost = true; persist(); toast('¡Congelada! Combina a su lado', 2200); }
+    }
   }
 
   function trySwap(a, b) {
@@ -776,6 +831,8 @@
     var res = Engine().applySwap(G.state, a, b);
     if (!res.turnInfo || !res.turnInfo.valid) { playInvalid(a, b); return false; }
     G.turns.push(res.turnInfo);
+    // jugada del tutorial aceptada: se quita la penumbra y la mano YA (se ve el resultado de la lección)
+    if (G.tutorial && G.tutorial.move) tutorialAck();
     runTurn(res, 'swap');
     return true;
   }
@@ -820,10 +877,15 @@
     var DIRS = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
     var isAct = k === ' ' || k === 'Enter' || k === 'Spacebar';
     if (!DIRS[k] && !isAct) return;
+    if (isAct && (G.phase === 'hf' || (G.phase === 'end' && G.endSkip))) {
+      e.preventDefault(); unlockAudio();
+      if (G.phase === 'hf') skipHF(); else G.endSkip();
+      return;
+    }
+    // Enter/Espacio sobre un botón con foco (pausa, potenciadores) lo activan: no se mueve el cursor del tablero
+    if (isAct && e.target && e.target.closest && e.target.closest('button, [role="button"], a[href]')) return;
     e.preventDefault();
     unlockAudio();
-    if (G.phase === 'hf' && isAct) { skipHF(); return; }
-    if (G.phase === 'end' && isAct && G.endSkip) { G.endSkip(); return; }
     markInput();
     if (!canPlay()) return;
     var center = { r: Math.floor(G.state.rows / 2), c: Math.floor(G.state.cols / 2) };
@@ -860,9 +922,95 @@
     if (G.phase !== 'play' || G.paused) return;
     G.hintTimer = setTimeout(showHint, 6000);
   }
+  // ----- pista consciente de las metas -----
+  // Engine.hint solo ordena por especiales y piezas: seguirlo podía perder el nivel (Uva atascada arriba, el
+  // congelador intacto). Aquí cada jugada válida se prueba con Engine.applySwap sobre una copia con OTRA semilla
+  // (la pista no adivina lo que va a caer) y se puntúa el avance de cada meta en unidades finas: piezas del
+  // color, PV de hielo/cajas/amigos/congelador y filas que bajó cada ficha, con más peso para la meta más
+  // atrasada; bonos chicos por especiales y cascadas, y desempate con el orden de Engine.hint. Es el mismo
+  // criterio del bot de tools/sim.js. Una sola vez por estado (caché), ~10 ms en 8x8.
+  var SPECIAL_BONUS = { ph: 4, pv: 4, bomba: 5, copa: 8 };
+  function isSlotCell(cell) { return !!cell && !cell.b && !(cell.p && cell.p.frost); }
+  function blockerHp(grid, kind) {
+    var n = 0;
+    grid.forEach(function (row) { row.forEach(function (cell) { if (cell && cell.b && cell.b.kind === kind) n += cell.b.hp || 0; }); });
+    return n;
+  }
+  // casillas libres que le faltan a cada ficha para llegar abajo (+1), y las que aún no salen valen una columna entera
+  function tokenWork(s) {
+    var w = 0;
+    for (var r = 0; r < s.rows; r++) for (var c = 0; c < s.cols; c++) {
+      var cell = s.grid[r][c];
+      if (!cell || !cell.p || cell.p.type !== 'token') continue;
+      var d = 0;
+      for (var r2 = r + 1; r2 < s.rows; r2++) if (isSlotCell(s.grid[r2][c])) d++;
+      w += d + 1;
+    }
+    if (s.tokens) w += Math.max(0, s.tokens.total - s.tokens.spawned) * (s.rows + 1);
+    return w;
+  }
+  function goalWork(s) {
+    return s.goals.map(function (gl) {
+      if (gl.remaining <= 0) return 0;
+      switch (gl.type) {
+        case 'ice': return blockerHp(s.grid, 'ice');
+        case 'rescue': return blockerHp(s.grid, 'friend');
+        case 'boss': return s.freezer ? Math.max(0, s.freezer.hp) : 0;
+        case 'token': return tokenWork(s);
+        default: return gl.remaining;   // color, cajas
+      }
+    });
+  }
+  // Puntúa jugadas: [{ m, v, tie }] (v = avance de metas, tie = orden de Engine.hint)
+  function scoreMoves(s, moves) {
+    var E = Engine();
+    var W0 = G.work0 && G.work0.length === s.goals.length ? G.work0 : goalWork(s).map(function (x) { return Math.max(1, x); });
+    var before = goalWork(s).map(function (x, i) { return x / W0[i]; });
+    var maxF = Math.max.apply(null, [0].concat(before));
+    var weight = before.map(function (f) { return maxF > 0 ? 0.25 + f / maxF : 0; });
+    var probe = {};
+    Object.keys(s).forEach(function (k) { probe[k] = s[k]; });
+    probe.movesLeft = 999;
+    probe.rng = ((s.rng ^ 0x9E3779B9) >>> 0);
+    return moves.map(function (m) {
+      var tie = 0;
+      if (E._analyzeSwap) { var an = safe(function () { return E._analyzeSwap(s, m.a, m.b); }, null); if (an) tie = an.rank * 10000 + an.sub; }
+      var res = safe(function () { return E.applySwap(probe, m.a, m.b); }, null);
+      if (!res || !res.turnInfo || !res.turnInfo.valid) return { m: m, v: -Infinity, tie: tie };
+      var v;
+      if (res.state.status === 'won') v = 1e6;
+      else {
+        var after = goalWork(res.state);
+        v = 0;
+        for (var i = 0; i < after.length; i++) v += weight[i] * (before[i] - after[i] / W0[i]) * 100;
+        res.steps.forEach(function (st) { (st.events || []).forEach(function (e) { if (e.t === 'create') v += SPECIAL_BONUS[e.type] || 0; }); });
+        v += Math.max(0, res.turnInfo.cascades - 1) * 0.5;
+        v += res.turnInfo.cleared * 0.05 + (m.a.r + m.b.r) * 0.05;
+      }
+      return { m: m, v: v, tie: tie };
+    });
+  }
+  function bestScored(list) {
+    var best = null;
+    list.forEach(function (x) {
+      if (x.v === -Infinity) return;
+      if (!best || x.v > best.v + 1e-6 || (Math.abs(x.v - best.v) <= 1e-6 && x.tie > best.tie)) best = x;
+    });
+    return best;
+  }
+  function goalHint(s) {
+    if (!s || s.status !== 'playing') return null;
+    if (G.hintCache && G.hintCache.state === s) return G.hintCache.move;
+    var E = Engine();
+    var moves = safe(function () { return E.validMoves(s); }, []);
+    var best = moves.length ? safe(function () { return bestScored(scoreMoves(s, moves)); }, null) : null;
+    var mv = best ? { a: best.m.a, b: best.m.b } : safe(function () { return E.hint(s); }, null);
+    G.hintCache = { state: s, move: mv };
+    return mv;
+  }
   function showHint() {
     if (G.phase !== 'play' || G.paused || G.armed || (G.tutorial && G.tutorial.move)) return;
-    var h = safe(function () { return Engine().hint(G.state); }, null);
+    var h = goalHint(G.state);
     if (!h) return;
     G.R.hint = { a: h.a, b: h.b, t0: G.R.now() };
     G.R.kick();
@@ -962,7 +1110,7 @@
     G.R.after(620, function () { if (gen === G.gen) G.state.goals.forEach(function (g, i) { setGoal(i, g.remaining); }); });
     updateVillainBadges();
     refreshMoods();
-    if (G.tutorial && (G.tutorial.move || G.tutorial.hud || kind === 'swap')) endTutorial();
+    tutorialAfterTurn(kind);
     if (s.status === 'won') { winSeq(); return; }
     if (s.status === 'lost') { loseSeq(); return; }
     G.phase = 'play';
@@ -1732,8 +1880,11 @@
     });
     return best || hint;
   }
+  // Lecciones de especiales en dos pasos: 1) crear el especial, 2) usarlo (si no, muchos nunca lo disparan)
+  var SPECIAL_TEACH = { paleta: { ph: 1, pv: 1 }, bomba: { bomba: 1 }, copa: { copa: 1 } };
+  var TEACH_USE = '¡Ahora deslízala para usarla!';
   function startTutorial(teach, key) {
-    var t = { teach: teach, key: key, move: null, booster: null, hud: false, els: [] };
+    var t = { teach: teach, key: key, stage: 1, move: null, booster: null, hud: false, els: [], token: null, acked: false };
     var text = TEACH[teach] || safe(function () { return Story().tips[G.level.id]; }, null) || TEACH.swap;
     var isBooster = teach === 'cucharon' || teach === 'chorro' || teach === 'batido';
     if (isBooster && !boosterUsable(teach)) return;   // sin esa ayuda disponible no hay nada que enseñar
@@ -1741,7 +1892,14 @@
     else if (teach === 'villano' || teach === 'cereza' || teach === 'dosvillanos') t.hud = true;
     else t.move = findTeachMove(teach);
     if (!t.booster && !t.hud && !t.move) return;
+    if (t.move && (teach === 'ficha' || teach === 'pruebas')) t.token = tutorialToken(t.move);
     G.tutorial = t;
+    buildTip(t, text);
+    addHand(t);
+    placeTutorial();
+    sfx('blip');
+  }
+  function buildTip(t, text) {
     var helper = safe(function () { return Story().helperFor(G.level.id); }, null) || ((G.level.id || 1) >= 16 ? 'banano' : 'lima');
     var tip = el('div', 'cg-tip');
     var frozen = safe(function () { return !!Story().helperFrozen(G.level.id); }, false);
@@ -1751,33 +1909,60 @@
     G.els.overlay.appendChild(tip);
     t.els.push(tip);
     t.tip = tip;
+  }
+  function addHand(t) {
     var hand = el('div', 'cg-hand', icon('hand'));
     G.els.overlay.appendChild(hand);
     t.els.push(hand);
     t.hand = hand;
-    placeTutorial();
-    sfx('blip');
+  }
+  // La ficha de la lección (Uva / pruebas): la que mueve la jugada, o la más cercana a ella
+  function tutorialToken(move) {
+    var s = G.state, best = null, bd = Infinity;
+    for (var r = 0; r < s.rows; r++) for (var c = 0; c < s.cols; c++) {
+      var cl = s.grid[r][c];
+      if (!cl || !cl.p || cl.p.type !== 'token') continue;
+      var d = Math.min(Math.abs(c - move.a.c) + Math.abs(r - move.a.r), Math.abs(c - move.b.c) + Math.abs(r - move.b.r));
+      if (d < bd) { bd = d; best = { r: r, c: c }; }
+    }
+    return best;
+  }
+  // Fila de la casilla más baja de la columna (donde la ficha sale del tablero)
+  function lowestSlot(c) {
+    var s = G.state;
+    for (var r = s.rows - 1; r >= 0; r--) if (isSlotCell(s.grid[r][c])) return r;
+    return -1;
   }
   function placeTutorial() {
     var t = G.tutorial;
     if (!t) return;
     var R = G.R, hand = t.hand, tip = t.tip, rr = rootRect();
     var hs = Math.round(Math.max(44, Math.min(72, R.cell * 1.15)));
-    hand.style.width = hand.style.height = hs + 'px';
+    if (hand) hand.style.width = hand.style.height = hs + 'px';
     var tipY;
     if (t.move) {
       var a = cellPt(t.move.a.r, t.move.a.c), b = cellPt(t.move.b.r, t.move.b.c);
-      R.spotlight = [t.move.a, t.move.b];
-      hand.className = 'cg-hand cg-hand-swipe';
-      hand.style.left = (a.x - hs * 0.45) + 'px'; hand.style.top = (a.y - hs * 0.19) + 'px';
-      hand.style.setProperty('--dx', (b.x - a.x) + 'px'); hand.style.setProperty('--dy', (b.y - a.y) + 'px');
+      var spot = [t.move.a, t.move.b];
+      R.guide = null;
+      if (t.token) {
+        // la ficha también se ilumina, con una flecha punteada hasta la salida de su columna
+        if (!spot.some(function (q) { return same(q, t.token); })) spot.push(t.token);
+        var low = lowestSlot(t.token.c);
+        if (low > t.token.r) R.guide = { c: t.token.c, r0: t.token.r, r1: low };
+      }
+      R.spotlight = spot;
+      if (hand) {
+        hand.className = 'cg-hand cg-hand-swipe';
+        hand.style.left = (a.x - hs * 0.45) + 'px'; hand.style.top = (a.y - hs * 0.19) + 'px';
+        hand.style.setProperty('--dx', (b.x - a.x) + 'px'); hand.style.setProperty('--dy', (b.y - a.y) + 'px');
+      }
       var midR = (t.move.a.r + t.move.b.r) / 2;
       tipY = midR < R.rows / 2 ? boardPt(0, R.Y(Math.min(R.rows, Math.ceil(midR) + 2))).y : boardPt(0, R.Y(Math.max(0, Math.floor(midR) - 1))).y - 8;
       tip.classList.toggle('cg-tip-above', midR >= R.rows / 2);
-    } else {
-      R.spotlight = null;
+    } else if (!t.acked) {
+      R.spotlight = null; R.guide = null;
       var target = t.booster ? G.els.boosters.querySelector('.cg-boost-' + t.booster + ' .cg-boost-ic') : (G.villains[0] && (G.villains[0].badges[0] ? G.villains[0].badges[0].el : G.villains[0].face));
-      if (target) {
+      if (target && hand) {
         var tr = relRect(target);
         hand.className = 'cg-hand cg-hand-tap';
         hand.style.left = (tr.cx - hs * 0.45) + 'px'; hand.style.top = (tr.cy - hs * 0.19) + 'px';
@@ -1794,10 +1979,12 @@
         tip.classList.add('cg-tip-mid');
       }
     }
-    var bw = Math.min(R.side - 16, 420);
-    tip.style.width = bw + 'px';
-    tip.style.left = (G.boardOff.x + (R.side - bw) / 2) + 'px';
-    tip.style.top = Math.max(8, Math.min(rr.height - 60, tipY)) + 'px';
+    if (tipY !== undefined) {
+      var bw = Math.min(R.side - 16, 420);
+      tip.style.width = bw + 'px';
+      tip.style.left = (G.boardOff.x + (R.side - bw) / 2) + 'px';
+      tip.style.top = Math.max(8, Math.min(rr.height - 60, tipY)) + 'px';
+    }
     R.kick();
   }
   function tutorialText(txt) { var t = G.tutorial; if (t && t.tip) t.tip.querySelector('.cg-tip-text span').textContent = txt; }
@@ -1808,16 +1995,95 @@
     t.hand.classList.remove('cg-hand-swipe'); void t.hand.offsetWidth; t.hand.classList.add('cg-hand-swipe');
     if (t.tip) { t.tip.classList.remove('cg-bump'); void t.tip.offsetWidth; t.tip.classList.add('cg-bump'); }
   }
+  // La jugada guiada se aceptó: fuera la penumbra, la flecha y la mano; el consejo dice «¡Así!» mientras se resuelve
+  function tutorialAck() {
+    var t = G.tutorial;
+    if (!t) return;
+    t.acked = true; t.move = null;
+    G.R.spotlight = null; G.R.guide = null; G.R.kick();
+    if (t.hand) {
+      var h = t.hand; t.hand = null;
+      h.classList.add('cg-out');
+      setTimeout(function () { h.remove(); }, 300);
+    }
+    tutorialText('¡Así!');
+    if (t.tip) { t.tip.classList.remove('cg-bump', 'cg-ok'); void t.tip.offsetWidth; t.tip.classList.add('cg-ok'); }
+  }
+  // Tras cada turno: fin de la lección, o el paso 2 (usar el especial recién creado)
+  function tutorialAfterTurn(kind) {
+    var t = G.tutorial, s = G.state;
+    if (t) {
+      if (!(t.move || t.hud || t.acked || kind === 'swap')) return;   // la lección de potenciador espera a que lo use
+      if (s.status === 'playing' && t.stage === 1 && SPECIAL_TEACH[t.teach]) {
+        markSeen(t.key);
+        var sm = specialMove(t.teach);
+        if (sm && sm.move) { specialStep(t, sm); return; }
+        if (sm && sm.wait) G.pendingSpecial = { teach: t.teach, key: t.key, tries: 3 };
+      }
+      endTutorial();
+      return;
+    }
+    var ps = G.pendingSpecial;
+    if (!ps) return;
+    if (s.status !== 'playing' || --ps.tries < 0) { G.pendingSpecial = null; return; }
+    var sm2 = specialMove(ps.teach);
+    if (sm2 && sm2.move) {
+      G.pendingSpecial = null;
+      var t2 = { teach: ps.teach, key: ps.key, stage: 1, move: null, booster: null, hud: false, els: [], token: null, acked: false };
+      G.tutorial = t2;
+      buildTip(t2, TEACH_USE);
+      specialStep(t2, sm2);
+    } else if (!sm2 || sm2.none) G.pendingSpecial = null;
+  }
+  // Mejor jugada que usa un especial del tipo enseñado. {move} | {wait} (existe pero no tiene jugada) | {none}
+  function specialMove(teach) {
+    var types = SPECIAL_TEACH[teach], s = G.state, E = Engine();
+    if (!types || !s) return null;
+    var cells = [];
+    s.grid.forEach(function (row, r) { row.forEach(function (cl, c) { if (cl && cl.p && types[cl.p.type] && !cl.p.frost) cells.push({ r: r, c: c }); }); });
+    if (!cells.length) return { none: true };
+    var moves = safe(function () { return E.validMoves(s); }, []).filter(function (m) {
+      return cells.some(function (q) { return same(q, m.a) || same(q, m.b); });
+    });
+    if (!moves.length) return { wait: true };
+    var scored = safe(function () { return scoreMoves(s, moves); }, null);
+    if (!scored) return { move: moves[0] };
+    if (teach === 'copa') {
+      // la Copa se luce con el color más común del tablero
+      var cnt = {};
+      s.grid.forEach(function (row) { row.forEach(function (cl) { if (cl && cl.p && cl.p.type === 'n') cnt[cl.p.color] = (cnt[cl.p.color] || 0) + 1; }); });
+      scored.forEach(function (x) {
+        var pa = s.grid[x.m.a.r][x.m.a.c].p, pb = s.grid[x.m.b.r][x.m.b.c].p;
+        var other = pa && pa.type === 'copa' ? pb : pa;
+        x.tie = x.v; x.v = other && other.type === 'n' ? (cnt[other.color] || 0) : -1;
+      });
+    }
+    var best = bestScored(scored);
+    return best ? { move: { a: best.m.a, b: best.m.b } } : { move: moves[0] };
+  }
+  function specialStep(t, sm) {
+    t.stage = 2; t.acked = false; t.move = sm.move; t.token = null;
+    tutorialText(TEACH_USE);
+    if (t.tip) { t.tip.classList.remove('cg-ok', 'cg-tip-above', 'cg-tip-mid'); void t.tip.offsetWidth; t.tip.classList.add('cg-bump'); }
+    if (!t.hand) addHand(t);
+    placeTutorial();
+    sfx('blip');
+    clearHint();
+  }
+  function markSeen(key) {
+    var d = data();
+    if (d.seen[key]) return;
+    d.seen[key] = true;
+    persist();
+  }
   function endTutorial() {
     var t = G.tutorial;
     if (!t) return;
     G.tutorial = null;
-    G.R.spotlight = null;
+    G.R.spotlight = null; G.R.guide = null;
     G.R.kick();
     t.els.forEach(function (e) { e.classList.add('cg-out'); setTimeout(function () { e.remove(); }, 300); });
-    var d = data();
-    d.seen[t.key] = true;
-    persist();
+    markSeen(t.key);
   }
 
   // =====================================================================
@@ -1908,7 +2174,7 @@
     if (G.fx) G.fx.clear();
     G.tutorial = null; G.armed = null; G.sel = null; G.cursor = null; G.press = null; G.pressed = null;
     if (G.els.overlay) G.els.overlay.innerHTML = '';
-    if (G.els.wrap) { G.els.wrap.classList.remove('cg-target'); G.els.wrap.style.transform = ''; G.lastShake = ''; }
+    if (G.els.wrap) { G.els.wrap.classList.remove('cg-target'); G.els.wrap.removeAttribute('data-armed'); G.els.wrap.style.transform = ''; G.lastShake = ''; }
     hidePeeker();
   }
   function stop() {
@@ -1954,6 +2220,9 @@
     if (G.tutorial) endTutorial();
     G.R.flush(); G.fx.clear();
     G.state = st;
+    G.work0 = goalWork(st).map(function (x) { return Math.max(1, x); });
+    G.hintCache = null; G.pendingSpecial = null;
+    G.R.exits = !!st.tokens;
     G.phase = 'play';
     buildHud();
     resize();

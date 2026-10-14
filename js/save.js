@@ -8,6 +8,7 @@
   var Cocardo = root ? (root.Cocardo = root.Cocardo || {}) : {};
 
   var KEY = 'cocardo.v1';
+  var BACKUP_KEY = 'cocardo.v1.backup';   // copia del guardado de una versión más nueva
   var LEVELS = 30;
   var BOOSTERS = ['cucharon', 'chorro', 'batido'];
   var BOOSTER_CAP = 9;
@@ -16,6 +17,7 @@
   var data = null;        // objeto único en memoria (misma identidad siempre)
   var memCopy = null;     // respaldo si localStorage no está disponible
   var storageOk = null;
+  var foreign = false;    // hay un guardado de una versión más nueva: no se sobrescribe (solo memoria)
 
   function fill(n, v) { var a = []; for (var i = 0; i < n; i++) a.push(v); return a; }
 
@@ -30,7 +32,7 @@
       rescued: [],
       seen: {},
       daily: { last: 0, streak: 0, bestStreak: 0, results: {} },
-      settings: { sound: true, vibra: true, motion: 'auto', music: false },
+      settings: { sound: true, vibra: true, motion: 'auto', music: false, skipStory: false },
     };
   }
 
@@ -86,7 +88,7 @@
       if (d.daily.bestStreak < d.daily.streak) d.daily.bestStreak = d.daily.streak;
       if (isObj(raw.daily.results)) {
         Object.keys(raw.daily.results).forEach(function (k) {
-          if (/^\d{8}$/.test(k) && isObj(raw.daily.results[k])) d.daily.results[k] = raw.daily.results[k];
+          if (/^\d{8}$/.test(k) && isObj(raw.daily.results[k])) d.daily.results[k] = cleanResult(raw.daily.results[k]);
         });
       }
     }
@@ -95,6 +97,7 @@
       if (typeof s.sound === 'boolean') d.settings.sound = s.sound;
       if (typeof s.vibra === 'boolean') d.settings.vibra = s.vibra;
       if (typeof s.music === 'boolean') d.settings.music = s.music;
+      if (typeof s.skipStory === 'boolean') d.settings.skipStory = s.skipStory;
       if (s.motion === 'auto' || s.motion === 'on' || s.motion === 'off') d.settings.motion = s.motion;
     }
     // el nivel desbloqueado nunca queda por detrás de lo ya superado
@@ -103,6 +106,21 @@
     }
     trimDaily(d);
     return d;
+  }
+
+  // Resultado de un reto diario, campo por campo (un guardado editado a mano no rompe la pantalla del Reto)
+  function cleanResult(r) {
+    var won = !!r.won;
+    return {
+      won: won,
+      stars: won ? num(r.stars, 1, 1, 3) : 0,
+      score: num(r.score, 0, 0, 1e9),
+      movesUsed: num(r.movesUsed, 0, 0, 999),
+      movesTotal: num(r.movesTotal, 0, 0, 999),
+      maxCombo: num(r.maxCombo, 0, 0, 999),
+      num: num(r.num, 0, 0, 1e6),
+      text: typeof r.text === 'string' ? r.text.slice(0, 600) : '',
+    };
   }
 
   // Solo se guardan los últimos 7 resultados diarios
@@ -135,11 +153,26 @@
     var parsed = null;
     try {
       var txt = readRaw();
-      if (txt) parsed = sanitize(JSON.parse(txt));
+      if (txt) {
+        var raw = JSON.parse(txt);
+        if (isObj(raw) && typeof raw.v === 'number' && raw.v > 1) {
+          // guardado de una versión más nueva (p. ej. se abrió una copia vieja del juego): se respalda y
+          // esta versión juega solo en memoria, sin pisarlo
+          foreign = true;
+          backup(txt);
+        }
+        parsed = sanitize(raw);
+      }
     } catch (e) {
       parsed = null;
     }
     return adopt(parsed || defaults());
+  }
+
+  function backup(txt) {
+    var ls = store();
+    if (!ls) return;
+    try { ls.setItem(BACKUP_KEY, txt); } catch (e) { /* sin espacio: el original sigue intacto */ }
   }
 
   function get() {
@@ -152,7 +185,7 @@
       trimDaily(d);
       var txt = JSON.stringify(d);
       memCopy = txt;
-      var ls = store();
+      var ls = foreign ? null : store();
       if (ls) {
         try { ls.setItem(KEY, txt); } catch (e) { /* cuota llena o bloqueado: queda en memoria */ }
       }
@@ -173,7 +206,9 @@
     defaults: defaults,
     KEY: KEY,
     BOOSTER_CAP: BOOSTER_CAP,
-    isPersistent: function () { return !!store(); },
+    isPersistent: function () { return !foreign && !!store(); },
+    // true si hay un guardado de una versión más nueva que esta copia del juego no toca
+    isForeign: function () { return foreign; },
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Cocardo.Save;
 })();

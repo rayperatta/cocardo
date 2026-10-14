@@ -38,6 +38,7 @@ const MIN_MOVES = 15;       // rango de la curva de --sweep
 const MAX_MOVES = 40;
 const WEAK_RANDOM = 0.3;   // el bot débil juega al azar este porcentaje de las veces
 const WEAK_MIN = 30;       // después del L5 el bot débil debería ganar al menos esto (%)
+const INTRO_MIN_TURNS = 8; // L1-L5: que no «se juegue solo» (en promedio al menos estos movimientos jugados)
 
 // ---------------------------------------------------------------- metas de balance (DISENO §7)
 // lo-hi = banda de victorias del bot principal; aim = punto ideal para una curva suave que baja poco a poco.
@@ -125,34 +126,55 @@ function goalAwareMove(s, moves, W0, peek) {
   return best;
 }
 
-// Juega una partida con `cap` movimientos. Devuelve los movimientos usados para ganar, o null si perdió.
+// Juega una partida con `cap` movimientos. Devuelve los movimientos usados para ganar (null si perdió) y en qué
+// movimiento quedaron libres todos los amigos (rescueAt) y cayó el congelador (bossAt), o null.
 function playGame(level, seed, policy, cap, peek) {
   let s = Engine.createGame(Object.assign({}, level, { moves: cap }), seed);
   const W0 = goalWork(s).map((x) => Math.max(1, x));
   let rs = RNG.seedFrom('bot:' + policy + ':' + seed);
   const rand = () => { const o = RNG.next(rs); rs = o.state; return o.value; };
+  const rescueGoal = s.goals.find((g) => g.type === 'rescue');
+  let turn = 0, rescueAt = null, bossAt = null;
   while (s.status === 'playing') {
     const moves = Engine.validMoves(s);
-    if (!moves.length) return { used: null, stuck: true };
+    if (!moves.length) return { used: null, stuck: true, rescueAt, bossAt };
     let m;
     if (policy === 'hint') m = Engine.hint(s);
     else if (policy === 'weak' && rand() < WEAK_RANDOM) m = moves[Math.floor(rand() * moves.length)];
     else m = goalAwareMove(s, moves, W0, peek);
     s = Engine.applySwap(s, m.a, m.b).state;
+    turn++;
+    if (rescueGoal && rescueAt === null && s.goals.find((g) => g.type === 'rescue').remaining <= 0) rescueAt = turn;
+    if (s.freezer && bossAt === null && s.freezer.hp <= 0) bossAt = turn;
   }
-  return { used: s.status === 'won' ? cap - s.wonMovesLeft : null, stuck: false };
+  return { used: s.status === 'won' ? cap - s.wonMovesLeft : null, stuck: false, rescueAt, bossAt };
 }
 
 function runTask(t) {
   const level = t.level || Levels.get(t.id);
-  const used = [];
+  const used = [], rescueAt = [], bossAt = [];
   let stuck = 0;
   for (let i = 0; i < t.seeds; i++) {
     const r = playGame(level, 'sim' + (t.offset + i), t.policy, t.cap, t.peek);
     used.push(r.used);
+    rescueAt.push(r.rescueAt);
+    bossAt.push(r.bossAt);
     if (r.stuck) stuck++;
   }
-  return { id: t.id, policy: t.policy, used, stuck };
+  return { id: t.id, policy: t.policy, used, rescueAt, bossAt, stuck };
+}
+
+// En las victorias con <= M movimientos: en qué punto de la partida (0-100%) quedaron libres los amigos, en
+// promedio, y qué porcentaje de esos rescates llegó después de que cayó el congelador.
+function rescueTiming(R, M) {
+  let n = 0, sum = 0, afterBoss = 0;
+  R.used.forEach((u, i) => {
+    if (u === null || u > M || R.rescueAt[i] === null) return;
+    n++;
+    sum += R.rescueAt[i] / u;
+    if (R.bossAt[i] !== null && R.rescueAt[i] >= R.bossAt[i]) afterBoss++;
+  });
+  return n ? { at: (100 * sum) / n, afterBoss: (100 * afterBoss) / n } : null;
 }
 
 // ---------------------------------------------------------------- estadísticas para M movimientos
@@ -296,7 +318,7 @@ async function main() {
 
   console.log(`Cocardo · simulación de balance · ${o.seeds} semillas por nivel${o.offset ? ' (desde la ' + o.offset + ')' : ''} · bot consciente de metas (1 jugada adelante${o.peek ? ', viendo el relleno' : ''}) · débil = ${WEAK_RANDOM * 100}% al azar · ${((Date.now() - t0) / 1000).toFixed(1)} s\n`);
 
-  const headers = ['Nivel', 'Tipo', 'Mov', 'Meta%', 'Bot%', 'Resto', '3★%', 'Turnos', 'Débil%', 'Débil3★%'];
+  const headers = ['Nivel', 'Tipo', 'Mov', 'Meta%', 'Bot%', 'Resto', '3★%', 'Turnos', 'Débil%', 'Débil3★%', 'Resc@'];
   if (o.hint) headers.push('Hint%');
   headers.push('Bot@40', 'Estado');
   const align = headers.map((h, i) => (i <= 1 || h === 'Estado' ? 'l' : 'r'));
@@ -319,16 +341,20 @@ async function main() {
       else flags.push('fácil' + unsure(b.win, b.win - tg.hi));
     }
     if (lvl.id > 5 && w.win < WEAK_MIN) flags.push(`débil<${WEAK_MIN}` + unsure(w.win, WEAK_MIN - w.win));
+    if (lvl.id <= 5 && b.turns < INTRO_MIN_TURNS) flags.push(`se juega solo: turnos<${INTRO_MIN_TURNS}`);
     if (M < minM || M > maxM) flags.push(`mov. fuera de ${minM}-${maxM}`);
     if (R.bot.stuck || R.weak.stuck) flags.push(`sin jugadas×${R.bot.stuck + R.weak.stuck}`);
     if (flags.length) flagged.push(`L${en.label}: ${flags.join(', ')}`);
-    const row = [en.label, tg.kind, M, `${tg.lo}-${tg.hi}`, pct(b.win), fix1(b.left), pct(b.three), fix1(b.turns), pct(w.win), pct(w.three)];
+    const rt = rescueTiming(R.bot, M);
+    const row = [en.label, tg.kind, M, `${tg.lo}-${tg.hi}`, pct(b.win), fix1(b.left), pct(b.three), fix1(b.turns), pct(w.win), pct(w.three),
+      rt ? `${pct(rt.at)}%${R.bot.bossAt.some((x) => x !== null) ? '/' + pct(rt.afterBoss) : ''}` : '-'];
     if (o.hint) row.push(pct(statsAt(R.hint.used, M).win));
     row.push(pct(at40.win), flags.length ? flags.join(', ') : 'ok');
     rows.push(row);
   });
   console.log(table(headers, rows, o.md, align));
   console.log('\nResto = movimientos que sobran al ganar (promedio de las victorias) · 3★% sobre todas las partidas · Turnos = movimientos jugados en promedio.');
+  console.log('Resc@ = en las victorias, punto de la partida en que quedaron libres los amigos (promedio) / % de rescates después de romper el congelador.');
   console.log(`Margen de error con ${o.seeds} semillas: hasta ±${Math.round(margin(50, o.seeds))} puntos; «?» = fuera de la meta por menos que eso (usa --seeds 300 para decidir).`);
   console.log(flagged.length ? '\nNiveles marcados:\n  ' + flagged.join('\n  ') : '\nTodos los niveles dentro de la meta.');
 
@@ -368,4 +394,4 @@ if (!isMainThread && workerData && workerData.worker) {
   main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { goalWork, goalAwareMove, playGame, statsAt, targetFor, movesRange, suggest, WEAK_MIN };
+module.exports = { goalWork, goalAwareMove, playGame, statsAt, rescueTiming, targetFor, movesRange, suggest, WEAK_MIN, INTRO_MIN_TURNS };

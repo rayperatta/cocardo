@@ -3,10 +3,12 @@
    adaptados al canon de docs/PERSONAJES.md (Cocardo escarcha, Cherry convierte fruta en cajas del inventario).
    Leyenda del layout: '#' vacío · '.' fruta · 'e' fruta escarchada · '1' '2' '3' hielo · 'K' caja ·
    'R' fruta congelada (rescue[] en orden de lectura) · 'C' congelador 2×2 · 'T' ficha (tokens.skin).
-   Balance (tools/sim.js, bot consciente de metas): cap. 1 ≥ 90% de victorias; normales 60-85% bajando poco a
-   poco por capítulo; ⚠ y jefes 40-60%; final 35-55%; el bot débil (30% al azar) ≥ 30% desde el L6.
-   La dificultad sale de las metas, el hielo, las cajas, los villanos y los sabores; los movimientos siguen
-   una curva suave: cap. 1 20-24, cap. 2 21-25, cap. 3-4 22-28, cap. 5-6 24-32. */
+   Balance (tools/sim.js, bot consciente de metas): cap. 1 ≥ 90% de victorias y ≥ 8 jugadas en promedio (que
+   no se juegue solo); normales 60-85% bajando poco a poco por capítulo; ⚠ y jefes 40-60%; final 35-55%; el bot
+   débil (30% al azar) ≥ 30% desde el L6. Metas de color cortas (≤ 30, ≤ 25 en pedidos de 3 sabores): la
+   dificultad sale del hielo, la escarcha, las cajas, los villanos y los sabores. En los jefes con rescate el
+   amigo está encajado junto al congelador tras hielo grueso, para que el rescate llegue al final.
+   Movimientos en curva suave: cap. 1 20-24, cap. 2 21-24, cap. 3-4 22-28, cap. 5-6 24-32. */
 (function () {
   'use strict';
   var Cocardo = (typeof window !== 'undefined' ? (window.Cocardo = window.Cocardo || {}) : {});
@@ -37,8 +39,9 @@
 
   var list = [
     // ===== Capítulo 1 · La nieve de Lima (Parte 1) — Coco's Scoops está en quiebra =====
-    L({ id: 1, name: 'Prende menos luces', colors: 'LFBU', moves: 20, teach: 'swap',
-      goals: [color('L', 12)],
+    L({ id: 1, name: 'Prende menos luces', colors: 'LFBUN', moves: 20, teach: 'swap',
+      // 5 sabores desde el principio: con 4 las cascadas ganan solas el nivel en 3 jugadas
+      goals: [color('L', 20)],
       layout: [
         '.......',
         '.......',
@@ -48,8 +51,8 @@
         '.......',
         '.......',
       ] }),
-    L({ id: 2, name: 'Está experimentado', colors: 'LFBU', moves: 20, teach: 'paleta', ensure: 'ph',
-      goals: [color('F', 15), color('B', 15)],
+    L({ id: 2, name: 'Está experimentado', colors: 'LFBUN', moves: 20, teach: 'paleta', ensure: 'ph',
+      goals: [color('F', 20), color('B', 20)],
       layout: [
         '.......',
         '.......',
@@ -60,7 +63,7 @@
         '.......',
       ] }),
     L({ id: 3, name: 'Huele a quemado', colors: 'LFBUN', moves: 20, teach: 'bomba', ensure: 'bomba',
-      goals: [color('U', 18)],
+      goals: [color('U', 24)],
       layout: [
         '.......',
         '.......',
@@ -73,7 +76,7 @@
     L({ id: 4, name: 'Hielo de importación', colors: 'LFBUN', moves: 22, teach: 'hielo',
       goals: [ice()],
       layout: [
-        '........',
+        '11111111',
         '........',
         '........',
         '..1111..',
@@ -108,34 +111,34 @@
         '........',
         '11111111',
       ] }),
-    L({ id: 7, name: 'Depende quién pregunte', colors: 'LFBND', moves: 22, teach: 'cucharon',
-      // primer «Pedido de Piña»: tres sabores a la vez
-      goals: [color('L', 45), color('F', 45), color('D', 45)],
+    L({ id: 7, name: 'Depende quién pregunte', colors: 'LFBND', moves: 21, teach: 'cucharon',
+      // primer «Pedido de Piña»: tres sabores a la vez, con un bloque de hielo en medio (para estrenar el Cucharón)
+      goals: [color('L', 22), color('F', 22), color('D', 22)],
       layout: [
         '##....##',
         '#......#',
-        '........',
-        '........',
-        '........',
-        '........',
+        '..2222..',
+        '..2222..',
+        '..2222..',
+        '..2222..',
         '#......#',
         '##....##',
       ] }),
-    L({ id: 8, name: 'Es orgánico', colors: 'LFBUN', moves: 24, teach: 'escarcha',
-      goals: [color('B', 54)],
+    L({ id: 8, name: 'Es orgánico', colors: 'LFBUN', moves: 21, teach: 'escarcha',
+      goals: [color('B', 30)],
       layout: [
         '........',
-        '........',
         '.eeeeee.',
         '........',
-        '........',
+        '.eeeeee.',
         '.eeeeee.',
         '........',
+        '.eeeeee.',
         '........',
       ] }),
-    L({ id: 9, name: '¿Ayudas o estorbas?', colors: 'LFBUN', moves: 24, teach: 'villano',
-      goals: [color('U', 35), ice()],
-      villains: [frost(5)],
+    L({ id: 9, name: '¿Ayudas o estorbas?', colors: 'LFBUN', moves: 22, teach: 'villano',
+      goals: [color('U', 30), ice()],
+      villains: [frost(4)],
       layout: [
         '........',
         '........',
@@ -146,34 +149,36 @@
         '........',
         '........',
       ] }),
-    L({ id: 10, name: 'El congelador viejo', boss: true, colors: 'LFBUN', moves: 25, teach: 'congelador',
+    L({ id: 10, name: 'El congelador viejo', boss: true, colors: 'LFBUN', moves: 24, teach: 'congelador',
       goals: [boss(), rescue()],
-      // arriba del todo: solo se le pega desde abajo y los lados
-      freezer: { who: 'cocardo', hp: 23, label: 'El congelador viejo' },
+      // «rompe el congelador viejo y luego mi bloque»: Lima está encajada entre el congelador y hielo grueso,
+      // así que su rescate llega al final (al caer el congelador o al romper el hielo), no en la jugada 4
+      freezer: { who: 'cocardo', hp: 19, label: 'El congelador viejo' },
       rescue: ['lima'], friendHP: 3,
       villains: [frost(4, 1, 'boss')],
       layout: [
-        '...CC...',
-        '...CC...',
+        '.3RCC...',
+        '..3CC...',
         '........',
         '........',
         '........',
         '........',
-        '...R....',
+        '........',
         '........',
       ] }),
 
     // ===== Capítulo 3 · Voy a ampliar el menú (Partes 4-5) — el congelador grande =====
-    L({ id: 11, name: '¿Para qué tanto espacio?', colors: 'LFBUN', moves: 24, teach: 'chorro',
-      goals: [color('L', 64), color('N', 64)],
+    L({ id: 11, name: '¿Para qué tanto espacio?', colors: 'LFBUN', moves: 23, teach: 'chorro',
+      // el hielo del medio no es meta: estorba (y el Chorro de Lima lo atraviesa)
+      goals: [color('L', 30), color('N', 30)],
       villains: [frost(5)],
       layout: [
         '........',
         '........',
-        '........',
-        '........',
-        '........',
-        '........',
+        '..2222..',
+        '..2222..',
+        '..2222..',
+        '..2222..',
         '........',
         '........',
       ] }),
@@ -218,15 +223,16 @@
       ] }),
     L({ id: 15, name: 'El congelador grande', boss: true, colors: 'LFBND', moves: 27,
       goals: [boss(), rescue()],
-      freezer: { who: 'cocardo', hp: 25, label: 'El congelador grande' },
+      // Durazna encajada junto al congelador, tras hielo grueso: se rescata al final
+      freezer: { who: 'cocardo', hp: 21, label: 'El congelador grande' },
       rescue: ['durazna'], friendHP: 3,
       villains: [frost(4, 1, 'boss')],
       layout: [
-        '...CC...',
-        '...CC...',
+        '...CCR3.',
+        '...CC3..',
         '........',
         '........',
-        '...R....',
+        '........',
         '........',
         '........',
         '........',
@@ -303,8 +309,8 @@
       ] }),
 
     // ===== Capítulo 5 · La fuga (Partes 8-10) — el apagón y las pruebas de Banano =====
-    L({ id: 21, name: 'La fuga de Uva', colors: 'LFBUN', moves: 24, teach: 'ficha',
-      goals: [token(), color('N', 66)],
+    L({ id: 21, name: 'La fuga de Uva', colors: 'LFBUND', moves: 24, teach: 'ficha',
+      goals: [token(), color('N', 24)],
       tokens: { skin: 'uva', total: 1, onBoard: 1 },
       villains: [crate(5)],
       layout: [
@@ -394,9 +400,9 @@
         '#.2222.#',
         '##....##',
       ] }),
-    L({ id: 27, name: 'Deja de temblar', hard: true, colors: 'LFBUND', moves: 26,
-      goals: [color('U', 34), crates(14)],
-      villains: [crate(4)],
+    L({ id: 27, name: 'Deja de temblar', hard: true, colors: 'LFBUND', moves: 24,
+      goals: [color('U', 30), crates(16)],
+      villains: [crate(3)],
       layout: [
         '........',
         '........',
@@ -436,17 +442,18 @@
       ] }),
     L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 32,
       goals: [boss(), rescue()],
-      freezer: { who: 'cocardo', hp: 27, label: 'El gran congelador' },
+      freezer: { who: 'cocardo', hp: 20, label: 'El gran congelador' },
       rescue: ['uva', 'banana'], friendHP: 3,
-      // final: los dos villanos a la vez; el gran congelador en el centro de la copa
+      // final: los dos villanos a la vez; el gran congelador en el centro de la copa, con Uva y Banana
+      // encajadas a sus lados tras hielo grueso (se rescatan al final, no antes de dañar el congelador)
       villains: [frost(4, 2, 'boss'), crate(6)],
       layout: [
         '........',
-        '........',
-        '...CC...',
+        '..3..3..',
+        '.3RCCR3.',
         '111CC111',
         '........',
-        '.R....R.',
+        '........',
         '#......#',
         '##....##',
       ] }),
@@ -454,7 +461,7 @@
 
   var chapters = [
     { id: 1, name: 'La nieve de Lima', zone: "Coco's Scoops", color: '#ff6fa5', levels: [1, 2, 3, 4, 5] },
-    { id: 2, name: 'Necesitamos un nuevo sabor', zone: 'La oficina de Don Piña', color: '#a1286a', levels: [6, 7, 8, 9, 10] },
+    { id: 2, name: 'Necesitamos un nuevo sabor', zone: "Coco's Scoops", color: '#a1286a', levels: [6, 7, 8, 9, 10] },
     { id: 3, name: 'Voy a ampliar el menú', zone: 'La trastienda', color: '#4aa8e0', levels: [11, 12, 13, 14, 15] },
     { id: 4, name: 'Cherry conoce el negocio', zone: 'El vecindario de Cherry', color: '#d61f4b', levels: [16, 17, 18, 19, 20] },
     { id: 5, name: 'La fuga', zone: 'La noche de la tormenta', color: '#5b1e74', levels: [21, 22, 23, 24, 25] },

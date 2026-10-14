@@ -116,19 +116,21 @@
   // ---------- paletas de las seis víctimas ----------
   var COLORS = ['L', 'F', 'B', 'U', 'N', 'D'];
   var IDS = { L: 'lima', F: 'fresa', B: 'banana', U: 'uva', N: 'naranja', D: 'durazna' };
+  // Solo fichas/tablero: los retratos (art-characters.js) llevan su propia paleta canónica. Aquí Uva, Durazna y Lima
+  // usan tonos más vivos y menos pelo oscuro para que las seis fichas se distingan de un vistazo (DISENO §6).
   var PAL = {
-    L: { skin: '#b5ea5c', light: '#efffbe', dark: '#5fa826', hair: '#2f8f2a', hairL: '#62c23e', hairD: '#185a14',
+    L: { skin: '#b4f03c', light: '#f6ffc8', dark: '#5fb514', hair: '#3cb53a', hairL: '#8ae45c', hairD: '#1e7f24',
       iris: '#e0a020', brow: '#2c7020', lips: '#3c8a2a', blush: '#ff9a7a', main: '#8fd63a' },
-    F: { skin: '#ff4256', light: '#ff9aa0', dark: '#b3122f', hair: '#3daa45', hairL: '#7fd65a', hairD: '#1d7a2c',
+    F: { skin: '#ff3650', light: '#ff9aa0', dark: '#bc0c2c', hair: '#3daa45', hairL: '#7fd65a', hairD: '#1d7a2c',
       iris: '#2fa84f', brow: '#2f8a3a', lips: '#a3123a', blush: '#ffb3c0', main: '#ff3b55' },
-    B: { skin: '#fff0a0', light: '#fffbe0', dark: '#e3b93c', hair: '#ffd23c', hairL: '#fff3c4', hairD: '#c89412',
+    B: { skin: '#ffe96e', light: '#fffbd8', dark: '#e8b818', hair: '#ffd81a', hairL: '#fff3a8', hairD: '#d29c08',
       iris: '#7d8b2a', brow: '#7d7a2a', lips: '#ff4f93', blush: '#ff9ab5', main: '#ffe266' },
-    U: { skin: '#9b4fd6', light: '#d7a8ff', dark: '#4e1a7a', hair: '#4d6e5a', hairL: '#7fa08a', hairD: '#26392e',
-      iris: '#7a4a26', brow: '#3a4f40', lips: '#d58ad0', blush: '#e08ad8', main: '#9a4ed6' },
-    N: { skin: '#ffab55', light: '#ffd9a6', dark: '#e0661a', hair: '#ff8a1a', hairL: '#ffc25a', hairD: '#c45306',
+    U: { skin: '#a852fa', light: '#d8a4ff', dark: '#5c12c0', hair: '#86b98c', hairL: '#cdeccb', hairD: '#4c7f62',
+      iris: '#7a4a26', brow: '#46306a', lips: '#ff9ce0', blush: '#ff8ae6', main: '#9a4ed6' },
+    N: { skin: '#ffa444', light: '#ffd496', dark: '#e85e0e', hair: '#ff8a1a', hairL: '#ffc25a', hairD: '#c45306',
       iris: '#8f9a36', brow: '#b0601e', lips: '#ff6f5a', blush: '#ff7a6a', main: '#ff8c1f' },
-    D: { skin: '#ffc48e', light: '#ffeacb', dark: '#f0835a', hair: '#24573a', hairL: '#3b7d55', hairD: '#123522',
-      iris: '#2e9a52', brow: '#1f4d2e', lips: '#c0668f', blush: '#ff4f5e', main: '#ffb07a' }
+    D: { skin: '#ffb08a', light: '#fff0cc', dark: '#f2607a', hair: '#24573a', hairL: '#3f8a5c', hairD: '#123522',
+      iris: '#2e9a52', brow: '#1f4d2e', lips: '#c0507f', blush: '#ff3a64', main: '#ffa07a' }
   };
   function normColor(c) {
     if (typeof c === 'number') return COLORS[c] || 'L';
@@ -203,30 +205,49 @@
   // ---------- cabezas de las víctimas (caja 100x100) ----------
   var HEADS = {};
 
+  // Rodaja de lima (gajos) como broche del pelo
+  function limeSlice(cx, cy, r) {
+    var sp = '';
+    for (var i = 0; i < 8; i++) {
+      var a = i * Math.PI / 4 + 0.2;
+      sp += 'M' + cx + ' ' + cy + 'L' + f(cx + Math.cos(a) * r * 0.7) + ' ' + f(cy + Math.sin(a) * r * 0.7);
+    }
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#2f9a2a" stroke="' + INK + '" stroke-width="1.9"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + f(r * 0.8) + '" fill="#f4ffd8"/><circle cx="' + cx + '" cy="' + cy + '" r="' + f(r * 0.68) + '" fill="#c4f04e"/>' +
+      '<path d="' + sp + '" stroke="#f4ffd8" stroke-width="1.3"/><circle cx="' + cx + '" cy="' + cy + '" r="' + f(r * 0.13) + '" fill="#f4ffd8"/>';
+  }
+  // Ficha de Lima: cara verde lima grande; el pelo es solo un fleco de hojas onduladas con florecitas blancas.
   HEADS.L = function (ctx, p, mood) {
     var hf = hairFill(ctx, p), out = '';
-    out += '<path d="' + wavy(50, 51, 42, 40, 18, 0.06, 0.2) + '" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    // mechones ondulados abajo
-    out += '<path d="M14 66q-3 12 6 22M86 66q3 12-6 22" fill="none" stroke="' + p.hairD + '" stroke-width="2" stroke-linecap="round" opacity=".7"/>';
-    out += '<ellipse cx="50" cy="57" rx="27" ry="28.5" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
+    // mechones ondulados que asoman a los lados (pelo largo)
+    out += '<path d="M21 48C11 58 19 68 11 78C8 84 12 90 18 89C17 82 24 76 23 67C22 59 27 54 28 50ZM79 48C89 58 81 68 89 78C92 84 88 90 82 89C83 82 76 76 77 67C78 59 73 54 72 50Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/>';
+    out += '<circle cx="50" cy="57" r="34" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
     // poros de cáscara
-    out += '<g fill="#e9f77a" opacity=".75"><circle cx="34" cy="74" r="1"/><circle cx="66" cy="76" r="1"/><circle cx="29" cy="62" r=".9"/><circle cx="72" cy="63" r=".9"/><circle cx="43" cy="80" r=".9"/><circle cx="58" cy="81" r="1"/></g>';
-    out += gloss(37, 47, 7, 4, -30, 0.45);
-    // fleco ondulado
-    out += '<path d="M21 58C16 32 33 18 50 19C67 18 84 32 79 58C75 46 70 40 63 37C59 43 51 45 45 40C39 45 30 48 21 58Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
-    out += '<path d="M30 30q8-6 16-5M58 26q9 1 14 7" fill="none" stroke="' + p.hairL + '" stroke-width="2.2" stroke-linecap="round"/>';
-    // hojas, limoncito y florecitas
-    out += leaf(20, 30, 15, -150, '#5fc23a') + leaf(80, 30, 15, -30, '#5fc23a');
-    out += '<circle cx="41" cy="16" r="4.6" fill="#c6f05a" stroke="' + INK + '" stroke-width="1.6"/><circle cx="39.6" cy="14.6" r="1.3" fill="#fff" opacity=".8"/>';
-    out += blossom(28, 22, 5.2) + blossom(66, 16, 5.6) + blossom(85, 47, 4.6) + blossom(14, 48, 4.4);
-    out += face(p, mood, { ey: 59, ex: 11, my: 72 });
+    out += '<g fill="#eaff8a" opacity=".85"><circle cx="30" cy="76" r="1.1"/><circle cx="70" cy="77" r="1.1"/><circle cx="24" cy="63" r="1"/><circle cx="76" cy="63" r="1"/><circle cx="42" cy="84" r="1"/><circle cx="58" cy="85" r="1.1"/></g>';
+    out += gloss(33, 50, 6, 3.4, -30, 0.5);
+    // fleco de hojas: puntas de hoja alrededor de la coronilla y borde ondulado sobre la frente
+    var d = '', R1 = 32, R2 = 42, a0 = 194, a1 = 346, n = 8, st = (a1 - a0) / n, rad = Math.PI / 180;
+    function pt(a, r) { return f(50 + Math.cos(a * rad) * r) + ' ' + f(57 + Math.sin(a * rad) * r); }
+    d = 'M' + pt(a0, R1);
+    for (var i = 0; i < n; i++) {
+      var a = a0 + i * st;
+      d += 'Q' + pt(a + st * 0.15, R2 - 3) + ' ' + pt(a + st * 0.62, R2) + 'Q' + pt(a + st * 0.8, R1 + 4) + ' ' + pt(a + st, R1);
+    }
+    d += 'Q79 37 72 41Q66 45 61 39Q55 33 50 39Q45 33 39 39Q34 45 28 41Q21 37 ' + pt(a0, R1) + 'Z';
+    out += '<path d="' + d + '" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    // nervaduras / brillos de las hojas
+    out += '<path d="M30 32q6-6 13-7M57 25q8 0 13 5M22 40q1-4 4-7" fill="none" stroke="' + p.hairL + '" stroke-width="2.2" stroke-linecap="round"/>';
+    // florecitas blancas y rodaja de lima
+    out += blossom(25, 27, 5.2) + blossom(47, 18, 5.4) + blossom(14, 47, 4.3) + blossom(87, 47, 4.3);
+    out += limeSlice(74, 23, 10);
+    out += face(p, mood, { ey: 60, ex: 11.5, my: 75, s: 1.04 });
     return out;
   };
 
   HEADS.F = function (ctx, p, mood) {
     var out = '', hf = hairFill(ctx, p);
     // melena verde detrás (larga)
-    out += '<path d="M26 34C12 42 9 64 14 86C20 80 25 72 30 64ZM74 34C88 42 91 64 86 86C80 80 75 72 70 64Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    out += '<path d="M26 35C14 43 11 62 15 80C20 75 25 68 29 62ZM74 35C86 43 89 62 85 80C80 75 75 68 71 62Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
     // cara de fresa
     out += '<path d="M50 93C30 90 15 70 16 48C17 31 32 24 50 26C68 24 83 31 84 48C85 70 70 90 50 93Z" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
     // semillas
@@ -274,30 +295,31 @@
     return out;
   };
 
+  // Ficha de Uva: cara morado uva grande, fleco de lado verde claro, hoja de parra y un racimo grande.
   HEADS.U = function (ctx, p, mood) {
     var out = '', hf = hairFill(ctx, p);
-    out += '<path d="M15 58C12 30 30 14 50 14C70 14 88 30 85 58C84 68 90 76 86 84C84 90 78 92 74 88C70 93 63 93 60 89C56 93 44 93 40 89C37 93 30 93 26 88C22 92 16 90 14 84C10 76 16 68 15 58Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>' +
-      '<path d="M19 62q-2 12 3 22M81 62q2 12-3 22" fill="none" stroke="' + p.hairL + '" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>';
-    out += '<circle cx="50" cy="58" r="27" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    out += '<g fill="#5a2290" opacity=".35"><circle cx="33" cy="72" r="2.4"/><circle cx="68" cy="73" r="2"/><circle cx="60" cy="82" r="1.6"/><circle cx="41" cy="82" r="1.8"/></g>';
-    out += gloss(37, 46, 8, 4.5, -30, 0.6) + '<circle cx="46" cy="42" r="1.6" fill="#fff" opacity=".8"/>';
-    // fleco de lado
-    out += '<path d="M22 54C19 32 36 22 54 24C70 25 82 36 79 52C72 42 60 37 48 38C38 40 29 46 22 54Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
-    // hoja de parra
-    out += g('translate(27 21) rotate(-28)',
-      '<path d="M0 10C-6 8 -14 6 -16 -1C-11 -1 -9 -3 -10 -7C-6 -6 -4 -9 -5 -14C-1 -11 2 -12 3 -16C6 -12 9 -11 12 -13C12 -8 14 -6 18 -5C16 0 13 3 10 4C12 7 8 9 0 10Z" fill="#66b347" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/>' +
+    // zarcillos rizados a los lados (detrás)
+    out += '<path d="M18 58c-9 4-10 14-4 18c4 3 9-1 6-5c-2-2-5 0-4 2M82 60c9 4 10 14 4 18c-4 3-9-1-6-5c2-2 5 0 4 2" fill="none" stroke="' + INK + '" stroke-width="4.6" stroke-linecap="round"/>' +
+      '<path d="M18 58c-9 4-10 14-4 18c4 3 9-1 6-5c-2-2-5 0-4 2M82 60c9 4 10 14 4 18c-4 3-9-1-6-5c2-2 5 0 4 2" fill="none" stroke="#9fe07a" stroke-width="2.2" stroke-linecap="round"/>';
+    out += '<circle cx="50" cy="57" r="34" fill="' + skinFill(ctx, p) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
+    // moteado morado
+    out += '<g fill="#6a22b8" opacity=".3"><circle cx="27" cy="74" r="2.6"/><circle cx="73" cy="76" r="2.2"/><circle cx="62" cy="86" r="1.8"/><circle cx="38" cy="86" r="2"/><circle cx="22" cy="62" r="1.6"/></g>';
+    out += gloss(31, 52, 6, 3.4, -30, 0.55);
+    // fleco de lado (verde claro con brillo)
+    out += '<path d="M18 53C15 36 28 25 46 24C60 23 72 28 79 37C68 33 58 34 48 38C38 42 28 46 18 53Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    out += '<path d="M26 35q9-7 21-7" fill="none" stroke="' + p.hairL + '" stroke-width="2.4" stroke-linecap="round"/>';
+    // hoja de parra grande
+    out += g('translate(24 22) rotate(-24) scale(1.12)',
+      '<path d="M0 10C-6 8 -14 6 -16 -1C-11 -1 -9 -3 -10 -7C-6 -6 -4 -9 -5 -14C-1 -11 2 -12 3 -16C6 -12 9 -11 12 -13C12 -8 14 -6 18 -5C16 0 13 3 10 4C12 7 8 9 0 10Z" fill="#6cc84a" stroke="' + INK + '" stroke-width="2" stroke-linejoin="round"/>' +
       '<path d="M0 9L-9 -2M0 9L-2 -9M0 9L5 -10M0 9L11 -6" stroke="#2f6e22" stroke-width="1.1" fill="none" opacity=".7"/>');
-    // zarcillos
-    out += '<path d="M60 18c4-7 13-6 13 0c0 4-5 4-5 1M72 26c5-3 10 0 8 4c-1 2-4 1-3-1" fill="none" stroke="#6fb04a" stroke-width="2.2" stroke-linecap="round"/>';
-    // racimo
-    var gp = [[78, 34], [86, 37], [74, 42], [82, 44], [78, 51]], cl = '';
-    gp.forEach(function (q) {
-      cl += '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="5"/>';
-    });
-    out += '<path d="M80 30l3-6" stroke="#5a3a1a" stroke-width="2.4" stroke-linecap="round"/>';
-    out += '<g fill="#7b35b8" stroke="' + INK + '" stroke-width="1.8">' + cl + '</g>';
-    out += '<g fill="#fff" opacity=".7">' + gp.map(function (q) { return '<circle cx="' + (q[0] - 1.6) + '" cy="' + (q[1] - 1.6) + '" r="1.3"/>'; }).join('') + '</g>';
-    out += face(p, mood, { ey: 59, ex: 11, my: 72 });
+    // racimo grande (arriba a la derecha)
+    var gf = rg(ctx, [[0, '#ecc8ff'], [0.4, '#a040f4'], [1, '#5212a8']], 0.38, 0.32, 0.7);
+    var gp = [[78, 33], [71, 23], [84, 23], [64, 13], [77, 12], [90, 14]], cl = '';
+    gp.forEach(function (q) { cl += '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="6.6"/>'; });
+    out += '<path d="M78 7Q80 1 86 0" fill="none" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/><path d="M78 7Q80 1 86 0" fill="none" stroke="#7a5a2a" stroke-width="2.4" stroke-linecap="round"/>';
+    out += '<g fill="' + gf + '" stroke="' + INK + '" stroke-width="2">' + cl + '</g>';
+    out += '<g fill="#fff" opacity=".85">' + gp.map(function (q) { return '<circle cx="' + (q[0] - 2.2) + '" cy="' + (q[1] - 2.2) + '" r="1.6"/>'; }).join('') + '</g>';
+    out += face(p, mood, { ey: 60, ex: 11.5, my: 75, s: 1.04 });
     return out;
   };
 
@@ -325,23 +347,28 @@
     return out;
   };
 
+  // Ficha de Durazna: silueta de durazno (corazón) con la línea del durazno, rubor fuerte, tallito con hojas
+  // y solo un fleco fino verde oscuro con raya al medio.
+  var PEACH = 'M50 28C57 15 79 13 88 31C97 49 90 73 74 86C66 92 58 95 50 95C42 95 34 92 26 86C10 73 3 49 12 31C21 13 43 15 50 28Z';
   HEADS.D = function (ctx, p, mood) {
     var out = '', hf = hairFill(ctx, p);
-    out += '<path d="' + smooth([[50, 18], [74, 22], [86, 42], [86, 62], [90, 78], [84, 92], [66, 90], [50, 88], [34, 90], [16, 92], [10, 78], [14, 62], [14, 42], [26, 22]]) + '" fill="' + hf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    var pf = rg(ctx, [[0, '#fff2d6'], [0.45, '#ffc48e'], [0.85, '#ff9a6a'], [1, '#f06a5a']], 0.4, 0.35, 0.72);
-    out += '<path d="M50 33C42 27 22 31 22 57C22 77 35 88 50 88C65 88 78 77 78 57C78 31 58 27 50 33Z" fill="' + pf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    out += '<path d="M50 34Q46 42 49 49" fill="none" stroke="#e0704a" stroke-width="2" stroke-linecap="round" opacity=".8"/>';
-    out += gloss(36, 46, 6, 3.5, -30, 0.5);
-    // cortinas de pelo con raya al medio
-    out += '<path d="M50 24C33 22 19 34 19 52C19 62 17 70 14 78C23 70 26 58 28 49C31 40 40 33 50 31Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/>';
-    out += '<path d="M50 24C67 22 81 34 81 52C81 62 83 70 86 78C77 70 74 58 72 49C69 40 60 33 50 31Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/>';
-    out += '<path d="M27 32q-5 10-4 22M73 32q5 10 4 22" fill="none" stroke="' + p.hairL + '" stroke-width="2" stroke-linecap="round"/>';
-    // tallito con hoja
-    out += '<path d="M50 28Q49 18 54 10" fill="none" stroke="' + INK + '" stroke-width="6" stroke-linecap="round"/><path d="M50 28Q49 18 54 10" fill="none" stroke="#8a5530" stroke-width="3" stroke-linecap="round"/>';
-    out += leaf(53, 14, 18, -25, '#5cbf4a', 1.8);
+    var pf = rg(ctx, [[0, '#ffefc4'], [0.38, '#ffc088'], [0.72, '#ff9474'], [1, '#f04e6e']], 0.36, 0.3, 0.8);
+    out += '<path d="' + PEACH + '" fill="' + pf + '"/>';
+    // lado rojizo del durazno
+    var bl = rg(ctx, [[0, '#ff2a5c', 0.6], [1, '#ff2a5c', 0]], 0.5, 0.5, 0.5);
+    out += '<g clip-path="' + clip(ctx, '<path d="' + PEACH + '"/>') + '"><ellipse cx="80" cy="70" rx="26" ry="30" fill="' + bl + '"/></g>';
+    out += '<path d="' + PEACH + '" fill="none" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    // línea del durazno
+    out += '<path d="M50 29C44 36 44 43 48 49" fill="none" stroke="#e8505a" stroke-width="2.6" stroke-linecap="round"/><path d="M45 32C41 37 41 42 43 46" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>';
+    out += gloss(26, 50, 6, 3.4, -30, 0.55);
+    // fleco fino de cortinas con raya al medio
+    out += '<path d="M50 30C40 27 26 31 20 42C18 46 17 50 17 56C21 48 26 43 33 40C39 37 45 35 50 33ZM50 30C60 27 74 31 80 42C82 46 83 50 83 56C79 48 74 43 67 40C61 37 55 35 50 33Z" fill="' + hf + '" stroke="' + INK + '" stroke-width="2.2" stroke-linejoin="round"/>';
+    // tallito con hojas
+    out += '<path d="M50 29Q48 19 53 9" fill="none" stroke="' + INK + '" stroke-width="6.4" stroke-linecap="round"/><path d="M50 29Q48 19 53 9" fill="none" stroke="#8a5530" stroke-width="3.2" stroke-linecap="round"/>';
+    out += leaf(52, 13, 24, -14, '#5cc84a', 2) + leaf(50, 15, 15, -165, '#45b040', 1.8);
     // nariz sonrojada
-    out += '<ellipse cx="50" cy="66" rx="3" ry="2" fill="#ff5a5e" opacity=".55"/>';
-    out += face(p, mood, { ey: 58, ex: 11, my: 73, blushR: 1.25, blushOp: 0.6 });
+    out += '<ellipse cx="50" cy="68" rx="3.2" ry="2.2" fill="#ff3a64" opacity=".6"/>';
+    out += face(p, mood, { ey: 60, ex: 11.5, my: 76, blushR: 1.4, blushOp: 0.75 });
     return out;
   };
 
@@ -503,31 +530,37 @@
     return wrap(ctx, 100, 100, body);
   }
 
-  // Paleta: la cabeza sobre una paleta helada con franjas y flechas en la dirección que limpia
+  // Colores de sabor saturados para las especiales: [claro, principal, oscuro]
+  var POP = { L: ['#ecffa8', '#86e01e', '#3a8c0c'], F: ['#ffb4c0', '#ff2a4a', '#ae0828'], B: ['#fff8b8', '#ffd414', '#cc9200'],
+    U: ['#ecd0ff', '#a33ef8', '#5410b4'], N: ['#ffdcaa', '#ff7a0e', '#c44600'], D: ['#ffe8cc', '#ff8a72', '#e2406a'] };
+  // Halo blanco suave detrás de las especiales (las hace saltar a la vista sobre las fichas normales)
+  function halo(ctx, cx, cy, r, col) {
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + rg(ctx, [[0, col || '#fff', 0.95], [0.55, col || '#fff', 0.55], [1, col || '#fff', 0]], 0.5, 0.5, 0.5) + '"/>';
+  }
+
+  // Paleta: helado de palito con franjas gruesas y flechas en la dirección que limpia (pv = columna, ph = fila).
+  // Se dibuja vertical y se gira -90° para la horizontal (el palito queda a la derecha); la cara no se gira.
+  var POPSICLE = 'M19 32Q19 4 50 4Q81 4 81 32V64Q81 73 72 73H28Q19 73 19 64Z';
   function paletaBody(ctx, col, p, mood, horiz) {
-    var out = '', i, stripes = '';
-    var pf = lg(ctx, [[0, p.light], [0.45, p.main], [1, p.dark]], 0, 0, horiz ? 0 : 1, horiz ? 1 : 0);
-    // cuerpo: [x, y, w, h], palito y flechas
-    var B = horiz ? [3, 13, 82, 74] : [13, 3, 74, 82];
-    var rect = '<rect x="' + B[0] + '" y="' + B[1] + '" width="' + B[2] + '" height="' + B[3] + '" rx="30"/>';
-    out += shadow(50, 94, horiz ? 40 : 30, 4);
-    if (horiz) out += '<rect x="78" y="42" width="20" height="16" rx="7" fill="#efcf96" stroke="' + INK + '" stroke-width="2.8"/><path d="M84 46H94" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>';
-    else out += '<rect x="42" y="78" width="16" height="20" rx="7" fill="#efcf96" stroke="' + INK + '" stroke-width="2.8"/><path d="M46 84V94" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>';
-    // halo blanco para que destaque de las fichas normales
-    out += '<rect x="' + B[0] + '" y="' + B[1] + '" width="' + B[2] + '" height="' + B[3] + '" rx="30" fill="none" stroke="#fff" stroke-width="10" opacity=".55"/>';
-    out += '<rect x="' + B[0] + '" y="' + B[1] + '" width="' + B[2] + '" height="' + B[3] + '" rx="30" fill="' + pf + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    var cp = clip(ctx, rect);
-    for (i = 0; i < 5; i++) stripes += horiz ? '<rect x="0" y="' + (14 + i * 15) + '" width="100" height="7.5"/>' : '<rect y="0" x="' + (14 + i * 15) + '" height="100" width="7.5"/>';
-    out += '<g clip-path="' + cp + '" fill="#fff" opacity=".6">' + stripes + '</g>';
-    out += '<path d="' + (horiz ? 'M14 24Q24 16 40 16' : 'M22 18Q28 8 44 7') + '" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" opacity=".9"/>';
-    out += g(horiz ? 'translate(12 12) scale(.66)' : 'translate(17 12) scale(.66)', headStr(ctx, col, mood));
-    if (horiz) out += arrow(6, 50, 180) + arrow(94, 50, 0);
-    else out += arrow(50, 6, -90) + arrow(50, 94, 90);
+    var c = POP[col], v = '', i, st = '';
+    var out = halo(ctx, 50, 48, 50);
+    v += '<rect x="42.5" y="62" width="15" height="34" rx="7.5" fill="#f6d69c" stroke="' + INK + '" stroke-width="2.8"/>' +
+      '<path d="M47 76V90M53 80V87" stroke="#c48c48" stroke-width="1.6" stroke-linecap="round"/>';
+    v += '<path d="' + POPSICLE + '" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>';
+    v += '<path d="' + POPSICLE + '" fill="' + lg(ctx, [[0, c[0]], [0.3, c[1]], [0.75, c[1]], [1, c[2]]], 0, 0, 1, 0) + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
+    for (i = 0; i < 3; i++) st += '<rect x="' + (24.5 + i * 19) + '" y="0" width="9" height="100"/>';
+    v += '<g clip-path="' + clip(ctx, '<path d="' + POPSICLE + '"/>') + '"><g fill="#fff" opacity=".9">' + st + '</g>' +
+      '<path d="M19 66H81" stroke="' + c[2] + '" stroke-width="5" opacity=".5"/></g>';
+    v += '<path d="M26 28Q27 13 40 9" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>';
+    v += arrow(50, 5, -90) + arrow(26, 88, 90) + arrow(74, 88, 90);
+    out += horiz ? g('rotate(-90 50 50)', v) : v;
+    out += g(horiz ? 'translate(18 23) scale(.46)' : 'translate(27 13) scale(.46)', headStr(ctx, col, mood));
+    out += sparkle(horiz ? 86 : 89, horiz ? 14 : 13, 6, '#fff');
     return out;
   }
   function arrow(x, y, rot) {
     return g('translate(' + x + ' ' + y + ') rotate(' + rot + ')',
-      '<path d="M6 0L-5 -10L-5 10Z" fill="#fff" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/>');
+      '<path d="M7 0L-6 -11L-6 11Z" fill="#fff" stroke="' + INK + '" stroke-width="2.8" stroke-linejoin="round"/>');
   }
 
   function coconut(ctx, cx, cy, r) {
@@ -543,50 +576,60 @@
     return out;
   }
   function bombaBody(ctx, col, p, mood) {
-    var out = shadow(50, 94, 32, 4.5);
-    // mecha encendida
-    out += '<path d="M64 24Q70 12 80 12" fill="none" stroke="' + INK + '" stroke-width="6" stroke-linecap="round"/><path d="M64 24Q70 12 80 12" fill="none" stroke="#e8c48a" stroke-width="3" stroke-linecap="round"/>';
-    out += coconut(ctx, 48, 56, 37);
-    out += '<g fill="#2b160c"><ellipse cx="38" cy="30" rx="3.4" ry="2.6"/><ellipse cx="50" cy="27" rx="3.4" ry="2.6"/><ellipse cx="44" cy="36" rx="3" ry="2.3"/></g>';
+    var c = POP[col];
+    var out = halo(ctx, 48, 56, 50) + shadow(50, 95, 32, 4);
+    // mecha
+    out += '<path d="M63 25Q68 12 79 12" fill="none" stroke="' + INK + '" stroke-width="7" stroke-linecap="round"/><path d="M63 25Q68 12 79 12" fill="none" stroke="#f6dca0" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="3 2"/>';
+    // contorno blanco + coco
+    out += '<circle cx="48" cy="57" r="37" fill="none" stroke="#fff" stroke-width="9"/>';
+    out += coconut(ctx, 48, 57, 37);
+    out += '<g fill="#2b160c"><ellipse cx="38" cy="31" rx="3.4" ry="2.6"/><ellipse cx="50" cy="28" rx="3.4" ry="2.6"/><ellipse cx="44" cy="37" rx="3" ry="2.3"/></g>';
     // faja del color del sabor
-    var cp = clip(ctx, '<circle cx="48" cy="56" r="37"/>');
-    out += '<g clip-path="' + cp + '"><path d="M0 52Q48 44 100 52L100 70Q48 62 0 70Z" fill="' + p.main + '" stroke="' + INK + '" stroke-width="2.6"/>' +
-      '<path d="M0 55Q48 47 100 55" fill="none" stroke="#fff" stroke-width="2" opacity=".55"/></g>';
-    out += gloss(32, 40, 8, 4, -35, 0.35);
+    var cp = clip(ctx, '<circle cx="48" cy="57" r="37"/>');
+    out += '<g clip-path="' + cp + '"><path d="M0 51Q48 42 100 51L100 72Q48 63 0 72Z" fill="' + c[1] + '" stroke="' + INK + '" stroke-width="2.6"/>' +
+      '<path d="M0 55Q48 46 100 55" fill="none" stroke="#fff" stroke-width="2.4" opacity=".7"/></g>';
+    out += gloss(31, 41, 8, 4, -35, 0.4);
     // medallón con la cabeza
-    out += '<circle cx="48" cy="61" r="26" fill="' + p.light + '" stroke="' + INK + '" stroke-width="2.8"/>';
-    var mc = clip(ctx, '<circle cx="48" cy="61" r="24.6"/>');
-    out += '<g clip-path="' + mc + '">' + g('translate(22 33) scale(.53)', headStr(ctx, col, mood)) + '</g>';
-    // chispa
-    out += '<path d="M81 1L84 8L91 6L87 12L93 17L85 17L84 24L80 18L73 21L76 14L70 10L78 9Z" fill="#ffd23c" stroke="#ff6a1a" stroke-width="1.6" stroke-linejoin="round"/>';
-    out += '<circle cx="81" cy="12" r="2.5" fill="#fff"/>';
+    out += '<circle cx="48" cy="62" r="26" fill="' + c[0] + '" stroke="' + INK + '" stroke-width="2.8"/>';
+    var mc = clip(ctx, '<circle cx="48" cy="62" r="24.6"/>');
+    out += '<g clip-path="' + mc + '">' + g('translate(22 34) scale(.53)', headStr(ctx, col, mood)) + '</g>';
+    // chispa con resplandor
+    out += '<circle cx="81" cy="13" r="17" fill="' + rg(ctx, [[0, '#fffbd0', 1], [0.35, '#ffd23c', 0.85], [1, '#ff6a1a', 0]], 0.5, 0.5, 0.5) + '"/>';
+    out += '<path d="M81 -1L85 7L94 4L89 12L97 17L87 18L86 27L80 20L71 24L75 15L67 10L77 8Z" fill="#fff36a" stroke="#e8380a" stroke-width="2" stroke-linejoin="round"/>';
+    out += '<circle cx="81" cy="13" r="3.6" fill="#fff"/><g fill="#ff8a1a"><circle cx="66" cy="4" r="1.6"/><circle cx="95" cy="27" r="1.4"/><circle cx="70" cy="22" r="1.2"/></g>';
     return out;
   }
 
   // ---------- Copa Arcoíris ----------
   function copa() {
-    var ctx = newCtx(), out = shadow(50, 94, 26, 4);
-    var gf = lg(ctx, [[0, '#ffffff', 0.85], [0.5, '#cdeeff', 0.75], [1, '#8fd0f0', 0.85]], 0, 0, 1, 0);
+    var ctx = newCtx(), out = halo(ctx, 50, 46, 50, '#fff8d0') + shadow(50, 95, 26, 4);
+    var gf = lg(ctx, [[0, '#ffffff', 0.9], [0.5, '#d8f4ff', 0.8], [1, '#9fdcff', 0.9]], 0, 0, 1, 0);
+    // arcoíris detrás de las bolas
+    var rb = ['#ff3355', '#ff8a10', '#ffd414', '#2ed060', '#2f8cff', '#9a44f0'], arc = '';
+    rb.forEach(function (c, i) { var r = 45 - i * 4.2; arc += '<path d="M' + f(50 - r) + ' 50A' + r + ' ' + r + ' 0 0 1 ' + f(50 + r) + ' 50" stroke="' + c + '"/>'; });
+    out += '<path d="M3 50A47 47 0 0 1 97 50" fill="none" stroke="#fff" stroke-width="9"/>';
+    out += '<g fill="none" stroke-width="4.6">' + arc + '</g>';
     // bolas
-    out += '<circle cx="34" cy="44" r="15" fill="#ff7eb6" stroke="' + INK + '" stroke-width="2.6"/>';
-    out += '<circle cx="66" cy="44" r="15" fill="#5fdcc0" stroke="' + INK + '" stroke-width="2.6"/>';
-    out += '<circle cx="50" cy="28" r="16" fill="#ffd84a" stroke="' + INK + '" stroke-width="2.6"/>';
-    out += '<circle cx="50" cy="12" r="8" fill="#b88cff" stroke="' + INK + '" stroke-width="2.4"/>';
-    out += '<g fill="#fff" opacity=".6"><ellipse cx="29" cy="39" rx="4" ry="2.4"/><ellipse cx="61" cy="39" rx="4" ry="2.4"/><ellipse cx="45" cy="22" rx="4.5" ry="2.6"/><circle cx="47" cy="9" r="2"/></g>';
+    out += '<circle cx="34" cy="44" r="15" fill="#ff5fa8" stroke="' + INK + '" stroke-width="2.6"/>';
+    out += '<circle cx="66" cy="44" r="15" fill="#2fe0b8" stroke="' + INK + '" stroke-width="2.6"/>';
+    out += '<circle cx="50" cy="28" r="16" fill="#ffd41a" stroke="' + INK + '" stroke-width="2.6"/>';
+    out += '<circle cx="50" cy="12" r="8" fill="#b070ff" stroke="' + INK + '" stroke-width="2.4"/>';
+    out += '<g fill="#fff" opacity=".7"><ellipse cx="29" cy="39" rx="4" ry="2.4"/><ellipse cx="61" cy="39" rx="4" ry="2.4"/><ellipse cx="45" cy="22" rx="4.5" ry="2.6"/><circle cx="47" cy="9" r="2"/></g>';
     // chispitas de colores
-    var sp = [[30, 50, '#3a8bff', 30], [38, 38, '#ff4256', -20], [62, 50, '#ff8c1f', 40], [70, 38, '#9a4ed6', -40], [44, 30, '#3ac46a', 60], [56, 24, '#ff4f93', -10], [52, 34, '#3a8bff', 20], [27, 44, '#ffd23c', 70], [72, 46, '#fff', 10], [50, 14, '#fff', 50]];
+    var sp = [[30, 50, '#2f8cff', 30], [38, 38, '#ff3355', -20], [62, 50, '#ff8a10', 40], [70, 38, '#9a44f0', -40], [44, 30, '#2ed060', 60], [56, 24, '#ff4f93', -10], [52, 34, '#2f8cff', 20], [27, 44, '#ffd414', 70], [72, 46, '#fff', 10], [50, 14, '#fff', 50]];
     out += sp.map(function (s) { return '<rect x="' + (s[0] - 3) + '" y="' + (s[1] - 1) + '" width="6" height="2.2" rx="1.1" fill="' + s[2] + '" transform="rotate(' + s[3] + ' ' + s[0] + ' ' + s[1] + ')"/>'; }).join('');
-    // copa de vidrio
-    out += '<path d="M14 50H86Q84 74 58 78L56 84H44L42 78Q16 74 14 50Z" fill="' + gf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
+    // copa de vidrio con contorno blanco
+    var CUP = 'M14 50H86Q84 74 58 78L56 84H44L42 78Q16 74 14 50Z';
+    out += '<path d="' + CUP + '" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round"/>';
+    out += '<path d="' + CUP + '" fill="' + gf + '" stroke="' + INK + '" stroke-width="' + SW + '" stroke-linejoin="round"/>';
     // franjas arcoíris en el vidrio
-    var cp = clip(ctx, '<path d="M14 50H86Q84 74 58 78L42 78Q16 74 14 50Z"/>');
-    var rb = ['#ff4256', '#ff8c1f', '#ffd23c', '#3ac46a', '#3a8bff', '#9a4ed6'], st = '';
+    var cp = clip(ctx, '<path d="M14 50H86Q84 74 58 78L42 78Q16 74 14 50Z"/>'), st = '';
     rb.forEach(function (c, i) { st += '<rect x="0" y="' + (52 + i * 4.2) + '" width="100" height="4.4" fill="' + c + '"/>'; });
-    out += '<g clip-path="' + cp + '" opacity=".75">' + st + '</g>';
-    out += '<path d="M14 50H86" stroke="' + INK + '" stroke-width="' + SW + '"/><path d="M22 56Q26 68 38 72" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
+    out += '<g clip-path="' + cp + '">' + st + '</g>';
+    out += '<path d="M14 50H86" stroke="' + INK + '" stroke-width="' + SW + '"/><path d="M22 56Q26 68 38 72" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".85"/>';
     out += '<path d="M30 92Q50 84 70 92Z" fill="' + gf + '" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/><rect x="45" y="82" width="10" height="9" fill="#d7f2ff" stroke="' + INK + '" stroke-width="2.2"/>';
     // destellos
-    out += sparkle(86, 18, 6, '#fff') + sparkle(14, 24, 4.5, '#fff');
+    out += sparkle(88, 16, 7, '#fff') + sparkle(12, 22, 5.5, '#fff') + sparkle(86, 70, 4.5, '#ffd414');
     return wrap(ctx, 100, 100, out);
   }
   function sparkle(x, y, r, col) {
@@ -727,23 +770,56 @@
     return wrap(ctx, 100, 100, out);
   }
 
-  // ---------- fruta congelada (amigo dentro del hielo) ----------
+  // ---------- amigo congelado (bloque de hielo grueso con el personaje dentro, cadena y candado) ----------
+  // Etapas: 0 = intacto (ojos cerrados), 1 = agrietado (asustado), 2 = último golpe (feliz, candado abierto).
+  function linkChain(x0, x1, y) {
+    var s = '';
+    for (var x = x0, i = 0; x <= x1; x += 7, i++) s += i % 2 ? '<rect x="' + f(x - 2.4) + '" y="' + f(y - 1.6) + '" width="4.8" height="3.2" rx="1.6"/>' : '<rect x="' + f(x - 4.4) + '" y="' + f(y - 3.2) + '" width="8.8" height="6.4" rx="3.2"/>';
+    return '<g fill="none" stroke="' + INK + '" stroke-width="4.4">' + s + '</g><g fill="none" stroke="#c9d4de" stroke-width="2">' + s + '</g>';
+  }
   function friend(who, hp, maxHp) {
     hp = Math.max(1, Math.round(hp || 1)); maxHp = Math.max(hp, Math.round(maxHp || hp));
-    var ctx = newCtx(), out = '';
-    var lost = maxHp - hp;
-    var mood = lost === 0 ? 'blink' : (hp === 1 ? 'happy' : 'scared');
-    var bg = lg(ctx, [[0, '#e8f8ff'], [1, '#8fd0f0']], 0, 0, 0, 1);
-    out += '<rect x="4" y="4" width="92" height="92" rx="14" fill="' + bg + '" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    out += g('translate(14 10) scale(.72)', charHead(ctx, who || 'lima', mood));
-    var ov = lg(ctx, [[0, '#ffffff', 0.55], [0.5, '#bfe9ff', 0.3], [1, '#4aa8e0', 0.45]], 0, 0, 0.6, 1);
-    out += '<rect x="4" y="4" width="92" height="92" rx="14" fill="' + ov + '"/>';
-    out += '<path d="M10 40V20Q10 10 20 10H60" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".9"/>';
-    out += '<path d="M22 80L76 26" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".28"/>';
-    out += frostCorners(0.85);
-    out += '<rect x="4" y="4" width="92" height="92" rx="14" fill="none" stroke="' + INK + '" stroke-width="' + SW + '"/>';
-    out += cracks(Math.min(lost * (maxHp <= 2 ? 2 : 1), 4), 1.5);
-    out += hpPips(hp, maxHp);
+    var ctx = newCtx(), out = '', lost = maxHp - hp;
+    var stage = lost === 0 ? 0 : (hp === 1 ? 2 : 1);
+    var mood = stage === 0 ? 'blink' : (stage === 2 ? 'happy' : 'scared');
+    var W = '<rect x="15" y="16" width="70" height="60" rx="7"/>';
+    out += shadow(50, 96, 42, 3.5, 0.25);
+    // bloque con bisel grueso
+    out += '<rect x="2" y="2" width="96" height="94" rx="14" fill="' + lg(ctx, [[0, '#f2fbff'], [0.55, '#a9dcf6'], [1, '#5aa6dc']], 0, 0, 0.6, 1) + '" stroke="' + INK + '" stroke-width="3.4"/>';
+    out += '<path d="M4 16Q4 4 16 4H84Q96 4 96 16L85 16H15Z" fill="#fff" opacity=".9"/>';
+    out += '<path d="M4 16L15 16V76L4 84Z" fill="#fff" opacity=".55"/>';
+    out += '<path d="M96 16L85 16V76L96 84Z" fill="#1f6aa8" opacity=".3"/>';
+    out += '<path d="M4 84L15 76H85L96 84Q96 94 84 94H16Q4 94 4 84Z" fill="#1f6aa8" opacity=".42"/>';
+    // ventana de hielo con el personaje dentro (más chico y detrás del vidrio escarchado)
+    out += W.replace('/>', ' fill="' + lg(ctx, [[0, '#d6f1ff'], [1, '#7cc4ee']], 0, 0, 0, 1) + '"/>');
+    out += '<g clip-path="' + clip(ctx, W) + '">' + g('translate(23 17) scale(.54)', charHead(ctx, who || 'lima', mood)) +
+      W.replace('/>', ' fill="' + lg(ctx, [[0, '#ffffff', 0.72], [0.45, '#d8f2ff', 0.38], [1, '#5ab0e6', 0.55]], 0, 0, 0.5, 1) + '"/>') +
+      '<path d="M10 70L48 12M34 84L80 16" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".38"/>' +
+      flake(23, 24, 6, 1.8, '#fff', 0.9) + flake(78, 68, 5, 1.6, '#fff', 0.8) + '</g>';
+    out += W.replace('/>', ' fill="none" stroke="' + INK + '" stroke-width="2.6"/>');
+    out += '<path d="M18 40V24Q18 19 23 19H50" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>';
+    // grietas según el daño
+    var CR = ['M62 4L57 22L66 30L54 44', 'M96 52L80 50L74 62L62 58', 'M4 60L20 56L26 68L38 64L42 76', 'M40 4L44 18L36 30', 'M96 30L86 36L88 46'];
+    var nc = stage === 0 ? 0 : (stage === 1 ? 2 : 5), cr = '';
+    for (var i = 0; i < nc; i++) cr += '<path d="' + CR[i] + '"/>';
+    if (cr) out += '<g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#fff" stroke-width="4.4">' + cr + '</g><g stroke="#1d5f8f" stroke-width="2.2">' + cr + '</g></g>';
+    if (stage === 2) out += '<path d="M84 4H96V16Z" fill="' + INK + '" opacity=".2"/><path d="M4 92L4 82L12 92Z" fill="' + INK + '" opacity=".2"/>';
+    // cadena y candado
+    out += linkChain(7, 93, 82);
+    var open = stage === 2;
+    out += '<path d="' + (open ? 'M44 79V70Q44 62 51 62Q58 62 58 70' : 'M44 79V71Q44 64 50 64Q56 64 56 71V79') + '" fill="none" stroke="' + INK + '" stroke-width="7" stroke-linecap="round"/>' +
+      '<path d="' + (open ? 'M44 79V70Q44 62 51 62Q58 62 58 70' : 'M44 79V71Q44 64 50 64Q56 64 56 71V79') + '" fill="none" stroke="#c9d4de" stroke-width="3" stroke-linecap="round"/>';
+    out += '<rect x="38" y="74" width="24" height="19" rx="4.5" fill="' + lg(ctx, [[0, '#ffe680'], [1, '#e09a10']], 0, 0, 0, 1) + '" stroke="' + INK + '" stroke-width="2.8"/>';
+    out += '<circle cx="50" cy="81.5" r="2.6" fill="' + INK + '"/><path d="M50 82V88" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round"/><path d="M41 77H52" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>';
+    // destellos de escarcha
+    out += sparkle(10, 10, 5, '#fff') + sparkle(91, 62, 4.5, '#fff') + sparkle(90, 10, 3.5, '#fff');
+    // vida: píldoras grandes arriba
+    var w = 14, gap = 4, tot = maxHp * w + (maxHp - 1) * gap, x0 = 50 - tot / 2;
+    for (var k = 0; k < maxHp; k++) {
+      var on = k < hp;
+      out += '<rect x="' + f(x0 + k * (w + gap)) + '" y="5" width="' + w + '" height="8" rx="4" fill="' + (on ? '#fff' : '#2a5f86') + '" stroke="' + INK + '" stroke-width="2"' + (on ? '' : ' opacity=".7"') + '/>';
+      if (on) out += '<rect x="' + f(x0 + k * (w + gap) + 3) + '" y="7.4" width="' + (w - 6) + '" height="3.2" rx="1.6" fill="#5fd0ff"/>';
+    }
     return wrap(ctx, 100, 100, out);
   }
 
