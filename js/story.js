@@ -8,7 +8,7 @@
        + frozen:true                retrato congelado (Art.portrait opts.frozen)
        + variant:'carcel'|'huida'|'tubo'|'panecitos'   (Art.portrait opts.variant)
      { sfx:'clac' }                 golpe de efecto; texto y sonido sugeridos en Story.effects
-     { card:'CONTINUARÁ...' }       tarjeta a pantalla completa */
+     { card:'CONTINUARÁ…' }         tarjeta a pantalla completa */
 (function () {
   'use strict';
   var Cocardo = (typeof window !== 'undefined' ? (window.Cocardo = window.Cocardo || {}) : {});
@@ -21,7 +21,7 @@
   function sfx(name) { return { sfx: name }; }
   function card(text) { return { card: text }; }
   var FROZEN = { frozen: true };
-  var TBC = 'CONTINUARÁ...';
+  var TBC = 'CONTINUARÁ…'; // ui.js reconoce la tarjeta con /continuar/i
 
   // Efectos de los guiones: texto en pantalla y sonido de Cocardo.Audio que mejor le queda.
   var effects = {
@@ -40,7 +40,7 @@
       say('cocardo', 'burlon', 'Bueno, entonces mañana prende menos luces.'),
       say('lima', 'enojado', '¡Cocardo! Necesitamos ayuda de verdad.'),
       say('lima', 'feliz', 'Tú, sí, tú: acomoda la fruta en la vitrina. ¡Junta tres iguales!'),
-      say('cocardo', 'feliz', "¡Bienvenido a Coco's Scoops, ayudante!"),
+      say('cocardo', 'feliz', "¡Pásale a Coco's Scoops, ayudante!"),
     ],
     pre2: [
       say('cocardo', 'feliz', 'Compré un congelador usado. ¡Una ganga: cuatro mil pesos!'),
@@ -48,9 +48,9 @@
       say('cocardo', 'burlon', 'No está viejo, está experimentado.'),
     ],
     pre3: [
-      say('lima', 'asustado', 'Cocardo, el congelador está temblando… y huele a quemado.'),
+      say('lima', 'asustado', 'Hace ruidos raros, tiembla solo y huele a quemado.'),
       say('cocardo', 'burlon', 'Así ronronea cuando está contento.'),
-      say('lima', 'enojado', 'Ay, Cocardo…'),
+      say('lima', 'enojado', 'Esa cosa nos va a salir carísimo.'),
     ],
     pre4: [
       say('lima', 'sorprendido', 'Se apagó otra vez… ¡y dejó todo lleno de hielo!'),
@@ -59,7 +59,8 @@
     pre5: [
       say('cocardo', 'nervioso', 'Si hoy no vendemos, cerramos.'),
       say('lima', 'feliz', 'Entonces hagamos el mejor helado de la ciudad. ¡Copa Arcoíris!'),
-      say('cocardo', 'burlon', '¿Y si el congelador se vuelve a apagar? Dale un golpecito.'),
+      say('lima', 'nervioso', '¿Y si el congelador se vuelve a apagar?'),
+      say('cocardo', 'burlon', 'Dale un golpecito.'),
     ],
     cliff5: [
       say('lima', 'nervioso', 'Se volvió a apagar. Voy a revisar el cable de atrás.'),
@@ -68,18 +69,19 @@
       say('lima', 'asustado', 'Ya sé, ya sé, Cocardo… tengo frío.', FROZEN),
       say('cocardo', 'sorprendido', '¡No inventes, estás viva!'),
       say('cocardo', 'burlon', 'Perdóname, amor… solo un poquito.'),
+      say('cocardo', 'sorprendido', 'Tu brazo… se regeneró.'),
       card(TBC),
     ],
 
     // ===== Capítulo 2 · Necesitamos un nuevo sabor (Partes 2-3) =====
     pre6: [
-      say('lima', 'triste', 'Psst… ayudante. Sigo viva aquí adentro. ¡No le digas a Cocardo!', FROZEN),
+      say('lima', 'triste', 'Psst… ayudante. Sigo viva aquí adentro. ¡Que Cocardo no sepa que hablamos!', FROZEN),
       say('cocardo', 'nervioso', 'Uno por persona, ya se me están poniendo violentos.'),
       say('cocardo', 'burlon', 'Mañana habrá un sabor nuevo.'),
       say('fresa', 'nervioso', 'Vine a ver a mi prima Lima, no me responde desde ayer.'),
-      say('cocardo', 'burlon', 'Pásale, está atrás… en la trastienda.'),
-      sfx('clac'),
+      say('cocardo', 'burlon', 'Está ocupada… está acá atrás. Ven, te la voy a mostrar.'),
       say('cocardo', 'nervioso', 'Lo siento, Fresa, pero te necesito.'),
+      sfx('clac'),
     ],
     pre7: [
       say('cocardo', 'feliz', '¡Pásele, pásele! Tenemos la famosa nieve de Lima y el nuevo sabor de fresa.'),
@@ -96,7 +98,7 @@
       say('fresa', 'enojado', '¡Sácanos de aquí, cabeza de coco!', FROZEN),
     ],
     pre9: [
-      say('cocardo', 'sorprendido', 'Oye, tú, el de la fruta… ¿me estás ayudando o estorbando?'),
+      say('cocardo', 'sorprendido', 'Oye, tú, ayudante… ¿me estás ayudando o estorbando?'),
       say('cocardo', 'burlon', 'Por si acaso, cada pocos turnos te congelo una fruta.'),
       say('lima', 'feliz', 'Psst… no te rindas, ayudante. Ya casi llegas a mi congelador.', FROZEN),
     ],
@@ -122,11 +124,13 @@
     pre11: [
       say('brocoli', 'sorprendido', 'Oiga, sí está grande, ¿para qué quiere tanto espacio?'),
       say('cocardo', 'burlon', 'Voy a ampliar el menú.'),
+      say('brocoli', 'normal', '¿Quiere que me lleve el congelador viejo?'),
+      say('cocardo', 'burlon', 'No, déjalo aquí.'),
       say('cocardo', 'feliz', 'Me piden durazno, plátano y uva morada… y yo cumplo.'),
       say('lima', 'feliz', 'Ayudante, te presto mi Chorro de Lima: limpia una fila entera.'),
     ],
     pre12: [
-      say('cocardo', 'burlon', 'Durazna, ¿quieres probar recetas? Helado gratis de por vida.'),
+      say('cocardo', 'burlon', 'Durazna, quiero probar unas recetas nuevas… Helado gratis de por vida.'),
       say('durazna', 'feliz', '¿Helado gratis de por vida? ¡Claro que sí!'),
       say('cocardo', 'burlon', 'Estoy a tres sabores de cerrar el mejor trato de mi vida… tú serás el tercero.'),
       say('cocardo', 'burlon', 'Tranquila, será rápido.'),
@@ -143,8 +147,9 @@
       say('cocardo', 'furioso', '¿¡Otra vez!? ¿¡Y mi nuevo sabor de fresa!?'),
     ],
     pre14: [
-      say('cocardo', 'feliz', 'Uva, eres nueva en la ciudad, ¿no? Pásate esta noche a la hora del cierre.'),
-      say('cocardo', 'burlon', 'Y tú, Banana… ¿te corrieron ayer? Tengo trabajo para ti.'),
+      say('cocardo', 'feliz', 'Oye, ¿eres nueva por aquí? Nunca te había visto.'),
+      say('uva', 'feliz', 'Llegué hace unos días… sigo buscando trabajo.'),
+      say('cocardo', 'burlon', 'Qué coincidencia. Tú también, Banana: pásense esta noche a la hora del cierre.'),
       say('cocardo', 'burlon', 'Aquí sucede la magia… Entren y véanlo de cerca.'),
       sfx('clac'),
       say('cocardo', 'carcajada', '¡Perfecto, ya están los 5!'),
@@ -162,7 +167,11 @@
       say('cocardo', 'llorando', '¡Mi congelador nuevo! ¡Ni lo había terminado de pagar!'),
     ],
     cliff15: [
-      say('cereza', 'coqueta', 'Cocardo, lo del helado de cereza… quiero que lo hagas.'),
+      say('cocardo', 'burlon', 'Oye, ¿y a ti no te gustaría uno de cereza?'),
+      say('cereza', 'sorprendido', '¿De cereza? ¿En serio harías eso?'),
+      say('cocardo', 'burlon', 'Claro, creo que podríamos arreglarlo fácil.'),
+      card('Al día siguiente…'),
+      say('cereza', 'coqueta', 'Estuve pensando… lo del helado de cereza, quiero que lo hagas.'),
       say('cocardo', 'asustado', 'Cherry, no abra ese congelador.'),
       sfx('drama'),
       say('cereza', 'sorprendido', 'Mira, ahí está Banana… esto es hermoso.'),
@@ -177,16 +186,16 @@
       say('cereza', 'burlon', 'Y estas son mis cajas del inventario. Nadie las abre, ¿eh?'),
     ],
     pre17: [
-      say('pina', 'sorprendido', '¿Y tú quién eres? ¿Cocardo te hizo socia?'),
-      say('cereza', 'coqueta', 'No me hizo socia. Yo vi una oportunidad.'),
       say('cereza', 'burlon', 'Espere, queremos el triple de lo que ofreció.'),
       say('pina', 'feliz', 'Me agradas. Denos el triple.'),
       say('cocardo', 'sorprendido', '¿El triple? Voy a necesitar mucha más fruta…'),
+      say('pina', 'normal', 'Empiezo a entender por qué la hiciste tu socia.'),
+      say('cereza', 'coqueta', 'No me hizo socia. Yo vi una oportunidad.'),
     ],
     pre18: [
       say('banano', 'enojado', 'Otra vez no… esto me resulta demasiado familiar.'),
-      say('banano', 'triste', 'Dónde estás, hermana. Voy a encontrarte.'),
-      say('cocardo', 'feliz', '¿Le sirvo uno de plátano? Es sabor nuevo.'),
+      say('banano', 'triste', '¿Dónde estás, hermana? Voy a encontrarte.'),
+      say('cereza', 'coqueta', '¿Qué te sirvo? ¿Plátano? Ese es nuevo.'),
       say('banano', 'sorprendido', 'Demasiado familiar… Mi hermana también era banana.'),
     ],
     pre19: [
@@ -217,27 +226,29 @@
     // ===== Capítulo 5 · La fuga (Partes 8-10) =====
     pre21: [
       sfx('trueno'),
-      say('cocardo', 'nervioso', 'Lima, fresa, durazno, banana… ¿dónde está Uva?'),
+      say('cocardo', 'nervioso', 'Lima, Fresa, Durazna, Banana… ¿dónde está Uva?'),
       say('cereza', 'burlon', 'Lima, Fresa y Durazna ya se te fueron hace rato, genio.'),
       say('uva', 'asustado', '¡Me descongelé con el apagón! ¡Tengo que salir de aquí!'),
     ],
     post21: [
       say('uva', 'asustado', 'Ayúdame, por favor… un hombre me encerró en un congelador.'),
-      say('cereza', 'coqueta', 'Claro, mi amor. Ven conmigo.'),
+      say('cereza', 'coqueta', 'Tranquila, ya estás afuera. Ven conmigo, yo te ayudo.'),
+      say('uva', 'sorprendido', 'Espera… ¿por qué volvemos aquí?'),
       say('cereza', 'burlon', 'Aquí termina el paseo.'),
       say('uva', 'sorprendido', '¡Tú estás con él!'),
       say('cereza', 'burlon', 'Sí. Se acabó, Uva.'),
     ],
     pre22: [
-      say('banano', 'enojado', 'Solo quiero respuestas.'),
-      say('guardaespaldas', 'enojado', '…'),
-      say('pina', 'burlon', 'Mientras cumplan con el pedido, no es asunto mío.'),
-      say('banano', 'normal', 'Entonces juntaré pruebas: el periódico, el expediente… todo.'),
-    ],
-    pre23: [
       say('pina', 'enojado', 'Creí que eras un hombre de palabra.'),
       say('cocardo', 'nervioso', 'Una noche de retraso no va a destruir su imperio.'),
       say('pina', 'normal', 'No, pero los malos hábitos sí.'),
+      say('banano', 'enojado', 'Solo quiero respuestas.'),
+      say('guardaespaldas', 'enojado', 'Entonces tendrás que sacármelas.'),
+      say('pina', 'burlon', 'Mientras cumplan con el pedido, no es asunto mío.'),
+    ],
+    pre23: [
+      say('cocardo', 'enojado', 'Uva casi se escapa y trajiste a naranjita cuando ni siquiera necesitábamos otro sabor.'),
+      say('cereza', 'burlon', 'Y aun así se vendió.'),
       say('cocardo', 'enojado', 'Yo tenía el control antes de que llegaras.'),
       say('cereza', 'burlon', 'No, Cocardo, tenías suerte.'),
     ],
@@ -248,9 +259,9 @@
       say('banano', 'enojado', 'Ya casi te tengo, Cocardo.'),
     ],
     pre25: [
-      say('cereza', 'coqueta', 'Cocardo, necesitamos otra sucursal.'),
+      say('cereza', 'coqueta', 'Deberíamos abrir otra sucursal… yo me encargo de esa.'),
       say('cocardo', 'enojado', 'Más gente haciendo preguntas.'),
-      say('cereza', 'burlon', 'Entonces estreno mi propio congelador. Rosita, como yo.'),
+      say('cereza', 'burlon', 'Entonces estreno mi propio congelador. Rosita y coqueta, como yo.'),
       say('banano', 'enojado', 'Ayudante, rompe el congelador de Cherry y bájame las pruebas.'),
     ],
     cliff25: [
@@ -297,20 +308,25 @@
       say('cocardo', 'sorprendido', 'Lima. Mi amor, eres tú.'),
       say('lima', 'enojado', 'Ya no más.'),
       sfx('sirena'),
-      say('policia_sandia', 'normal', 'Ya pasó todo. Arrestamos al culpable.'),
+      say('policia_fresa', 'normal', 'Ya pasó todo. Arrestamos al culpable.'),
       say('banano', 'enojado', 'El culpable son dos… Cherry.'),
       card('Esa noche, en las noticias…'),
       say('reportera', 'normal', 'Cocardo, dueño de la famosa heladería, fue arrestado esta noche…'),
       say('pina', 'furioso', '¡Idiota! Tenía un negocio que funcionaba y consiguió que lo arrestaran.'),
+      say('guardaespaldas', 'normal', '¿No le preocupa lo que encontraron?'),
+      say('pina', 'enojado', 'Me preocupa que mañana tengo pedidos y nadie que los produzca.'),
+      say('reportera', 'normal', 'Cocardo no trabajaba solo. Las autoridades buscan a su compañera Cherry.'),
       say('pina', 'burlon', 'Cherry… interesante.'),
       say('cereza', 'coqueta', 'Un boleto de avión, por favor.', { variant: 'huida' }),
       say('banana', 'llorando', 'Pensé que no iba a volver a verte… Gracias por venir por mí.'),
       say('banano', 'feliz', 'Siempre iba a venir por ti.'),
-      say('uva', 'feliz', 'Libre otra vez. Y esta vez, para siempre.'),
-      say('fresa', 'triste', 'Nunca imaginé eso de Cocardo.'),
+      say('uva', 'feliz', 'Esta vez nadie me regresa al congelador.'),
+      say('lima', 'triste', 'No puedo creer todo lo que hizo Cocardo.'),
+      say('fresa', 'triste', 'Supongo que nunca sabes de lo que alguien es capaz, ¿no?'),
       say('lima', 'triste', 'A veces lo descubres demasiado tarde.'),
       say('lima', 'feliz', 'Gracias, ayudante. Sin ti seguiríamos en el congelador.'),
-      say('cocardo', 'sorprendido', '¿Quién anda ahí?', { variant: 'carcel' }),
+      card('Mientras tanto, en la cárcel…'),
+      say('policia_sandia', 'normal', 'Luces.'),
       card('FIN DE LA TEMPORADA 1'),
       card('¿Segunda temporada…?'),
     ],
@@ -331,32 +347,32 @@
     2: '¡Junta 4 en línea y sale una Paleta! Limpia toda su fila o columna.',
     3: 'Junta en forma de L o de T: ¡Bomba de Coco! Revienta todo a su alrededor.',
     4: 'Combina junto al hielo para romperlo. ¡Las Paletas lo atraviesan!',
-    5: '¡5 en línea: Copa Arcoíris! Cámbiala por una fruta y se lleva todo ese sabor.',
+    5: '¡5 en línea: Copa Arcoíris! Cámbiala con una fruta y se lleva todo ese sabor.',
     6: 'Psst… desde aquí lo veo todo: el hielo grueso necesita dos golpes.',
-    7: 'Psst… junta los tres sabores del pedido. ¡El Cucharón rompe sin gastar jugada!',
+    7: 'Psst… junta los tres sabores del pedido. ¡El Cucharón rompe sin gastar movimiento!',
     8: 'Psst… la fruta escarchada no se mueve, pero sí combina. ¡Júntala para soltarla!',
     9: 'Psst… Cocardo escarcha una fruta cada pocos turnos. ¡Mira su cuenta regresiva!',
-    10: 'Combina junto al congelador para romperlo… ¡y junto a mi bloque para sacarme!',
-    11: 'Mi Chorro de Lima limpia una fila entera. ¡Úsalo cuando te atores!',
-    12: '¡Seis sabores! Cuesta más combinar: busca Paletas y Bombas.',
-    13: 'Fresa está hasta abajo. Rompe el hielo de encima para llegar a ella.',
+    10: 'Psst… rompe el hielo junto a mi bloque y pégale al congelador. ¡Así me sacas de aquí!',
+    11: 'Mi Chorro de Lima limpia una fila entera, hielo incluido. ¡Úsalo cuando te atores!',
+    12: '¡Seis sabores y hielo muy grueso en el centro! Busca Paletas y Bombas.',
+    13: 'Fresa está hasta abajo, rodeada de hielo. Rómpelo y pégale a su bloque.',
     14: 'Mi Batido revuelve todo el tablero. ¡Úsalo si no ves jugadas!',
-    15: 'Rompe el congelador grande y el bloque de Durazna. ¡Su hielo aguanta varios golpes!',
+    15: 'Durazna quedó entre el congelador y hielo grueso. ¡Rompe el hielo y tumba el congelador!',
     16: 'Las cajas de Cherry se rompen como el hielo: combina junto a ellas.',
     17: 'Cherry convierte fruta en cajas cada pocos turnos. ¡Que no se te junten!',
     18: 'Hielo arriba y abajo, cajas en medio. ¡Las Paletas ayudan!',
-    19: 'Naranja está encerrada en hielo. Ábrete paso y pégale a su bloque hasta sacarla.',
+    19: 'Naranja está rodeada de hielo: ábrete paso y pégale a su bloque. ¡Y rompe las cajas!',
     20: '¡Los dos villanos a la vez! Rompe el congelador y no olvides las cajas.',
     21: 'Baja a Uva hasta el fondo del tablero para que escape. ¡Rápido!',
-    22: 'Baja cada prueba hasta el fondo. Una Paleta vertical la tira de golpe.',
-    23: 'Tres capas de hielo. Empieza por arriba y que las cajas no te encierren.',
-    24: 'Dos pruebas a la vez. Abre camino en sus columnas.',
-    25: 'El congelador de Cherry escarcha fruta muy seguido. ¡Rómpelo rápido!',
-    26: 'El hielo doble tapa el camino. Rómpelo y baja las pruebas.',
-    27: 'Muchas cajas y una fila escarchada. Junta uvas con Paletas y Bombas.',
+    22: 'Junto pruebas contra Cocardo: baja cada una al fondo. ¡Una Paleta vertical la tira!',
+    23: 'Hielo de lado a lado y Cherry suelta cajas muy seguido. ¡Que no te encierren!',
+    24: 'Combina debajo de las pruebas para que bajen. ¡Y de paso rompe las cajas de Cherry!',
+    25: 'El congelador de Cherry escarcha muy seguido. ¡Rómpelo y baja las pruebas!',
+    26: 'Rompe el hielo grueso y baja las pruebas al fondo. ¡Cherry sigue soltando cajas!',
+    27: 'Muchas cajas, una fila escarchada y Cherry encajona muy seguido. ¡Junta uvas sin parar!',
     28: 'Cocardo escarcha fruta cada pocos turnos. Rompe el hielo del centro y baja las pruebas.',
     29: 'Cajas arriba y abajo, hielo grueso en medio. ¡Ya casi lo tenemos!',
-    30: 'Rompe el gran congelador y saca a Uva y a mi hermana. ¡Ahora o nunca!',
+    30: 'Rompe el hielo junto a Uva y a mi hermana, y tumba el gran congelador. ¡Ahora o nunca!',
   };
 
   // Burlas de los villanos: start (inicio), low (quedan 5 movimientos), act (al congelar o encajonar),
@@ -372,7 +388,7 @@
     cereza: {
       start: ['Te dije que valían el triple.', 'Yo vi una oportunidad, cariño.', '¿Y helado de coco cremosito? …Bromi.', 'Esto va a ser un imperio.'],
       low: ['Deja de temblar y piensa.', 'Aquí termina el paseo.', 'Tic, tac, ayudante.'],
-      act: ['Con cuidado, que no se me rompa el inventario.', '¡Una cajita más!', 'Al inventario, mi amor.', 'Buenas noches, fresita.'],
+      act: ['Tú sabes hacer helados y yo sé convertirlos en un negocio.', '¡Una cajita más!', 'Al inventario, mi amor.', 'Buenas noches, frutita.'],
       win: ['¿¡Mi inventario!?', 'Esto no se queda así, cariño.'],
       lose: ['Se acabó, ayudante.', 'Te dije que valían el triple.'],
     },
@@ -396,17 +412,17 @@
     { id: 'cocardo', name: 'Cocardo', role: "Dueño de Coco's Scoops. Congela frutas y las vende como helado.", quote: 'No está viejo, está experimentado.', unlock: { type: 'start' } },
     { id: 'lima', name: 'Lima', role: 'Novia y socia de Cocardo. La primera en quedar atrapada en el congelador.', quote: 'Cocardo, hoy vendemos menos de lo que cuesta prender las luces.', unlock: { type: 'rescue', who: 'lima' } },
     { id: 'cereza', name: 'Cherry', role: 'Clienta que descubre el secreto y se vuelve socia. Llena todo de cajas.', quote: 'Tú haces el helado, yo te ayudo a convertir esto en un imperio.', unlock: { type: 'level', level: 15 } },
-    { id: 'pina', name: 'Don Piña', role: 'Empresario millonario. Su pedido de cinco sabores lo empezó todo.', quote: 'Necesito 500 litros para empezar… 500 por sabor. Consígueme 5 y tenemos un trato.', unlock: { type: 'level', level: 6 } },
+    { id: 'pina', name: 'Don Piña', role: 'Empresario millonario. Su pedido de cinco sabores lo cambió todo.', quote: 'Necesito 500 litros para empezar… 500 por sabor. Consígueme 5 y tenemos un trato.', unlock: { type: 'level', level: 6 } },
     { id: 'banano', name: 'Banano', role: 'Investigador. Busca a su hermana Banana y reúne las pruebas.', quote: 'Así que tú eres Cocardo… ¿Dónde está mi hermana?', unlock: { type: 'level', level: 17 } },
     { id: 'banana', name: 'Banana', role: 'Hermana de Banano. Cocardo la atrajo con una oferta de trabajo.', quote: 'Pensé que no iba a volver a verte… Gracias por venir por mí.', unlock: { type: 'rescue', who: 'banana' } },
     { id: 'fresa', name: 'Fresa', role: 'Prima de Lima. Fue a buscarla y terminó como «el nuevo sabor de fresa».', quote: 'Vine a ver a mi prima Lima, no me responde desde ayer.', unlock: { type: 'rescue', who: 'fresa' } },
-    { id: 'durazna', name: 'Durazna', role: 'Clienta fiel. Le prometieron helado gratis de por vida.', quote: '¿Helado gratis de por vida?', unlock: { type: 'rescue', who: 'durazna' } },
+    { id: 'durazna', name: 'Durazna', role: 'Clienta de la heladería. Cocardo le prometió helado gratis de por vida.', quote: '¿Helado gratis de por vida?', unlock: { type: 'rescue', who: 'durazna' } },
     { id: 'uva', name: 'Uva', role: 'Nueva en la ciudad. Escapó en el apagón… y Cherry la regresó.', quote: 'Un hombre me encerró en un congelador.', unlock: { type: 'rescue', who: 'uva' } },
     { id: 'naranja', name: 'Naranja', role: 'Vecina de Cherry. Le llevó panecitos y salió congelada.', quote: 'Vecina, te traje panecitos calientitos.', unlock: { type: 'rescue', who: 'naranja' } },
     { id: 'limon', name: 'Limón', role: 'Vive en el callejón de atrás. Se asoma con pistas.', quote: 'El coco y la cereza tienen algo grande escondido en los congeladores.', unlock: { type: 'level', level: 1 } },
-    { id: 'policia_fresa', name: 'La oficial', role: 'Contacto de Banano en la policía. Todo con orden… hasta que no.', quote: 'Dime que no estás haciendo otra vez lo que creo que estás haciendo.', unlock: { type: 'level', level: 25 } },
-    { id: 'policia_sandia', name: 'El oficial Sandía', role: 'Esposa a Cocardo y vigila su celda.', quote: 'Ya pasó todo. Arrestamos al culpable.', unlock: { type: 'level', level: 30 } },
-    { id: 'guardaespaldas', name: 'El guardaespaldas', role: 'Siempre junto a Don Piña. Nunca dice nada.', quote: '…', unlock: { type: 'level', level: 6 } },
+    { id: 'policia_fresa', name: 'La oficial', role: 'Contacto de Banano en la policía. Primero pide una orden; luego, todas las unidades.', quote: 'Dime que no estás haciendo otra vez lo que creo que estás haciendo.', unlock: { type: 'level', level: 25 } },
+    { id: 'policia_sandia', name: 'El oficial Sandía', role: 'Esposa a Cocardo y vigila su celda.', quote: 'Luces.', unlock: { type: 'level', level: 30 } },
+    { id: 'guardaespaldas', name: 'El guardaespaldas', role: 'Siempre junto a Don Piña. Habla poco y pega fuerte.', quote: 'Entonces tendrás que sacármelas.', unlock: { type: 'level', level: 6 } },
     { id: 'brocoli', name: 'El repartidor', role: 'Entregó el congelador grande e hizo la pregunta correcta.', quote: 'Oiga, sí está grande, ¿para qué quiere tanto espacio?', unlock: { type: 'level', level: 10 } },
     { id: 'reportera', name: 'La reportera', role: 'Da la noticia del arresto en la tele.', quote: 'Cocardo, dueño de la famosa heladería, fue arrestado esta noche.', unlock: { type: 'level', level: 30 } },
   ];

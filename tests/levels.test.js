@@ -342,7 +342,7 @@ test('Story: forLevel apunta a guiones existentes y los cliffhangers caen en los
   assert.equal(Story.forLevel(30).cliff, 'ending');
   for (const id of [5, 10, 15, 20, 25]) {
     const sc = Story.scripts[Story.forLevel(id).cliff];
-    assert.equal(sc[sc.length - 1].card, 'CONTINUARÁ...', `cliff${id}`);
+    assert.equal(sc[sc.length - 1].card, 'CONTINUARÁ…', `cliff${id}`);
   }
   const end = Story.scripts.ending;
   assert.deepEqual(end.slice(-2).map((e) => e.card), ['FIN DE LA TEMPORADA 1', '¿Segunda temporada…?']);
@@ -403,7 +403,7 @@ test('Story: frases canónicas en boca de quien las dijo', () => {
     ['naranja', 'Vecina, te traje panecitos calientitos.'],
     ['cereza', 'Buenas noches, naranjita.'],
     ['cocardo', 'Si se descongelan, se acabó el negocio.'],
-    ['cocardo', 'Lima, fresa, durazno, banana… ¿dónde está Uva?'],
+    ['cocardo', 'Lima, Fresa, Durazna, Banana… ¿dónde está Uva?'],
     ['uva', 'Ayúdame, por favor… un hombre me encerró en un congelador.'],
     ['cereza', 'Aquí termina el paseo.'],
     ['cereza', 'Sí. Se acabó, Uva.'],
@@ -417,12 +417,23 @@ test('Story: frases canónicas en boca de quien las dijo', () => {
     ['cocardo', 'Se están descongelando.'],
     ['cocardo', 'Lima. Mi amor, eres tú.'],
     ['lima', 'Ya no más.'],
-    ['policia_sandia', 'Ya pasó todo. Arrestamos al culpable.'],
+    ['policia_fresa', 'Ya pasó todo. Arrestamos al culpable.'],
+    ['policia_sandia', 'Luces.'],
     ['reportera', 'Cocardo, dueño de la famosa heladería, fue arrestado esta noche…'],
     ['cereza', 'Un boleto de avión, por favor.'],
     ['pina', 'Cherry… interesante.'],
     ['banano', 'Siempre iba a venir por ti.'],
     ['lima', 'A veces lo descubres demasiado tarde.'],
+    // revisión de canon (docs/investigacion/verificacion.json)
+    ['lima', 'Hace ruidos raros, tiembla solo y huele a quemado.'],
+    ['cocardo', 'Tu brazo… se regeneró.'],
+    ['brocoli', '¿Quiere que me lleve el congelador viejo?'],
+    ['cereza', '¿Qué te sirvo? ¿Plátano? Ese es nuevo.'],
+    ['pina', 'Creí que eras un hombre de palabra.'],
+    ['guardaespaldas', 'Entonces tendrás que sacármelas.'],
+    ['guardaespaldas', '¿No le preocupa lo que encontraron?'],
+    ['reportera', 'Cocardo no trabajaba solo. Las autoridades buscan a su compañera Cherry.'],
+    ['fresa', 'Supongo que nunca sabes de lo que alguien es capaz, ¿no?'],
   ];
   for (const [who, text] of canon) assert.ok(said(who, text), `falta «${text}» (${who})`);
   // los secundarios aparecen en escena

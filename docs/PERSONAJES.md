@@ -22,7 +22,7 @@ son **mujeres de piel color fruta** con **pelo hecho de la fruta** (hojas, cásc
 | `cereza` | **Cherry** (la prensa la llama *Cereza*) | cereza | Clienta que descubre el congelador y se vuelve socia: "yo te ayudo a convertir esto en un imperio". Congela a su vecina Naranja y recaptura a Uva. Al final huye en avión. |
 | `pina` | **Don Piña** | piña | Empresario millonario: "Necesito 500 litros… 500 por sabor. Consígueme 5 y tenemos un trato." Nunca es víctima. |
 | `banano` | **Banano** | plátano (hombre) | El héroe: investigador que busca a su hermana Banana. Choca su auto contra la heladería. |
-| `banana` | **Banana** | plátano (mujer) | Hermana menor de Banano. Víctima (sabor "plátano"); la atraen con una oferta de trabajo. |
+| `banana` | **Banana** | plátano (mujer) | Hermana de Banano (la serie nunca dice si es la menor). Víctima (sabor "plátano"); la atraen con una oferta de trabajo. |
 | `fresa` | **Fresa** | fresa | Prima de Lima. Segunda víctima ("el nuevo sabor de fresa"). |
 | `durazna` | **Durazna** | durazno | Clienta. Tercera víctima ("helado gratis de por vida"). En el final pelea con un tubo. |
 | `uva` | **Uva** | uva morada | Nueva en la ciudad, busca trabajo. Víctima; escapa en el apagón y Cherry la regresa. |
@@ -35,11 +35,11 @@ Las seis **víctimas** son los seis colores de fichas del tablero: Lima, Fresa, 
 | id | Nombre en el juego | Fruta | Papel |
 |---|---|---|---|
 | `limon` | **Limón** (el del callejón) | limón | Vagabundo que vive detrás de la heladería: "El coco y la cereza tienen algo grande escondido en los congeladores." |
-| `policia_fresa` | **La oficial** | fresa (cabeza) | Contacto de Banano en la policía; manda "todas las unidades". No es Fresa la víctima. |
-| `policia_sandia` | **El oficial Sandía** | sandía | Esposa a Cocardo y vigila su celda. |
-| `guardaespaldas` | **El guardaespaldas** | mango (probable) | Siempre junto a Don Piña. |
+| `policia_fresa` | **La oficial** | fresa (cabeza) | Contacto de Banano en la policía. A "¿Cuántas unidades?" responde "Todas las que estén cerca"; en el arresto dice "Ya pasó todo. Arrestamos al culpable." No es Fresa la víctima. |
+| `policia_sandia` | **El oficial Sandía** | sandía | Esposa a Cocardo y vigila su celda; cierra la serie con "Luces." antes del apagón de la celda. |
+| `guardaespaldas` | **El guardaespaldas** | mango (probable) | Siempre junto a Don Piña. **No es mudo**, aunque habla poco: "Entonces tendrás que sacármelas" (a Banano) y "¿No le preocupa lo que encontraron?" (a Piña). |
 | `brocoli` | **El repartidor** | brócoli | Entrega el congelador grande: "¿Para qué quiere tanto espacio?" |
-| `reportera` | **La reportera** | papaya/mango | Anuncia el arresto en la tele. |
+| `reportera` | **La reportera** | papaya/mango | Anuncia el arresto en la tele y que las autoridades buscan a "su compañera Cherry". |
 
 ## Aspecto detallado
 

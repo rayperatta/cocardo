@@ -829,7 +829,7 @@
   }
   CH.banana = {
     name: 'Banana', fruit: 'plátano', color: '#ffe266',
-    role: 'Hermana menor de Banano. La atraen con una oferta de trabajo.',
+    role: 'Hermana de Banano. La atraen con una oferta de trabajo.',
     F: wF(PAL.banana, {}), H: { cx: 100, cy: 88, rx: 70, ry: 70, t: 18, chin: 142, sh: 166 },
     draw: function (c, M, v, F) {
       var p = PAL.banana, o = '';
@@ -896,7 +896,7 @@
   }
   CH.durazna = {
     name: 'Durazna', fruit: 'durazno', color: '#ffb07a', variants: ['tubo'],
-    role: 'Clienta fiel: «helado gratis de por vida». Al final pelea con un tubo.',
+    role: 'Clienta de la heladería: «helado gratis de por vida». Al final pelea con un tubo.',
     F: wF(PAL.durazna, { blushOp: 0.62, bw: 5.4 }), H: H_W,
     draw: function (c, M, v, F) {
       var p = PAL.durazna, hf = hairG(c, p), o = '';
@@ -1018,7 +1018,7 @@
   var LIMON_HEAD = sym([0, 26], [[8, 26, 12, 34, 22, 37], [46, 42, 62, 66, 62, 98], [62, 132, 38, 156, 8, 160], [4, 162, 0, 165, 0, 165]]);
   CH.limon = {
     name: 'Limón', fruit: 'limón', color: '#e8d040',
-    role: 'Vive en el callejón: «El coco y la cereza tienen algo grande escondido».',
+    role: 'Vive en el callejón: «El coco y la cereza tienen algo grande escondido…».',
     normal: { e: { lid: [0.36, 0.42], curve: 0.1 }, b: [[2, 4, -1], [-1, 2, 0]] },
     F: { x: 100, ey: 98, ex: 19, er: [10.5, 10], iris: '#6a5a2a', irisL: '#d8c890', lash: 0, brow: '#8a8578', bw: 7, bg: 6, arch: 2, lidAdd: 0.08,
       my: 136, mw: 13, lips: null, mouth: 'smile', nose: 'bulb', ny: 117, nosec: '#9a7a10', blush: '#ff9a50', blushOp: 0.2, tintPath: LIMON_HEAD },
@@ -1046,7 +1046,7 @@
   var OFI_HEAD = sym([0, 46], [[34, 42, 60, 58, 60, 88], [60, 120, 32, 152, 0, 164]]);
   CH.policia_fresa = {
     name: 'La oficial', fruit: 'fresa', color: '#e8323f',
-    role: 'Contacto de Banano en la policía: «¡Todas las unidades!».',
+    role: 'Contacto de Banano en la policía: «Todas las que estén cerca».',
     normal: { b: [2, 0, 0] },
     F: { x: 100, ey: 98, ex: 20, er: [11, 12.5], iris: '#4a2a1a', irisL: '#c89070', lash: 1, brow: '#6a0a1a', bw: 4.6, bg: 7, arch: 2,
       my: 128, mw: 10, lips: '#7a0a24', mouth: 'flat', nose: 'small', ny: 114, nosec: 'rgba(90,10,20,.45)', blush: '#ff9aa0', blushOp: 0.35, tintPath: OFI_HEAD },
@@ -1105,7 +1105,7 @@
   var MANGO_HEAD = smooth([[104, 30], [138, 40], [156, 72], [154, 112], [140, 146], [106, 162], [72, 154], [52, 124], [48, 88], [62, 52], [82, 34]]);
   CH.guardaespaldas = {
     name: 'El guardaespaldas', fruit: 'mango', color: '#ff9a2a',
-    role: 'La sombra musculosa de Don Piña. No habla, no sonríe.',
+    role: 'La sombra musculosa de Don Piña. Habla poco y no sonríe.',
     F: { x: 100, ey: 99, ex: 21, er: [12, 11], iris: '#3a2a1a', lash: 0, brow: '#4a1e0a', bw: 7.6, bg: 3, arch: 1, bin: 2, noEyes: true,
       my: 137, mw: 13, lips: null, mouth: 'flat', nose: 'strong', ny: 118, nosec: '#b8501a', blush: null, tintPath: MANGO_HEAD },
     H: { cx: 102, cy: 96, rx: 54, ry: 64, t: 30, chin: 160, sh: 158 },
