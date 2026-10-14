@@ -2,7 +2,11 @@
    Contrato: docs/ARQUITECTURA.md §4.1 y §5. Diseño: docs/DISENO.md §7, con los villanos y los congeladores
    adaptados al canon de docs/PERSONAJES.md (Cocardo escarcha, Cherry convierte fruta en cajas del inventario).
    Leyenda del layout: '#' vacío · '.' fruta · 'e' fruta escarchada · '1' '2' '3' hielo · 'K' caja ·
-   'R' fruta congelada (rescue[] en orden de lectura) · 'C' congelador 2×2 · 'T' ficha (tokens.skin). */
+   'R' fruta congelada (rescue[] en orden de lectura) · 'C' congelador 2×2 · 'T' ficha (tokens.skin).
+   Balance (tools/sim.js, bot consciente de metas): cap. 1 ≥ 90% de victorias; normales 60-85% bajando poco a
+   poco por capítulo; ⚠ y jefes 40-60%; final 35-55%; el bot débil (30% al azar) ≥ 30% desde el L6.
+   La dificultad sale de las metas, el hielo, las cajas, los villanos y los sabores; los movimientos siguen
+   una curva suave: cap. 1 20-24, cap. 2 21-25, cap. 3-4 22-28, cap. 5-6 24-32. */
 (function () {
   'use strict';
   var Cocardo = (typeof window !== 'undefined' ? (window.Cocardo = window.Cocardo || {}) : {});
@@ -430,9 +434,9 @@
         'K......K',
         'KKKKKKKK',
       ] }),
-    L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 31,
+    L({ id: 30, name: 'Se acabó el sabor', boss: true, final: true, colors: 'LFBUND', moves: 32,
       goals: [boss(), rescue()],
-      freezer: { who: 'cocardo', hp: 26, label: 'El gran congelador' },
+      freezer: { who: 'cocardo', hp: 27, label: 'El gran congelador' },
       rescue: ['uva', 'banana'], friendHP: 3,
       // final: los dos villanos a la vez; el gran congelador en el centro de la copa
       villains: [frost(4, 2, 'boss'), crate(6)],
