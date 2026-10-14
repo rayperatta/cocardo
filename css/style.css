@@ -973,6 +973,16 @@ svg { display: block; }
 .reward b { font-family: var(--font-display); font-weight: 400; font-size: 19px; }
 .r-icon { flex: 0 0 auto; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; background: #fff; border: 3px solid var(--ink); color: var(--pink-dark); }
 .intro-card .reward { animation-delay: .4s; }
+/* el botón principal siempre a la vista aunque la tarjeta no quepa */
+.intro-card > .btn-row:last-child, .victory-card > .btn-col, .defeat-card > .btn-col {
+  position: sticky;
+  bottom: -20px;
+  z-index: 3;
+  margin-left: -6px; margin-right: -6px;
+  padding: 10px 6px 20px;
+  background: linear-gradient(180deg, rgba(255, 246, 234, 0) 0, var(--cream) 14px);
+  border-radius: 0 0 22px 22px;
+}
 
 /* ---------- Pausa ---------- */
 
@@ -1577,6 +1587,15 @@ svg { display: block; }
   .card { padding-left: 14px; padding-right: 14px; }
 }
 @media (max-height: 640px) {
+  .intro-chapter { display: none; }
+  .intro-name { font-size: 23px; }
+  .intro-card .sec-title { margin: 8px 0 4px; }
+  .intro-card .goal-icon { width: 46px; height: 46px; border-radius: 14px; }
+  .intro-card .moves-pill { margin-top: 8px; }
+  .intro-card .tip { margin-top: 8px; }
+  .intro-card .tip-bubble { font-size: 13px; padding: 7px 10px; }
+  .intro-card .booster { padding: 4px 4px 4px; }
+  .intro-card .booster small { display: none; }
   .title-hero { width: min(56vw, 210px, 32vh); }
   .title-tag { font-size: 24px; margin-top: 12px; }
   .overlay { padding-top: calc(32px + var(--sat)); }

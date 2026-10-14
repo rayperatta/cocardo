@@ -159,15 +159,15 @@
     function text(x, y, str, opts) {
       opts = opts || {};
       var size = opts.size || 18, start = -(opts.delay || 0);
-      // si ya hay un texto joven en el mismo sitio, se apila encima
+      // si ya hay un texto joven en el mismo sitio, el nuevo va debajo (el viejo ya va subiendo)
       for (var guard = 0; guard < 6; guard++) {
         var hit = false;
         for (var i = 0; i < texts.length; i++) {
           var o = texts[i];
-          if (Math.abs(o.x - x) < size * 1.6 && Math.abs(o.y - y) < size * 0.9 && Math.abs(o.t - start) < 300) { hit = true; break; }
+          if (Math.abs(o.x - x) < size * 2 && Math.abs(o.y - y) < size * 1.1 && Math.abs(o.t - start) < 400) { hit = true; break; }
         }
         if (!hit) break;
-        y -= size * 1.05;
+        y += size * 1.15;
       }
       texts.push({ x: x, y: y, s: String(str), size: size, color: opts.color || '#ffffff', stroke: opts.stroke || '#2b1630',
         dur: opts.dur || 760, rise: opts.rise === undefined ? 34 : opts.rise, t: -(opts.delay || 0) });
