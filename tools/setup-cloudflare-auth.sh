@@ -3,11 +3,22 @@
 # «continuar a cocardo.app». GitHub Pages no puede atender esas rutas, así que se pone Cloudflare delante:
 #   1. sube el Worker tools/auth-proxy/worker.js (reenvía /__/auth/* y /__/firebase/* a <proyecto>.firebaseapp.com)
 #   2. crea la ruta <dominio>/__/* → Worker
-#   3. pone el SSL de la zona en «Full» (si estuviera en «Flexible» o apagado, GitHub Pages haría un bucle de
-#      redirecciones; «Full» y no «Full (strict)» para no depender de que GitHub renueve su certificado detrás del proxy)
-#   4. activa el proxy (nube naranja) en los registros A/AAAA del apex; www sigue «DNS only» y GitHub lo redirige
-#   5. comprueba que el juego y el handler de Firebase responden por https://<dominio>/
-# Es idempotente: se puede correr de nuevo. Para deshacerlo: tools/setup-cloudflare-dns.sh (vuelve a «DNS only»).
+#   3. SSL de la zona en «Full» y en modo manual. «Flexible» haría un bucle de redirecciones con GitHub Pages, y
+#      «Full (strict)» tumbaría el sitio con un 526 si GitHub no logra renovar su certificado detrás del proxy (lo
+#      normal: su Let's Encrypt necesita que el DNS apunte a GitHub). El modo automático de Cloudflare se apaga
+#      porque podría subir solo a «Full (strict)» y nunca vuelve a bajar.
+#   4. caché del navegador según las cabeceras de GitHub (10 min), no las 4 h por defecto de Cloudflare
+#   5. activa el proxy (nube naranja) en el apex (A/AAAA) y en www (CNAME): así los dos usan el certificado de
+#      Cloudflare y no dependen del de GitHub; GitHub sigue redirigiendo www → apex
+#   6. comprueba que el juego, el handler de Firebase y la redirección de www responden a través de Cloudflare
+# Es idempotente: se puede correr de nuevo.
+#
+# Para deshacerlo (en este orden; si no, «Entrar con Google» da error):
+#   1. js/cloud-config.js: authDomain = '<proyecto>.firebaseapp.com'; subir el cambio y esperar el build de Pages.
+#   2. esperar 10 min (caché del navegador) o purgar /js/cloud-config.js en Cloudflare.
+#   3. tools/setup-cloudflare-dns.sh (vuelve a «DNS only»). La ruta y el Worker quedan sin efecto; se pueden borrar.
+# En el cliente OAuth conviene dejar las DOS URI de redirección (la de <dominio> y la de <proyecto>.firebaseapp.com):
+# así cualquiera de los dos authDomain funciona, también para quien tenga la configuración vieja en caché.
 #
 # Después, en Google Cloud (una vez): Credenciales → «Web client (auto created by Google Service)» → URI de
 # redireccionamiento autorizados → https://<dominio>/__/auth/handler; y en js/cloud-config.js, authDomain = '<dominio>'.
@@ -64,52 +75,61 @@ else
   cf POST "/zones/$ZONE_ID/workers/routes" "$ROUTE_BODY" | ok "  + creada"
 fi
 
-echo "→ SSL de la zona"
-SSL=$(cf GET "/zones/$ZONE_ID/settings/ssl" | py 'import json,sys; d=json.load(sys.stdin); assert d.get("success"), d.get("errors"); print(d["result"]["value"])')
-if [ "$SSL" = "full" ]; then
-  echo "  = full"
-else
-  RES=$(cf PATCH "/zones/$ZONE_ID/settings/ssl" '{"value":"full"}')
-  if ! printf '%s' "$RES" | py 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("success") else 1)'; then
-    # con el modo automático de SSL/TLS activo, Cloudflare no deja fijar el modo a mano: se pasa a «custom» y se reintenta
-    cf PATCH "/zones/$ZONE_ID/settings/ssl_automatic_mode" '{"value":"custom"}' >/dev/null || true
-    RES=$(cf PATCH "/zones/$ZONE_ID/settings/ssl" '{"value":"full"}')
-  fi
-  printf '%s' "$RES" | ok "  $SSL → full"
-fi
+setting() { cf GET "/zones/$ZONE_ID/settings/$1" | py 'import json,sys; d=json.load(sys.stdin); assert d.get("success"), d.get("errors"); print(d["result"]["value"])'; }
 
-echo "→ Proxy de Cloudflare en el apex ($DOMAIN A/AAAA)"
-cf GET "/zones/$ZONE_ID/dns_records?name=$DOMAIN&per_page=100" | py 'import json,sys
+echo "→ SSL de la zona (manual, Full)"
+AUTO=$(cf GET "/zones/$ZONE_ID/settings/ssl_automatic_mode" | py 'import json,sys; d=json.load(sys.stdin); print(d["result"]["value"] if d.get("success") and d.get("result") else "n/a")')
+if [ "$AUTO" = "custom" ] || [ "$AUTO" = "n/a" ]; then
+  echo "  = modo automático: $AUTO"
+else
+  cf PATCH "/zones/$ZONE_ID/settings/ssl_automatic_mode" '{"value":"custom"}' | ok "  modo automático ($AUTO) → custom"
+fi
+SSL=$(setting ssl)
+if [ "$SSL" = "full" ]; then echo "  = full"; else cf PATCH "/zones/$ZONE_ID/settings/ssl" '{"value":"full"}' | ok "  $SSL → full"; fi
+[ "$(setting ssl)" = "full" ] || { echo "El SSL no quedó en full; no se activa el proxy." >&2; exit 1; }
+
+echo "→ Caché del navegador: respetar las cabeceras de GitHub"
+BCT=$(setting browser_cache_ttl)
+if [ "$BCT" = "0" ]; then echo "  = respeta las cabeceras"; else cf PATCH "/zones/$ZONE_ID/settings/browser_cache_ttl" '{"value":0}' | ok "  $BCT s → respeta las cabeceras (max-age=600 de GitHub)"; fi
+
+echo "→ Proxy de Cloudflare en $DOMAIN (A/AAAA) y www.$DOMAIN (CNAME)"
+for NAME in "$DOMAIN" "www.$DOMAIN"; do
+  cf GET "/zones/$ZONE_ID/dns_records?name=$NAME&per_page=100" | py 'import json,sys
 d=json.load(sys.stdin); assert d.get("success"), d.get("errors")
 for r in d["result"]:
-    if r["type"] in ("A","AAAA"): print(r["id"], r["type"], r["content"], r["proxied"])' | while read -r id type content proxied; do
-  if [ "$proxied" = "True" ]; then
-    echo "  = $type $content (ya con proxy)"
-  else
-    cf PATCH "/zones/$ZONE_ID/dns_records/$id" '{"proxied":true}' | ok "  ~ $type $content → con proxy"
-  fi
+    if r["type"] in ("A","AAAA","CNAME"): print(r["id"], r["type"], r["name"], r["content"], r["proxied"])' | while read -r id type name content proxied; do
+    if [ "$proxied" = "True" ]; then
+      echo "  = $type $name → $content (ya con proxy)"
+    else
+      cf PATCH "/zones/$ZONE_ID/dns_records/$id" '{"proxied":true}' | ok "  ~ $type $name → $content: con proxy"
+    fi
+  done
 done
 
 echo "→ Comprobación (preguntando directo a Cloudflare, sin la caché de DNS de esta computadora)"
 NS=$(cf GET "/zones/$ZONE_ID" | py 'import json,sys; print((json.load(sys.stdin)["result"].get("name_servers") or [""])[0])')
-IP=""
+# dig y curl no deben cortar el script (set -e): un fallo cuenta como «todavía no» y se reintenta
+ip_of() { { command -v dig >/dev/null 2>&1 && [ -n "$NS" ] && dig +short +time=2 +tries=1 @"$NS" "$1" A 2>/dev/null | grep -Em1 '^[0-9.]+$'; } || true; }
+via() { [ -n "$2" ] && echo "--resolve $1:443:$2"; true; }   # sin IP de Cloudflare se usa el DNS normal
+probe() { curl -sS --max-time 10 $(via "$1" "$2") -o /dev/null -w '%{http_code} %{redirect_url}' "https://$1$3" 2>/dev/null || echo "000"; }
+GOOD=""
 for i in $(seq 1 24); do
-  # la IP se vuelve a pedir en cada vuelta: justo después del cambio Cloudflare todavía puede dar la de GitHub
-  command -v dig >/dev/null 2>&1 && [ -n "$NS" ] && IP=$(dig +short @"$NS" "$DOMAIN" A | head -1)
-  RESOLVE=(); [ -n "$IP" ] && RESOLVE=(--resolve "$DOMAIN:443:$IP")
-  SITE=$(curl -s "${RESOLVE[@]}" -o /dev/null -w '%{http_code}' "https://$DOMAIN/")
-  HANDLER=$(curl -s "${RESOLVE[@]}" -o /dev/null -w '%{http_code}' "https://$DOMAIN/__/auth/handler")
-  if [ "$SITE" = "200" ] && [ "$HANDLER" = "200" ] && curl -s "${RESOLVE[@]}" "https://$DOMAIN/__/auth/handler" | grep -q 'handler.js'; then break; fi
+  # las IP se vuelven a pedir en cada vuelta: justo después del cambio Cloudflare todavía puede dar las de GitHub
+  IP=$(ip_of "$DOMAIN"); WIP=$(ip_of "www.$DOMAIN")
+  SITE=$(probe "$DOMAIN" "$IP" /); HANDLER=$(probe "$DOMAIN" "$IP" /__/auth/handler); WWW=$(probe "www.$DOMAIN" "$WIP" /)
+  SERVER=$( { curl -sSI --max-time 10 $(via "$DOMAIN" "$IP") "https://$DOMAIN/" 2>/dev/null || true; } | tr -d '\r' | awk -F': ' 'tolower($1)=="server"{print $2}')
+  BODY=$( { curl -sS --max-time 10 $(via "$DOMAIN" "$IP") "https://$DOMAIN/__/auth/handler" 2>/dev/null || true; } | grep -c 'handler.js' || true)
+  if [ "${SITE%% *}" = "200" ] && [ "${HANDLER%% *}" = "200" ] && [ "${BODY:-0}" != "0" ] && [ "$SERVER" = "cloudflare" ] && [ "$WWW" = "301 https://$DOMAIN/" ]; then GOOD=1; break; fi
   sleep 5
 done
-echo "  https://$DOMAIN/ → $SITE   https://$DOMAIN/__/auth/handler → $HANDLER   (vía ${IP:-DNS local})"
-SERVER=$(curl -sI "${RESOLVE[@]}" "https://$DOMAIN/" | tr -d '\r' | awk -F': ' 'tolower($1)=="server"{print $2}')
-echo "  servidor: $SERVER (cloudflare = proxy activo)"
-[ "$SITE" = "200" ] && [ "$HANDLER" = "200" ] || { echo "Algo no responde todavía; vuelve a correr el script en un minuto." >&2; exit 1; }
+echo "  https://$DOMAIN/ → ${SITE%% *}   /__/auth/handler → ${HANDLER%% *}   servidor: ${SERVER:-?}   (vía ${IP:-?})"
+echo "  https://www.$DOMAIN/ → $WWW"
+[ -n "$GOOD" ] || { echo "Algo no responde todavía (el proxy ya quedó activo). Vuelve a correr el script en un minuto; si sigue igual, revisa el SSL y la ruta del Worker en el panel de Cloudflare." >&2; exit 1; }
 
 cat <<MSG
 
-Listo. Falta (una vez) en Google Cloud → APIs y servicios → Credenciales → «Web client (auto created by Google
-Service)» → URI de redireccionamiento autorizados → Agregar: https://$DOMAIN/__/auth/handler → Guardar.
+Listo. Si es la primera vez, en Google Cloud → APIs y servicios → Credenciales → «Web client (auto created by Google
+Service)» → URI de redireccionamiento autorizados deben estar las dos:
+  https://$DOMAIN/__/auth/handler   y   https://$PROJECT.firebaseapp.com/__/auth/handler
 Después: authDomain = '$DOMAIN' en js/cloud-config.js y subir el cambio.
 MSG
