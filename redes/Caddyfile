@@ -1,0 +1,6 @@
+# Solo se usa en el VPS (COMPOSE_PROFILES=vps). Caddy saca y renueva el certificado HTTPS
+# de POSTIZ_DOMINIO por su cuenta; el dominio tiene que apuntar ya a la IP del VPS.
+{$POSTIZ_DOMINIO} {
+	encode zstd gzip
+	reverse_proxy postiz:5000
+}

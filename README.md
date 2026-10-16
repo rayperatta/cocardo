@@ -94,6 +94,7 @@ firebase/               reglas de seguridad de Firestore (firestore.rules) y con
 docs/                   diseño, arquitectura, personajes, investigación, Firebase y plan de crecimiento
 tests/                  pruebas del motor, niveles, reto diario, progreso y prueba de punta a punta
 tools/                  simulador de niveles, empaquetador, capturas, íconos, bot que graba videos y vistas previas
+redes/                  Postiz con Docker para publicar los videos en las redes (ver redes/README.md)
 ```
 
 Comandos (Node 18 o superior):
