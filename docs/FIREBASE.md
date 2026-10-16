@@ -12,7 +12,25 @@ El juego funciona completo sin nube (todo se guarda en el navegador). Al activar
   `clip`, `sign_in`, `referral`…).
 
 Todo el código está en `js/cloud.js`, `js/cloud-config.js`, `js/analytics.js` y `firebase/`. Tiempo estimado:
-20 minutos. Costo: **US$0** en el plan Spark (gratis) para decenas de miles de jugadores al mes (ver §6).
+20 minutos a mano, o **2 minutos con el script** `tools/setup-firebase.sh` (§0). Costo: **US$0** en el plan Spark
+(gratis) para decenas de miles de jugadores al mes (ver §6).
+
+## 0. Camino rápido: todo por línea de comandos
+
+`tools/setup-firebase.sh` crea el proyecto, la app web, escribe `js/cloud-config.js`, crea Firestore, sube las reglas,
+activa el proveedor «Anónimo» y añade los dominios autorizados. Solo necesita una credencial:
+
+```bash
+npm install -g firebase-tools
+firebase login:ci            # abre el navegador una vez y te da un token (guárdalo como FIREBASE_TOKEN)
+FIREBASE_TOKEN=… tools/setup-firebase.sh cocardo-rescate "Cocardo Rescate Helado" southamerica-east1 cocardo.app,www.cocardo.app,rayperatta.github.io
+```
+
+Lo único que Google no permite por API es activar el proveedor **Google** (crea un cliente OAuth por detrás):
+consola → Authentication → Sign-in method → Google → Enable → Save (dos clics). El script comprueba si ya está y
+te deja el enlace exacto. Si prefieres no usar `login:ci` (la CLI lo marca como obsoleto, aunque funciona), crea
+el proyecto a mano (§1) y dale al script una cuenta de servicio con rol Editor en `GOOGLE_APPLICATION_CREDENTIALS`.
+Las secciones siguientes describen el mismo proceso paso a paso en la consola.
 
 ## 1. Crear el proyecto
 

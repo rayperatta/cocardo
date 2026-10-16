@@ -81,21 +81,32 @@ abandona en un nivel, bájale 2 movimientos de dificultad con `tools/sim.js`), `
 | cocardo.game | Disponible, pero `.game` es una extensión cara (US$300+/año en la mayoría de registradores). | US$300+ |
 | cocardo.pe | No se pudo comprobar (el registro `.pe` no publica RDAP); míralo en punto.pe. | — |
 
-**Recomendación:** compra **hoy** cocardo.app (principal) y rescatehelado.com (redirección), en Cloudflare
-Registrar (precio de costo), Porkbun o Namecheap. El nombre se está moviendo rápido (dos registros de «cocardo»
-en las últimas tres semanas). Yo no puedo comprarlo por ti: necesita tu tarjeta y tu cuenta.
+**Estado (16-oct-2026, 21:42 UTC): cocardo.app ya está comprado** en Cloudflare Registrar, con los servidores
+de nombres de Cloudflare (`cass` y `lloyd`). Queda pendiente rescatehelado.com como redirección, si quieres.
+
+**Conectarlo sin tocar la consola de Cloudflare:** `tools/setup-cloudflare-dns.sh` crea (o corrige) los registros
+A/AAAA del apex y el CNAME de `www` hacia GitHub Pages, sin proxy, con un token de API de Cloudflare
+(My Profile → API Tokens → Create Token → plantilla «Edit zone DNS», zona `cocardo.app`) en la variable
+`CLOUDFLARE_API_TOKEN`:
+
+```bash
+CLOUDFLARE_API_TOKEN=… tools/setup-cloudflare-dns.sh cocardo.app rayperatta
+```
 
 **Una advertencia honesta.** «Cocardo» es un personaje de otra persona. Un dominio con su nombre para un juego de
 fans gratuito y claramente marcado como no oficial tiene riesgo bajo, pero no cero: si el creador o una marca lo
 reclama, podrías tener que entregarlo. Por eso el segundo dominio (rescatehelado.com) te da un nombre propio al
 que migrar sin perder a nadie, y por eso conviene hablar con el creador (§2).
 
-**Conectarlo a GitHub Pages (5 minutos).** En el registrador, DNS: 4 registros `A` con `185.199.108.153`,
-`185.199.109.153`, `185.199.110.153`, `185.199.111.153` y un `CNAME` de `www` a `<tu-usuario>.github.io`.
-En el repositorio: *Settings → Pages → Custom domain* = `cocardo.app`, espera el visto bueno y marca
-*Enforce HTTPS* (GitHub crea el archivo `CNAME` en la rama). Después añade el dominio en Firebase
-(Authentication → Authorized domains) y, si eliges otro dominio, cambia `https://cocardo.app/` en `index.html`,
-`landing.html` y `js/cloud-config.js` (`siteUrl`).
+**Conectarlo a GitHub Pages.** A mano serían 4 registros `A` (`185.199.108.153`, `185.199.109.153`,
+`185.199.110.153`, `185.199.111.153`), 4 `AAAA` (`2606:50c0:8000::153` a `8003::153`) y un `CNAME` de `www` a
+`<tu-usuario>.github.io`, todos «DNS only» (nube gris) para que GitHub pueda emitir el certificado. El script de
+arriba lo hace solo. En el repositorio ya existe el archivo `CNAME` con `cocardo.app`: en cuanto la rama que
+publica GitHub Pages lo contenga, el dominio queda configurado solo; después, en *Settings → Pages*, marca
+*Enforce HTTPS* cuando se active (el certificado tarda de minutos a una hora) y, en *Settings → Pages → Verified
+domains* de tu cuenta, verifica el dominio (pásale el token TXT al script como tercer argumento). Añade el dominio en
+Firebase (`tools/setup-firebase.sh` lo hace) y, si algún día cambias de dominio, reemplaza `https://cocardo.app/`
+en `index.html`, `landing.html`, `js/cloud-config.js` (`siteUrl`) y `CNAME`.
 
 ## 4. Repositorios y recursos de GitHub que aplican a este juego
 
