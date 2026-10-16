@@ -90,15 +90,20 @@ for r in d["result"]:
   fi
 done
 
-echo "→ Comprobación (puede tardar unos segundos en propagarse)"
-for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-  SITE=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/")
-  HANDLER=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/__/auth/handler")
-  if [ "$SITE" = "200" ] && [ "$HANDLER" = "200" ] && curl -s "https://$DOMAIN/__/auth/handler" | grep -q 'handler.js'; then break; fi
+echo "→ Comprobación (preguntando directo a Cloudflare, sin la caché de DNS de esta computadora)"
+NS=$(cf GET "/zones/$ZONE_ID" | py 'import json,sys; print((json.load(sys.stdin)["result"].get("name_servers") or [""])[0])')
+IP=""
+for i in $(seq 1 24); do
+  # la IP se vuelve a pedir en cada vuelta: justo después del cambio Cloudflare todavía puede dar la de GitHub
+  command -v dig >/dev/null 2>&1 && [ -n "$NS" ] && IP=$(dig +short @"$NS" "$DOMAIN" A | head -1)
+  RESOLVE=(); [ -n "$IP" ] && RESOLVE=(--resolve "$DOMAIN:443:$IP")
+  SITE=$(curl -s "${RESOLVE[@]}" -o /dev/null -w '%{http_code}' "https://$DOMAIN/")
+  HANDLER=$(curl -s "${RESOLVE[@]}" -o /dev/null -w '%{http_code}' "https://$DOMAIN/__/auth/handler")
+  if [ "$SITE" = "200" ] && [ "$HANDLER" = "200" ] && curl -s "${RESOLVE[@]}" "https://$DOMAIN/__/auth/handler" | grep -q 'handler.js'; then break; fi
   sleep 5
 done
-echo "  https://$DOMAIN/ → $SITE   https://$DOMAIN/__/auth/handler → $HANDLER"
-SERVER=$(curl -sI "https://$DOMAIN/" | tr -d '\r' | awk -F': ' 'tolower($1)=="server"{print $2}')
+echo "  https://$DOMAIN/ → $SITE   https://$DOMAIN/__/auth/handler → $HANDLER   (vía ${IP:-DNS local})"
+SERVER=$(curl -sI "${RESOLVE[@]}" "https://$DOMAIN/" | tr -d '\r' | awk -F': ' 'tolower($1)=="server"{print $2}')
 echo "  servidor: $SERVER (cloudflare = proxy activo)"
 [ "$SITE" = "200" ] && [ "$HANDLER" = "200" ] || { echo "Algo no responde todavía; vuelve a correr el script en un minuto." >&2; exit 1; }
 

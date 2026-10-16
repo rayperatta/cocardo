@@ -12,7 +12,7 @@
   Cocardo.CloudConfig = {
     firebase: {
       apiKey: 'AIzaSyDjy9wfEVYbxoWI0XcygKtb-AHVRRFvhOA',
-      authDomain: 'graceful-system-406208.firebaseapp.com',          // p. ej. cocardo-rescate.firebaseapp.com
+      authDomain: 'cocardo.app',   // servido por tools/auth-proxy (Cloudflare); antes graceful-system-406208.firebaseapp.com
       projectId: 'graceful-system-406208',           // p. ej. cocardo-rescate
       appId: '1:884766434061:web:fbe561f24168079a074644',               // p. ej. 1:1234567890:web:abcdef
       // storageBucket y messagingSenderId no hacen falta para este juego
