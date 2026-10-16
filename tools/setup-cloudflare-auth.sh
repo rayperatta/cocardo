@@ -15,7 +15,7 @@
 #
 # Para deshacerlo (en este orden; si no, «Entrar con Google» da error):
 #   1. js/cloud-config.js: authDomain = '<proyecto>.firebaseapp.com'; subir el cambio y esperar el build de Pages.
-#   2. esperar 10 min (caché del navegador) o purgar /js/cloud-config.js en Cloudflare.
+#   2. esperar 10 min: los navegadores guardan cloud-config.js ese tiempo (purgar Cloudflare no borra esa caché).
 #   3. tools/setup-cloudflare-dns.sh (vuelve a «DNS only»). La ruta y el Worker quedan sin efecto; se pueden borrar.
 # En el cliente OAuth conviene dejar las DOS URI de redirección (la de <dominio> y la de <proyecto>.firebaseapp.com):
 # así cualquiera de los dos authDomain funciona, también para quien tenga la configuración vieja en caché.
