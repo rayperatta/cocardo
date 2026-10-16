@@ -97,6 +97,12 @@
         try { auth.useDeviceLanguage(); } catch (e) { /* nada */ }
         db = fb.firestore();
         auth.onAuthStateChanged(onAuth, function (e) { lastError = e; emit(); });
+        // vuelta de un inicio de sesión por redirección (ver popupFallback); sin redirección pendiente no hace nada
+        auth.getRedirectResult().catch(function (e) {
+          if (e && e.code === 'auth/credential-already-in-use' && e.credential) return auth.signInWithCredential(e.credential);
+          lastError = e;
+          emit();
+        });
         state = 'ready';
         emit();
         return fb;
@@ -114,6 +120,7 @@
   function onAuth(u) {
     if (u) {
       user = { uid: u.uid, name: u.displayName || '', photo: u.photoURL || '', anon: !!u.isAnonymous };
+      lastError = null;
       profileReady = false;
       flag(true);
       emit();
@@ -210,10 +217,13 @@
     try { p.setCustomParameters({ prompt: 'select_account' }); } catch (e) { /* nada */ }
     return p;
   }
-  function popupFallback(e, p) {
+  // Sin ventana emergente se va a Google y se vuelve: la marca hace que init() cargue el SDK al regresar, y load()
+  // recoge el resultado con getRedirectResult(). Si la sesión era anónima se vincula (no se pierde el apodo).
+  function popupFallback(e, p, link) {
     var c = (e && e.code) || '';
     if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment' || c === 'auth/web-storage-unsupported') {
-      return auth.signInWithRedirect(p);
+      flag(true);
+      return link ? auth.currentUser.linkWithRedirect(p) : auth.signInWithRedirect(p);
     }
     throw e;
   }
@@ -226,7 +236,7 @@
       if (cur && cur.isAnonymous) {
         return cur.linkWithPopup(p).catch(function (e) {
           if (e && e.code === 'auth/credential-already-in-use' && e.credential) return auth.signInWithCredential(e.credential);
-          return popupFallback(e, p);
+          return popupFallback(e, p, true);
         });
       }
       return auth.signInWithPopup(p).catch(function (e) { return popupFallback(e, p); });

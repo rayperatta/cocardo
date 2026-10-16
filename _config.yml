@@ -1,0 +1,10 @@
+# GitHub Pages publica la rama main con Jekyll: solo se sirve el juego y la landing.
+# Lo de desarrollo (documentos, herramientas, pruebas, Firebase, Postiz) queda en el repositorio pero no en cocardo.app.
+exclude:
+  - docs/
+  - tools/
+  - tests/
+  - firebase/
+  - redes/
+  - README.md
+  - package.json

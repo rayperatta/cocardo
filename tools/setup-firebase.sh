@@ -84,8 +84,11 @@ def find(o):
 cfg=find(raw)
 assert cfg, ("sin sdkConfig en la salida", raw)
 path=sys.argv[1]; s=open(path,encoding="utf-8").read()
+cur=re.search(r"\bauthDomain:\s*\x27([^\x27]*)\x27", s)
 for k in ("apiKey","authDomain","projectId","appId"):
     v=cfg.get(k,"")
+    # un authDomain propio (p. ej. cocardo.app, ver tools/setup-cloudflare-auth.sh) se respeta
+    if k=="authDomain" and cur and cur.group(1) and not cur.group(1).endswith(".firebaseapp.com"): v=cur.group(1)
     s,n=re.subn(r"(\b%s:\s*)\x27[^\x27]*\x27" % k, lambda m: m.group(1)+"\x27"+v+"\x27", s, count=1)
     assert n==1, "no se encontró el campo "+k
 extra=sys.argv[2].split(",")[0].strip()
