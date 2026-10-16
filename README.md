@@ -46,15 +46,13 @@ que descongela a las víctimas mientras la historia avanza igual que en la serie
 ## Jugar
 
 - **Local:** abre `index.html` con doble clic. No necesita servidor.
-- **Página de presentación:** `landing/index.html` es la landing del juego (historia, cómo se juega, personajes,
-  Reto Diario y preguntas frecuentes). Reutiliza el arte de `js/` y sus botones llevan a `index.html`.
 - **Un solo archivo:** `node tools/build-single.cjs` genera `dist/cocardo.html` con todo adentro, para
   compartirlo o subirlo a cualquier hosting.
 - **GitHub Pages:** en el repositorio, ve a *Settings → Pages*. En *Build and deployment* elige
   *Deploy from a branch*, selecciona la rama del juego y la carpeta `/ (root)`, y guarda. En un par de minutos
   queda en `https://<usuario>.github.io/cocardo/`. Dominio propio, cuentas y plan de lanzamiento:
   `docs/CRECIMIENTO.md` y `docs/FIREBASE.md`.
-- **Landing:** `landing.html` es la página de presentación (para Google, prensa y creadores). El enlace de la
+- **Landing:** `landing.html` es la página de presentación (para Google, prensa y creadores; `/landing/` redirige ahí). El enlace de la
   bio de TikTok/Instagram conviene que vaya directo a `index.html` (un toque y ya está jugando);
   `index.html?go=daily` abre el Reto Diario.
 
