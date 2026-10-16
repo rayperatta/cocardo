@@ -74,6 +74,7 @@ js/ui.js, js/main.js    navegación y pantallas (portada, mapa, historia, victor
 docs/                   diseño, arquitectura, personajes e investigación
 tests/                  pruebas del motor, niveles, reto diario y prueba de punta a punta
 tools/                  simulador de niveles, empaquetador, capturas y vistas previas del arte y el audio
+redes/                  Postiz con Docker para publicar los videos en las redes (ver redes/README.md)
 ```
 
 Comandos (Node 18 o superior):
