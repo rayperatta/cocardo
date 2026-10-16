@@ -11,6 +11,10 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
 - Static site. No build step to play: `index.html` + `css/*.css` + `js/**/*.js`, loaded with classic `<script>` tags
   (no ES modules, no `fetch` of local files, no external JS libraries). Must work from `file://`, GitHub Pages and a
   sandboxed iframe (Claude artifact). Only external resource allowed: Google Fonts stylesheet (with system fallbacks).
+  **Exceptions (§14-§16), all lazy and optional:** `Cocardo.Cloud` injects the Firebase *compat* SDK from gstatic
+  only when configured, served over http(s), not framed, and only on user action (or to restore a previous session);
+  `Cocardo.Track` loads `gtag.js` only when a GA4 id is configured; `Cocardo.Clip` may use a temporary `<a download>`
+  (never inside an iframe). Without configuration none of them touches the network and the game is identical.
 - Every module attaches to the single global namespace `window.Cocardo` (create it if missing:
   `var Cocardo = (typeof window !== 'undefined' ? (window.Cocardo = window.Cocardo || {}) : {});`).
 - Pure modules (`js/core/*`) must also work in Node: end with
@@ -24,8 +28,9 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
   each file's IIFE. No transpilation: target evergreen browsers (ES2019 is fine: arrow functions, classes, const/let,
   template strings, spread; avoid `?.`/`??` only if you want old Safari 13 — they are allowed).
 - Script load order in `index.html`:
-  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/story.js, js/art.js, js/art-characters.js,
-  js/audio.js, js/save.js, js/fx.js, js/render.js, js/game.js, js/ui.js, js/main.js`.
+  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/core/progress.js, js/story.js, js/art.js,
+  js/art-characters.js, js/audio.js, js/save.js, js/fx.js, js/render.js, js/game.js, js/cloud-config.js, js/cloud.js,
+  js/analytics.js, js/clip.js, js/ui.js, js/main.js`.
 
 ## 1. File ownership
 
@@ -36,7 +41,10 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
 | `js/art.js`, `tools/art-preview.html` | Art (board) | browser (strings only, no DOM needed) |
 | `js/art-characters.js`, `tools/portraits-preview.html` | Art (characters) | browser (strings only); adds `Cocardo.Art.characters` and `Cocardo.Art.portrait` |
 | `js/audio.js`, `tools/audio-preview.html` | Audio (done) | browser |
-| `index.html`, `css/style.css`, `js/save.js`, `js/ui.js`, `js/main.js` | Shell | browser |
+| `index.html`, `css/style.css`, `js/save.js`, `js/ui.js`, `js/main.js`, `manifest.webmanifest`, `sw.js`, `icons/` | Shell | browser |
+| `js/core/progress.js`, `tests/progress.test.js` | Cloud | pure |
+| `js/cloud-config.js`, `js/cloud.js`, `js/analytics.js`, `js/clip.js`, `firebase/*`, `docs/FIREBASE.md` | Cloud | browser |
+| `landing.html`, `css/landing.css`, `tools/build-icons.cjs`, `tools/record.cjs`, `docs/CRECIMIENTO.md` | Growth | browser / node |
 | `css/game.css`, `js/fx.js`, `js/render.js`, `js/game.js` | Board | browser |
 | `tools/sim.js` | Balance | node |
 | `tests/e2e.cjs` | QA | node + playwright |
@@ -302,7 +310,10 @@ Cocardo.Save = {
 ```
 `data = { v:1, unlocked:1, stars:Array(30).fill(0), best:Array(30).fill(0), boosters:{cucharon:0, chorro:0, batido:0},
 boostersUnlocked:{cucharon:false, chorro:false, batido:false}, rescued:[], seen:{}, daily:{ last:0, streak:0,
-bestStreak:0, results:{} }, settings:{ sound:true, vibra:true, motion:'auto'|'on'|'off', music:false } }`.
+bestStreak:0, results:{} }, settings:{ sound:true, vibra:true, motion:'auto'|'on'|'off', music:false, skipStory:false,
+clips:false }, cloud:{ on:false, nick:'', avatar:'', uid:'' }, ref:'' }`.
+`cloud` is a local copy of the cloud profile (so the title chip renders before the SDK loads); `ref` is the nickname
+that invited this player (`?r=<nick>`), set once.
 
 ## 11. `Cocardo.Game` (js/game.js + render.js + fx.js) — the board screen
 
@@ -358,3 +369,55 @@ Google Fonts link: `https://fonts.googleapis.com/css2?family=Lilita+One&family=N
 Layout: `html, body { height: 100% }` (never `100vh` for the app frame), app frame `#app` fills the viewport, respects
 safe-area insets, no horizontal scroll at 320–430 px wide, board square = `min(100vw - 24px, available height, 600px)`.
 Respect `prefers-reduced-motion` and the in-game "Movimiento reducido" setting (`body.reduced-motion`).
+
+## 14. `Cocardo.Progress` (js/core/progress.js, pure) and `Cocardo.Cloud` (js/cloud.js)
+
+```js
+Cocardo.Progress = {
+  merge(local, cloud) -> data,       // best of both: max stars/best/unlocked/boosters, union of rescued/seen, newest daily
+                                     // streak, both daily results (local wins on ties); settings always from `local`
+  summary(data) -> { stars, levels, rescued, bestStreak, finished },   // public profile numbers (ranking)
+  forCloud(data) -> data without settings,
+  validNick(s) -> { ok:true, nick, key } | { ok:false, reason },       // 3–16 [A-Za-z0-9_ + accents], blocked words
+  normalizeNick(s) -> lowercase, accents stripped (uniqueness key),
+};
+Cocardo.CloudConfig = { firebase:{ apiKey, authDomain, projectId, appId }, firebaseVersion, ga4, siteUrl, social:{ tiktok, instagram } };
+Cocardo.Cloud = {
+  init(),                       // main.js: restores a previous session (loads the SDK 1.2 s after boot) when the flag is set
+  configured(), available(),    // available = configured && http(s) && not framed && fetch
+  inAppBrowser() -> bool,       // TikTok/Instagram/Facebook webviews: Google sign-in is blocked there → offer signInAnon
+  state() -> 'off'|'idle'|'loading'|'ready'|'error', user() -> { uid, name, photo, anon } | null,
+  profile() -> { nick, nickKey, avatar, stars, levels, rescued, bestStreak, finished } | null,
+  onChange(fn), offChange(fn),  // fn({ state, user, profile, profileReady, error })
+  signIn() -> Promise<user>,    // Google popup (redirect fallback); links an anonymous session, or signs into the existing account
+  signInAnon() -> Promise<user>, signOut() -> Promise,
+  suggestNick() -> string, saveProfile({ nick, avatar }) -> Promise<{ ok, nick } | { ok:false, reason }>,  // transaction users + nicknames
+  sync() -> Promise<bool>,      // pull users/{uid}/private/save, Progress.merge into Save.get(), push
+  push() -> Promise,            // debounced upload (UI calls it after every win / official daily)
+  submitDaily(key, result) -> Promise<bool>,   // create-only: the rules reject a second attempt
+  dailyTop(key, n), topPlayers(n) -> Promise<rows>,   // public reads via the Firestore REST API (no SDK), cached 45 s
+};
+```
+Firestore layout and rules: `firebase/firestore.rules` (users/{uid} public profile, users/{uid}/private/save,
+nicknames/{key}, daily/{YYYYMMDD}/scores/{uid}). The UI (ui.js) owns every screen: title chip, account overlay,
+profile editor, settings card, ranking card in the daily screen, and the `?r=` referral toast.
+
+## 15. `Cocardo.Clip` (js/clip.js)
+
+```js
+Cocardo.Clip = {
+  supported() -> bool,                 // MediaRecorder + canvas.captureStream + a known MIME, not framed
+  start({ canvas, hud(), audio }) -> bool,   // composes 720×1280 frames (logo, title, board, moves/score, watermark) at 30 fps
+  stop() -> Promise<File|null>,        // mp4 when the browser can encode it (Safari, recent Chrome), else webm; max 3 min
+  recording(), last(), lastMeta() -> { ms, mime }, discard(),
+  share(file, text) -> Promise<'shared'|'saved'|'abort'|'fail'>,   // Web Share with files, else <a download>
+};
+```
+`Cocardo.Audio.captureStream()` returns the mixed audio as a MediaStream for the clip. The UI starts a clip when
+`settings.clips` is on (startLevel), stops it in `onEnd`, and adds «Compartir clip» to Victoria/Derrota.
+
+## 16. `Cocardo.Track` (js/analytics.js)
+
+`Cocardo.Track.event(name, params)` sends to GA4 when `CloudConfig.ga4` is set (gtag loaded lazily, events queued
+until then); no-op otherwise. Events: `level_start`, `level_end`, `daily_end`, `share`, `clip`, `clips_toggle`,
+`sign_in`, `sign_out`, `nick_set`, `referral`, `pwa_open`.

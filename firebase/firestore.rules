@@ -1,0 +1,77 @@
+rules_version = '2';
+// Cocardo: ¡Rescate Helado! — Reglas de Firestore.
+// Subir con: firebase deploy --only firestore:rules   (ver docs/FIREBASE.md)
+//
+// Colecciones:
+//   users/{uid}                 perfil público: nick, nickKey, avatar, stars, levels, rescued, bestStreak, finished
+//   users/{uid}/private/save    progreso completo (solo el dueño)
+//   nicknames/{nickKey}         { uid }  reserva del apodo (único, sin acentos ni mayúsculas)
+//   daily/{YYYYMMDD}/scores/{uid}   intento oficial del Reto Diario (solo se crea una vez)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function isInt(v, lo, hi) { return v is int && v >= lo && v <= hi; }
+    function validNick(n) {
+      return n is string && n.size() >= 3 && n.size() <= 16 && n.matches('^[A-Za-z0-9_ÁÉÍÓÚÜÑáéíóúüñ]+$');
+    }
+    function validKey(k) {
+      return k is string && k.size() >= 3 && k.size() <= 16 && k.matches('^[a-z0-9_]+$');
+    }
+    function validProfile(d) {
+      return validNick(d.nick) && validKey(d.nickKey)
+        && d.avatar is string && d.avatar.size() >= 1 && d.avatar.size() <= 20
+        && isInt(d.stars, 0, 90) && isInt(d.levels, 0, 30) && isInt(d.rescued, 0, 16)
+        && isInt(d.bestStreak, 0, 1000000) && d.finished is bool
+        && d.keys().hasOnly(['nick', 'nickKey', 'avatar', 'stars', 'levels', 'rescued', 'bestStreak', 'finished', 'updatedAt']);
+    }
+    // el apodo que queda en el perfil debe estar reservado a nombre de este usuario (misma transacción)
+    function nickReserved(uid, key) {
+      return getAfter(/databases/$(database)/documents/nicknames/$(key)).data.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read: if true;   // perfil público: lo ve el ranking
+      allow create, update: if isOwner(uid) && validProfile(request.resource.data) && nickReserved(uid, request.resource.data.nickKey);
+      allow delete: if false;
+
+      match /private/save {
+        allow read, write: if isOwner(uid)
+          && request.resource == null || (isOwner(uid) && request.resource.data.size() <= 14 && request.resource.data.v == 1);
+      }
+    }
+
+    match /nicknames/{key} {
+      allow read: if true;   // saber si un apodo está libre
+      allow create: if signedIn() && validKey(key) && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.nickKey == key;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /daily/{day}/scores/{uid} {
+      allow read: if true;   // ranking público
+      // solo el primer intento del día; el apodo y avatar deben ser los del perfil
+      allow create: if isOwner(uid) && day.matches('^[0-9]{8}$')
+        && request.resource.data.keys().hasOnly(['nick', 'avatar', 'won', 'score', 'stars', 'movesUsed', 'movesTotal', 'maxCombo', 'num', 'at'])
+        && request.resource.data.nick == get(/databases/$(database)/documents/users/$(uid)).data.nick
+        && request.resource.data.avatar is string
+        && request.resource.data.won is bool
+        && isInt(request.resource.data.score, 0, 999999)
+        && isInt(request.resource.data.stars, 0, 3)
+        && isInt(request.resource.data.movesUsed, 0, 99)
+        && isInt(request.resource.data.movesTotal, 0, 99)
+        && request.resource.data.movesUsed <= request.resource.data.movesTotal
+        && isInt(request.resource.data.maxCombo, 0, 99)
+        && isInt(request.resource.data.num, 0, 1000000)
+        && request.resource.data.at == request.time;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

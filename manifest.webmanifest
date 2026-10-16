@@ -1,0 +1,25 @@
+{
+  "name": "Cocardo: ¡Rescate Helado!",
+  "short_name": "Cocardo",
+  "description": "Juego gratis tipo junta 3 de la frutinovela viral: descongela a las frutas de la heladería de Cocardo.",
+  "lang": "es",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffd3e3",
+  "theme_color": "#ff6fa5",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "icons/shot-title.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Portada" },
+    { "src": "icons/shot-game.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Tablero" }
+  ],
+  "shortcuts": [
+    { "name": "Reto Diario", "short_name": "Reto", "url": "./?go=daily", "description": "El tablero de hoy, igual para todos" }
+  ]
+}

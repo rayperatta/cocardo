@@ -22,6 +22,12 @@ que descongela a las víctimas mientras la historia avanza igual que en la serie
   reportera. La investigación del reparto, con sus fuentes, está en `docs/PERSONAJES.md` y `docs/investigacion/`.
 - **Reto Diario**: el mismo tablero para todos cada día, con racha y resultado para compartir con emojis.
 - **Álbum** de personajes: las víctimas aparecen congeladas hasta que las rescatas.
+- **Cuenta con Google** (opcional): apodo y avatar, progreso en la nube y **ranking** del Reto Diario y por
+  estrellas. También «Jugar con apodo» sin cuenta. Activación en `docs/FIREBASE.md`.
+- **Clips 9:16**: con «Grabar clips» cada partida queda en video vertical con marca de agua, listo para TikTok,
+  Reels o Shorts, y se comparte desde la pantalla de Victoria o Derrota.
+- **App instalable** (PWA) que funciona sin conexión, vista previa al compartir enlaces y enlaces de invitación
+  (`?r=apodo`).
 
 ## Cómo se juega
 
@@ -44,7 +50,11 @@ que descongela a las víctimas mientras la historia avanza igual que en la serie
   compartirlo o subirlo a cualquier hosting.
 - **GitHub Pages:** en el repositorio, ve a *Settings → Pages*. En *Build and deployment* elige
   *Deploy from a branch*, selecciona la rama del juego y la carpeta `/ (root)`, y guarda. En un par de minutos
-  queda en `https://<usuario>.github.io/cocardo/`.
+  queda en `https://<usuario>.github.io/cocardo/`. Dominio propio, cuentas y plan de lanzamiento:
+  `docs/CRECIMIENTO.md` y `docs/FIREBASE.md`.
+- **Landing:** `landing.html` es la página de presentación (para Google, prensa y creadores). El enlace de la
+  bio de TikTok/Instagram conviene que vaya directo a `index.html` (un toque y ya está jugando);
+  `index.html?go=daily` abre el Reto Diario.
 
 El progreso se guarda en el navegador (`localStorage`). Si el navegador no lo permite, el juego sigue
 funcionando y solo guarda durante la sesión.
@@ -63,6 +73,7 @@ js/core/engine.js       motor match-3 puro y determinista
 js/core/replay.js       reproduce los eventos del motor (lo usan las pruebas)
 js/core/levels.js       los 30 niveles y capítulos
 js/core/daily.js        Reto Diario y texto para compartir
+js/core/progress.js     fusión de guardados local/nube, resumen público y reglas del apodo
 js/story.js             guion, consejos, burlas y álbum
 js/art.js               arte del tablero en SVG (fichas, hielo, congeladores, íconos, logo, fondos)
 js/art-characters.js    retratos SVG de los 16 personajes con 12 estados de ánimo
@@ -70,10 +81,17 @@ js/audio.js             efectos y música sintetizados con WebAudio
 js/save.js              guardado
 js/fx.js, js/render.js  partículas y dibujo del tablero en canvas
 js/game.js              pantalla de juego: HUD, controles, animaciones, tutoriales
-js/ui.js, js/main.js    navegación y pantallas (portada, mapa, historia, victoria, reto, álbum, ajustes)
-docs/                   diseño, arquitectura, personajes e investigación
-tests/                  pruebas del motor, niveles, reto diario y prueba de punta a punta
-tools/                  simulador de niveles, empaquetador, capturas y vistas previas del arte y el audio
+js/cloud-config.js      configuración de Firebase, GA4, dominio y redes (rellenar)
+js/cloud.js             cuenta de Google / apodo, progreso en la nube y rankings (Firebase, carga diferida)
+js/analytics.js         eventos a Google Analytics 4 (opcional)
+js/clip.js              grabación de clips verticales 9:16 de la partida
+js/ui.js, js/main.js    navegación y pantallas (portada, mapa, historia, victoria, reto, álbum, ajustes, cuenta)
+landing.html            página de presentación (css/landing.css)
+manifest.webmanifest    app instalable; sw.js: juego sin conexión; icons/: íconos e imagen de vista previa
+firebase/               reglas de seguridad de Firestore (firestore.rules) y configuración del proyecto
+docs/                   diseño, arquitectura, personajes, investigación, Firebase y plan de crecimiento
+tests/                  pruebas del motor, niveles, reto diario, progreso y prueba de punta a punta
+tools/                  simulador de niveles, empaquetador, capturas, íconos, bot que graba videos y vistas previas
 ```
 
 Comandos (Node 18 o superior):
@@ -83,6 +101,8 @@ node --test tests/*.test.js      # pruebas unitarias y de propiedades del motor 
 node tests/e2e.cjs --quick       # prueba de punta a punta en Chromium (necesita Playwright)
 node tools/sim.js 1-30 --seeds 300   # bots que juegan cada nivel para medir la dificultad
 node tools/build-single.cjs      # versión de un solo archivo en dist/
+node tools/build-icons.cjs       # regenera icons/ (íconos, favicon y la imagen de vista previa) desde el arte SVG
+node tools/record.cjs --level 12 --mp4   # un bot juega el nivel y lo graba en vertical (clips/), para TikTok
 ```
 
 Abre `#debug` al final de la dirección (por ejemplo `index.html#debug`) para tener `Cocardo.debug` en la consola:

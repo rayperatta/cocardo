@@ -148,6 +148,7 @@
     }
 
     G.master = master;
+    G.lim = lim;
     G.sfx = sfx;
     G.music = mus;
     G.noise = makeNoise(ctx, 1);
@@ -882,6 +883,18 @@
     } catch (e) { /* el audio nunca rompe el juego */ }
   }
 
+  // Flujo de audio (MediaStream) con la mezcla final, para grabar clips (Cocardo.Clip). null si no se puede.
+  function captureStream() {
+    try {
+      if (!live || !live.lim || typeof live.ctx.createMediaStreamDestination !== 'function') return null;
+      if (!live.tap) {
+        live.tap = live.ctx.createMediaStreamDestination();
+        live.lim.connect(live.tap);
+      }
+      return live.tap.stream;
+    } catch (e) { return null; }
+  }
+
   function setMuted(b) {
     muted = !!b;
     try {
@@ -969,6 +982,7 @@
       return !!(root && (root.AudioContext || root.webkitAudioContext)) && !unsupported;
     },
     isUnlocked: function () { return !!live; },
+    captureStream: captureStream,
     _render: render,
     _renderMusic: renderMusic,
     _stats: function () {

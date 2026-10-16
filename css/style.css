@@ -1934,3 +1934,111 @@ body.reduced-motion .flash.flash-on { animation: none; }
   }
   body:not(.motion-ok) .flakes, body:not(.motion-ok) .sprinkles, body:not(.motion-ok) .tv-rays { display: none; }
 }
+
+/* ===================================================================== */
+/*                     CUENTA, RANKING Y CLIPS (nube)                     */
+/* ===================================================================== */
+
+/* chip de cuenta en la Portada (arriba a la derecha) */
+.account-chip {
+  position: absolute;
+  z-index: 4;
+  top: calc(10px + var(--sat));
+  right: max(10px, var(--sar));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 60%;
+  min-height: 44px;
+  padding: 4px 14px 4px 4px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--cream);
+  box-shadow: 0 4px 0 var(--ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--drama);
+  transition: transform .08s;
+}
+.account-chip:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.account-chip .chip-face { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--mint); border: 2px solid var(--ink); display: grid; place-items: center; }
+.account-chip .chip-face svg { width: 100%; height: 100%; }
+.account-chip .chip-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-chip.chip-in { background: linear-gradient(180deg, #fff 0%, #ffe3ee 100%); }
+.social-row { position: absolute; z-index: 4; top: calc(10px + var(--sat)); left: max(10px, var(--sal)); display: flex; gap: 8px; }
+.social-row a { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--cream); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--ink); font-family: var(--font-display); font-size: 13px; text-decoration: none; }
+
+/* tarjeta de cuenta (Ajustes) y ventana de perfil */
+.account-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px !important; }
+.account-head { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+.account-face { flex: 0 0 64px; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: var(--mint); border: 3px solid var(--ink); display: grid; place-items: center; }
+.account-face svg { width: 100%; height: 100%; }
+.account-face.big { flex-basis: 110px; width: 110px; height: 110px; margin: 0 auto; }
+.account-name { display: flex; flex-direction: column; min-width: 0; }
+.account-name b { font-family: var(--font-display); font-weight: 400; font-size: 22px; line-height: 1.05; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-name small { font-size: 12px; font-weight: 700; opacity: .7; }
+.account-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.account-stats .pill { padding: 4px 10px; font-size: 14px; }
+.account-note { margin: 0; font-size: 13px; line-height: 1.35; opacity: .8; }
+.account-note.warn { color: var(--cherry-dark); opacity: 1; background: #fff0f3; border: 2px dashed var(--cherry); border-radius: 12px; padding: 8px 10px; }
+.account-note.error { color: var(--cherry-dark); opacity: 1; }
+.account-card .btn-col, .profile-card .btn-col { width: 100%; }
+.btn-google { --c1: #fff; --c2: #fff; --c3: #cfc4cf; color: var(--ink); text-shadow: none; }
+.btn-google svg { filter: none; }
+.btn-white { --c1: #fff; --c2: #f4ecf2; --c3: #cfc4cf; color: var(--ink); text-shadow: none; }
+.btn-white svg { filter: none; }
+.btn-sm { min-height: 40px; padding: 6px 14px; font-size: 16px; }
+
+.profile-card { padding-top: 22px !important; }
+.nick-field { display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; }
+.nick-field label { font-family: var(--font-display); font-size: 18px; color: var(--drama); }
+.nick-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #fff;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  -webkit-user-select: text;
+  user-select: text;
+}
+.nick-input:focus { outline: 4px solid var(--gold); outline-offset: 2px; }
+.nick-hint { min-height: 18px; font-size: 13px; opacity: .75; }
+.nick-hint.bad { color: var(--cherry-dark); opacity: 1; }
+.avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-top: 6px; }
+.avatar-opt { position: relative; aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: var(--mint); border: 3px solid var(--ink); transition: transform .12s; }
+.avatar-opt svg { width: 100%; height: 100%; }
+.avatar-opt.on { border-color: var(--pink-dark); box-shadow: 0 0 0 4px var(--gold); transform: scale(1.08); }
+.avatar-opt:active { transform: scale(.95); }
+
+/* ranking (Reto Diario) */
+.rank-card { padding: 16px 12px !important; }
+.rank-title { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--drama); }
+.rank-title svg { color: var(--gold-dark); }
+.rank-list { display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 0; padding: 0; list-style: none; text-align: left; }
+.rank-row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 3px 8px; border-radius: 12px; }
+.rank-row:nth-child(odd) { background: rgba(43, 22, 48, .05); }
+.rank-row.me { background: #fff3c4; outline: 2.5px solid var(--gold-dark); }
+.rank-pos { flex: 0 0 30px; font-family: var(--font-display); font-size: 19px; color: var(--drama); text-align: center; }
+.rank-pos.top { font-size: 22px; }
+.rank-face { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--mint); border: 2px solid var(--ink); }
+.rank-face svg { width: 100%; height: 100%; }
+.rank-nick { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.rank-nick small { display: block; font-size: 11px; opacity: .65; }
+.rank-score { flex: 0 0 auto; font-family: var(--font-display); font-size: 18px; color: var(--pink-dark); }
+.rank-score.lost { color: var(--cherry); opacity: .8; }
+.rank-empty { margin: 6px 0 10px; font-size: 14px; opacity: .75; }
+.rank-tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+.rank-tab { padding: 6px 14px; border-radius: 999px; border: 2.5px solid var(--ink); background: #fff; font-family: var(--font-display); font-size: 15px; color: var(--ink); }
+.rank-tab[aria-selected="true"] { background: var(--gold); }
+.rank-cta { margin-top: 10px; }
+
+/* clips */
+.clip-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px 0 0; font-size: 13px; opacity: .8; }
+.rec-dot { position: fixed; z-index: 60; top: calc(8px + var(--sat)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(43, 22, 48, .78); color: #fff; font-family: var(--font-display); font-size: 13px; pointer-events: none; }
+.rec-dot i { width: 10px; height: 10px; border-radius: 50%; background: var(--cherry); animation: pulse 1s ease-in-out infinite; }
+@media (max-width: 360px) { .avatar-grid { grid-template-columns: repeat(4, 1fr); } .account-chip { font-size: 15px; } }

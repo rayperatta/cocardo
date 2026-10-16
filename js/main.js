@@ -1,6 +1,7 @@
 /* Cocardo: ¡Rescate Helado! — Arranque.
  * Carga el guardado, aplica ajustes (sonido, movimiento reducido), muestra la Portada,
- * conecta el redimensionado con Cocardo.Game.resize() y expone los ganchos de depuración (#debug). */
+ * conecta el redimensionado con Cocardo.Game.resize(), arranca la nube (Cocardo.Cloud), registra el
+ * service worker (app instalable, juego sin conexión) y expone los ganchos de depuración (#debug). */
 (function () {
   'use strict';
 
@@ -26,6 +27,10 @@
 
     UI.show('title');
 
+    // Nube (cuentas, ranking): no hace nada sin configuración; si hubo sesión la restaura sola
+    try { if (Cocardo.Cloud) Cocardo.Cloud.init(); } catch (e) { console.error('[Cocardo.Cloud.init]', e); }
+    registerServiceWorker();
+
     // El tablero se adapta a cambios de tamaño (ui.js también redibuja el camino del mapa)
     var raf = 0;
     function onResize() {
@@ -41,6 +46,20 @@
     window.addEventListener('orientationchange', onResize);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
     watchPixelRatio(onResize);
+  }
+
+  // Service worker solo en http(s) y fuera de iframes (en file:// y en el artifact no aplica). Nunca rompe el
+  // arranque: si falla, el juego sigue igual, solo sin modo sin conexión.
+  function registerServiceWorker() {
+    try {
+      if (!('serviceWorker' in navigator)) return;
+      if (!/^https?:$/.test(location.protocol)) return;
+      if (window.top !== window.self) return;
+      if (location.hash === '#debug' || location.hostname === '127.0.0.1' || location.hostname === 'localhost') return;
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () { /* sin SW */ });
+      });
+    } catch (e) { /* nada */ }
   }
 
   // Cambio de densidad de píxeles sin cambio de tamaño (mover la ventana a otro monitor, zoom del navegador):

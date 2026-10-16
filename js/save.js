@@ -32,7 +32,10 @@
       rescued: [],
       seen: {},
       daily: { last: 0, streak: 0, bestStreak: 0, results: {} },
-      settings: { sound: true, vibra: true, motion: 'auto', music: false, skipStory: false },
+      settings: { sound: true, vibra: true, motion: 'auto', music: false, skipStory: false, clips: false },
+      // copia local del perfil en la nube (Cocardo.Cloud) y quién invitó a este jugador (?r=apodo)
+      cloud: { on: false, nick: '', avatar: '', uid: '' },
+      ref: '',
     };
   }
 
@@ -98,8 +101,16 @@
       if (typeof s.vibra === 'boolean') d.settings.vibra = s.vibra;
       if (typeof s.music === 'boolean') d.settings.music = s.music;
       if (typeof s.skipStory === 'boolean') d.settings.skipStory = s.skipStory;
+      if (typeof s.clips === 'boolean') d.settings.clips = s.clips;
       if (s.motion === 'auto' || s.motion === 'on' || s.motion === 'off') d.settings.motion = s.motion;
     }
+    if (isObj(raw.cloud)) {
+      d.cloud.on = !!raw.cloud.on;
+      d.cloud.nick = typeof raw.cloud.nick === 'string' ? raw.cloud.nick.slice(0, 16) : '';
+      d.cloud.avatar = typeof raw.cloud.avatar === 'string' ? raw.cloud.avatar.slice(0, 20) : '';
+      d.cloud.uid = typeof raw.cloud.uid === 'string' ? raw.cloud.uid.slice(0, 128) : '';
+    }
+    if (typeof raw.ref === 'string') d.ref = raw.ref.slice(0, 16);
     // el nivel desbloqueado nunca queda por detrás de lo ya superado
     for (var k = 0; k < LEVELS; k++) {
       if (d.stars[k] > 0) d.unlocked = Math.max(d.unlocked, Math.min(LEVELS, k + 2));

@@ -326,10 +326,449 @@
     f.classList.add('flash-on');
   }
 
+  /* ---------- nube: cuenta, apodo, ranking y clips (ARQUITECTURA §14-§16) ---------- */
+
+  var askedNick = false, lastCloudError = '', pendingGo = null, pendingClip = null, rankTab = 'daily';
+  var AVATARS = ['lima', 'fresa', 'banana', 'uva', 'naranja', 'durazna', 'cocardo', 'cereza', 'pina', 'banano',
+    'limon', 'policia_fresa', 'policia_sandia', 'guardaespaldas', 'brocoli', 'reportera'];
+
+  function cloud() { return Cocardo.Cloud || null; }
+  function cloudOn() { var c = cloud(); return !!(c && c.available && c.available()); }
+  function cloudUser() { var c = cloud(); return c && c.user ? c.user() : null; }
+  function cloudProfile() { var c = cloud(); return c && c.profile ? c.profile() : null; }
+  // apodo y avatar: del perfil vivo o de la copia en el guardado (antes de que cargue el SDK)
+  function cloudNick() {
+    var p = cloudProfile();
+    if (p && p.nick) return p.nick;
+    var cc = data().cloud;
+    return (cc && cc.on && cc.nick) ? cc.nick : '';
+  }
+  function cloudAvatar() {
+    var p = cloudProfile();
+    if (p && p.avatar) return p.avatar;
+    var cc = data().cloud;
+    return (cc && cc.avatar) || 'lima';
+  }
+  function track(name, params) { try { if (Cocardo.Track) Cocardo.Track.event(name, params || {}); } catch (e) { /* nada */ } }
+  function cloudPush() { try { var c = cloud(); if (c && cloudUser()) c.push(); } catch (e) { /* nada */ } }
+  // Manda al ranking el intento oficial del día (si hay sesión y apodo). Se reintenta al entrar más tarde.
+  function cloudSubmitDaily(key) {
+    var c = cloud();
+    var r = data().daily.results[key];
+    if (!c || !r || !cloudUser() || !cloudProfile()) return;
+    c.submitDaily(key, { won: r.won, score: r.score, stars: r.stars, movesUsed: r.movesUsed, movesTotal: r.movesTotal, maxCombo: r.maxCombo, num: r.num })
+      .then(function (sent) { if (sent && current === 'daily') renderDaily(); });
+  }
+  function onCloudChange(snap) {
+    refreshTitleChip();
+    if (current === 'settings') renderSettings();
+    else if (current === 'daily') renderDaily();
+    if (snap.user && snap.profile) cloudSubmitDaily(keyOf(dateParts(0)));
+    // primera vez con cuenta y sin apodo: se pide uno (una sola vez por sesión)
+    if (snap.user && snap.profileReady && !snap.profile && !askedNick && !isOpen('profile')) {
+      askedNick = true;
+      showProfileEditor(true);
+    }
+    if (snap.error && snap.error !== lastCloudError) { lastCloudError = snap.error; toast(snap.error, 4500); }
+  }
+
+  function accountChipHtml() {
+    if (!cloudOn()) return '';
+    var nick = cloudNick();
+    if (nick) {
+      return '<button class="account-chip chip-in" data-act="account" aria-label="Mi cuenta: ' + esc(nick) + '"><span class="chip-face">' + portrait(cloudAvatar(), 'feliz') + '</span><span class="chip-txt">' + esc(nick) + '</span></button>';
+    }
+    return '<button class="account-chip" data-act="account" aria-label="Entrar con tu cuenta"><span class="chip-face">' + icon('user', 22) + '</span><span class="chip-txt">Entrar</span></button>';
+  }
+  function socialRowHtml() {
+    var so = (Cocardo.CloudConfig && Cocardo.CloudConfig.social) || {};
+    var out = '';
+    if (so.tiktok) out += '<a href="https://www.tiktok.com/@' + esc(String(so.tiktok).replace(/^@/, '')) + '" target="_blank" rel="noopener" aria-label="TikTok">TT</a>';
+    if (so.instagram) out += '<a href="https://www.instagram.com/' + esc(String(so.instagram).replace(/^@/, '')) + '" target="_blank" rel="noopener" aria-label="Instagram">IG</a>';
+    return out ? '<div class="social-row">' + out + '</div>' : '';
+  }
+  function refreshTitleChip() {
+    var sec = doc.getElementById('screen-title');
+    var old = sec ? $('.account-chip', sec) : null;
+    if (!old) return;
+    var html = accountChipHtml();
+    if (!html) { old.remove(); return; }
+    old.parentNode.replaceChild(el(html), old);
+  }
+
+  function statsPills() {
+    var sum = Cocardo.Progress ? Cocardo.Progress.summary(data()) : { stars: 0, levels: 0, rescued: 0, bestStreak: 0 };
+    return '<div class="account-stats"><span class="pill">' + icon('star', 18) + ' ' + sum.stars + '</span>' +
+      '<span class="pill">' + icon('map', 18) + ' ' + sum.levels + ' niv.</span>' +
+      '<span class="pill">' + icon('flame', 18) + ' ' + sum.bestStreak + '</span></div>';
+  }
+
+  // Ventana de cuenta: entrar (Google o apodo sin cuenta) o ver el perfil
+  function showAccount() {
+    var c = cloud();
+    if (!c || !cloudOn()) { toast('Las cuentas no están disponibles en esta copia del juego'); return; }
+    if (isOpen('account')) closeOverlay('account', true);
+    var u = cloudUser(), st = c.state();
+    var nick = cloudNick();
+    var inApp = c.inAppBrowser();
+    var body;
+    if (u) {
+      body = '<span class="account-face big">' + portrait(cloudAvatar(), 'feliz') + '</span>' +
+        '<h2 class="card-title">' + esc(nick || 'Sin apodo') + '</h2>' +
+        '<p class="account-note">' + (u.anon ? 'Apodo sin cuenta (solo en este aparato)' : 'Cuenta de Google' + (u.name ? ' · ' + esc(u.name) : '')) + '</p>' +
+        statsPills() +
+        '<div class="btn-col">' +
+          '<button class="btn btn-gold" data-act="profile" data-autofocus>' + icon('user', 22) + ' ' + (nick ? 'Cambiar apodo o avatar' : 'Elegir apodo') + '</button>' +
+          (u.anon && !inApp ? '<button class="btn btn-google" data-act="google">' + icon('google', 22) + ' Vincular con Google</button>' : '') +
+          '<div class="btn-row"><button class="btn btn-white btn-sm" data-act="sync">' + icon('cloud', 20) + ' Sincronizar</button>' +
+          '<button class="btn btn-white btn-sm" data-act="logout">' + icon('logout', 20) + ' Salir</button></div>' +
+        '</div>' +
+        (u.anon ? '<p class="account-note">Vincula tu Google para no perder el apodo ni el progreso si cambias de celular.</p>' : '');
+    } else {
+      body = '<span class="account-face big">' + icon('user', 56) + '</span>' +
+        '<h2 class="card-title">Tu cuenta</h2>' +
+        '<p class="account-note">Guarda tu progreso en la nube, elige un apodo y entra al ranking del Reto Diario.</p>' +
+        (inApp ? '<p class="account-note warn">Estás dentro de otra app (TikTok, Instagram…) y Google no deja entrar desde aquí. Abre el juego en Chrome o Safari (menú ⋯ → «Abrir en el navegador») o juega con un apodo.</p>' : '') +
+        '<div class="btn-col">' +
+          (inApp
+            ? '<button class="btn btn-gold" data-act="copylink" data-autofocus>' + icon('share', 22) + ' Copiar enlace del juego</button>'
+            : '<button class="btn btn-google" data-act="google" data-autofocus' + (st === 'loading' ? ' disabled' : '') + '>' + icon('google', 22) + ' ' + (st === 'loading' ? 'Conectando…' : 'Entrar con Google') + '</button>') +
+          '<button class="btn btn-white btn-sm" data-act="anon">Jugar con apodo (sin cuenta)</button>' +
+          '<button class="btn btn-white btn-sm" data-act="close">Ahora no</button>' +
+        '</div>';
+    }
+    var o = openOverlay('account',
+      '<div class="card pop account-card profile-card">' +
+        '<button class="close-btn" data-act="close" aria-label="Cerrar">' + icon('close', 22) + '</button>' + body + '</div>',
+    { label: 'Tu cuenta', onEsc: function () { closeOverlay('account'); } });
+    o.addEventListener('click', function (ev) {
+      var t = ev.target.closest('[data-act]');
+      if (!t) { if (ev.target === o) closeOverlay(o); return; }
+      var act = t.getAttribute('data-act');
+      if (act === 'close') { closeOverlay(o); return; }
+      if (act === 'copylink') { share('Juega Cocardo: ¡Rescate Helado! 🍦'); return; }
+      closeOverlay(o, true);
+      if (act === 'profile') showProfileEditor(false);
+      else if (act === 'google') doSignIn();
+      else if (act === 'anon') doSignInAnon();
+      else if (act === 'sync') doSync();
+      else if (act === 'logout') doSignOut();
+    });
+    return o;
+  }
+
+  // Apodo y avatar (first = recién creada la cuenta, sin apodo todavía)
+  function showProfileEditor(first) {
+    var c = cloud();
+    if (!c || !cloudUser()) { showAccount(); return; }
+    if (isOpen('profile')) closeOverlay('profile', true);
+    var p = cloudProfile();
+    var nick = (p && p.nick) || c.suggestNick();
+    var avatar = (p && p.avatar) || 'lima';
+    var chosen = avatar;
+    var grid = AVATARS.map(function (id) {
+      return '<button type="button" class="avatar-opt' + (id === avatar ? ' on' : '') + '" data-avatar="' + id + '" aria-label="' + esc(nameOf(id)) + '" aria-pressed="' + (id === avatar ? 'true' : 'false') + '">' + portrait(id, 'feliz') + '</button>';
+    }).join('');
+    var input = null;
+    var o = openOverlay('profile',
+      '<div class="card pop profile-card">' +
+        (first ? '' : '<button class="close-btn" data-act="close" aria-label="Cerrar">' + icon('close', 22) + '</button>') +
+        '<h2 class="card-title">' + (first ? '¡Elige tu apodo!' : 'Tu apodo y avatar') + '</h2>' +
+        '<div class="nick-field"><label for="nick-input">Apodo (3 a 16 letras)</label>' +
+          '<input id="nick-input" class="nick-input" type="text" maxlength="16" autocomplete="nickname" autocapitalize="off" spellcheck="false" value="' + esc(nick) + '">' +
+          '<small class="nick-hint js-hint">Así te verán en el ranking.</small></div>' +
+        '<div class="avatar-grid" role="group" aria-label="Avatar">' + grid + '</div>' +
+        '<div class="btn-col"><button class="btn btn-pink btn-big" data-act="save">' + icon('check', 24) + ' Guardar</button>' +
+          (first ? '<button class="btn btn-white btn-sm" data-act="close">Después</button>' : '') + '</div>' +
+      '</div>',
+    { label: 'Apodo y avatar', onEsc: function () { closeOverlay('profile'); },
+      onKey: function (ev) { if (ev.key === 'Enter' && input && doc.activeElement === input) { save(); return true; } return false; } });
+    input = $('#nick-input', o);
+    var hint = $('.js-hint', o);
+    function check() {
+      var v = Cocardo.Progress.validNick(input.value);
+      hint.textContent = v.ok ? 'Así te verán en el ranking.' : v.reason;
+      hint.classList.toggle('bad', !v.ok);
+      return v;
+    }
+    input.addEventListener('input', check);
+    var saving = false;
+    function save() {
+      if (saving) return;
+      var v = check();
+      if (!v.ok) { play('invalid'); try { input.focus(); } catch (e) { /* nada */ } return; }
+      saving = true;
+      var btn = $('[data-act="save"]', o);
+      btn.disabled = true;
+      btn.textContent = 'Guardando…';
+      c.saveProfile({ nick: v.nick, avatar: chosen }).then(function (r) {
+        saving = false;
+        if (r && r.ok) {
+          track('nick_set', {});
+          closeOverlay(o, true);
+          toast('¡Listo, ' + r.nick + '! Ya estás en el ranking.', 3000);
+          play('booster');
+          refreshTitleChip();
+          if (current === 'settings') renderSettings();
+          else if (current === 'daily') renderDaily();
+          cloudSubmitDaily(keyOf(dateParts(0)));
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = icon('check', 24) + ' Guardar';
+          hint.textContent = (r && r.reason) || 'No se pudo guardar';
+          hint.classList.add('bad');
+          play('invalid');
+        }
+      });
+    }
+    o.addEventListener('click', function (ev) {
+      var a = ev.target.closest('[data-avatar]');
+      if (a) {
+        chosen = a.getAttribute('data-avatar');
+        $$('.avatar-opt', o).forEach(function (b) { var on = b === a; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+        return;
+      }
+      var t = ev.target.closest('[data-act]');
+      if (!t) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'save') save();
+      else if (act === 'close') closeOverlay(o);
+    });
+    later(function () { try { input.focus(); input.select(); } catch (e) { /* nada */ } }, 150);
+    return o;
+  }
+
+  function doSignIn() {
+    var c = cloud();
+    if (!c) return;
+    if (c.inAppBrowser()) { showAccount(); return; }
+    toast('Conectando con Google…', 2500);
+    c.signIn().then(function (u) {
+      if (!u) return;
+      track('sign_in', { method: u.anon ? 'anon' : 'google' });
+      toast(u.name ? '¡Hola, ' + u.name.split(' ')[0] + '!' : '¡Listo!');
+      play('booster');
+    }, function (e) { var m = c.message(e); if (m) toast(m, 4500); });
+  }
+  function doSignInAnon() {
+    var c = cloud();
+    if (!c) return;
+    c.signInAnon().then(function () { track('sign_in', { method: 'anon' }); }, function (e) { var m = c.message(e); if (m) toast(m, 4500); });
+  }
+  function doSync() {
+    var c = cloud();
+    if (!c || !cloudUser()) { showAccount(); return; }
+    toast('Sincronizando…');
+    c.sync().then(function (ok) {
+      toast(ok ? 'Progreso sincronizado' : 'No se pudo sincronizar', 2500);
+      if (current === 'settings') renderSettings();
+      else if (current === 'map') renderMap();
+    });
+  }
+  function doSignOut() {
+    var c = cloud();
+    if (!c) return;
+    c.signOut().then(function () { track('sign_out', {}); toast('Sesión cerrada. Tu progreso sigue en este aparato.', 3000); });
+  }
+
+  // Tarjeta de cuenta en Ajustes
+  function accountCardHtml() {
+    if (!cloudOn()) return '';
+    var c = cloud();
+    var st = c.state();
+    var u = cloudUser();
+    var nick = cloudNick();
+    var restoring = !u && data().cloud && data().cloud.on && (st === 'idle' || st === 'loading');
+    var inner;
+    if (u || restoring) {
+      inner = '<div class="account-head"><span class="account-face">' + portrait(cloudAvatar(), 'feliz') + '</span>' +
+        '<span class="account-name"><b>' + esc(nick || 'Sin apodo') + '</b><small>' + (u ? (u.anon ? 'Apodo sin cuenta' : 'Cuenta de Google') : 'Conectando…') + '</small></span></div>' +
+        statsPills() +
+        '<div class="btn-col">' +
+          '<button class="btn btn-gold btn-sm" data-act="profile">' + icon('user', 20) + ' ' + (nick ? 'Cambiar apodo o avatar' : 'Elegir apodo') + '</button>' +
+          (u && u.anon && !c.inAppBrowser() ? '<button class="btn btn-google btn-sm" data-act="google">' + icon('google', 20) + ' Vincular con Google</button>' : '') +
+          '<div class="btn-row"><button class="btn btn-white btn-sm" data-act="sync">' + icon('cloud', 20) + ' Sincronizar</button>' +
+          '<button class="btn btn-white btn-sm" data-act="logout">' + icon('logout', 20) + ' Salir</button></div>' +
+        '</div>' +
+        (u && u.anon ? '<p class="account-note">Vincula tu Google para no perder el apodo ni el progreso si cambias de celular.</p>' : '');
+    } else {
+      inner = '<div class="account-head"><span class="account-face">' + icon('user', 34) + '</span>' +
+        '<span class="account-name"><b>Tu cuenta</b><small>Progreso en la nube y ranking</small></span></div>' +
+        '<div class="btn-col"><button class="btn btn-google" data-act="google"' + (st === 'loading' ? ' disabled' : '') + '>' + icon('google', 22) + ' ' + (st === 'loading' ? 'Conectando…' : 'Entrar con Google') + '</button>' +
+        '<button class="btn btn-white btn-sm" data-act="anon">Jugar con apodo (sin cuenta)</button></div>' +
+        (c.inAppBrowser() ? '<p class="account-note warn">Estás dentro de otra app (TikTok, Instagram…). Google no deja entrar desde aquí: abre el juego en Chrome o Safari, o juega con apodo.</p>' : '');
+    }
+    var err = c.error();
+    return '<div class="card settings-card account-card">' + inner + (err ? '<p class="account-note error">' + esc(err) + '</p>' : '') + '</div>';
+  }
+
+  /* ---------- ranking (Reto Diario) ---------- */
+
+  function rankingCardHtml() {
+    if (!cloudOn()) return '';
+    var nick = cloudNick();
+    return '<div class="card rank-card">' +
+      '<h2 class="rank-title">' + icon('trophy', 26) + ' Ranking</h2>' +
+      '<div class="rank-tabs" role="tablist">' +
+        '<button class="rank-tab" role="tab" data-tab="daily" aria-selected="' + (rankTab === 'daily' ? 'true' : 'false') + '">Reto de hoy</button>' +
+        '<button class="rank-tab" role="tab" data-tab="top" aria-selected="' + (rankTab === 'top' ? 'true' : 'false') + '">Estrellas</button></div>' +
+      '<div class="rank-body"><p class="rank-empty">Cargando…</p></div>' +
+      (nick ? '' : '<div class="rank-cta"><button class="btn btn-gold btn-sm" data-act="account">' + icon('user', 20) + ' Entra para aparecer aquí</button></div>') +
+      '</div>';
+  }
+  function loadRanking(key) {
+    var c = cloud();
+    var sec = doc.getElementById('screen-daily');
+    var body = sec ? $('.rank-body', sec) : null;
+    if (!c || !body || !cloudOn()) return;
+    var tab = rankTab;
+    var p = tab === 'daily' ? c.dailyTop(key, 20) : c.topPlayers(20);
+    p.then(function (rows) {
+      if (!body.isConnected || rankTab !== tab) return;
+      body.innerHTML = rankListHtml(rows || [], tab);
+    }, function () {
+      if (body.isConnected) body.innerHTML = '<p class="rank-empty">No se pudo cargar el ranking. Revisa tu conexión.</p>';
+    });
+  }
+  function rankListHtml(rows, tab) {
+    if (!rows.length) {
+      return '<p class="rank-empty">' + (tab === 'daily' ? 'Nadie ha terminado el reto de hoy todavía. ¡Sé la primera persona!' : 'Todavía no hay rescatistas con apodo. ¡Sé la primera persona!') + '</p>';
+    }
+    var me = cloudUser();
+    return '<ol class="rank-list">' + rows.map(function (r, i) {
+      var mine = !!(me && r.uid === me.uid);
+      var pos = i + 1;
+      var medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : String(pos);
+      var right, sub;
+      if (tab === 'daily') {
+        right = '<span class="rank-score' + (r.won ? '' : ' lost') + '">' + (r.won ? '⭐'.repeat(clamp(r.stars | 0, 1, 3)) + ' ' : '❌ ') + (r.score | 0).toLocaleString('es-MX') + '</span>';
+        sub = (r.movesUsed | 0) + '/' + (r.movesTotal | 0) + ' movs';
+      } else {
+        right = '<span class="rank-score">' + icon('star', 16) + ' ' + (r.stars | 0) + '</span>';
+        sub = (r.levels | 0) + ' niveles · ' + (r.rescued | 0) + ' rescates' + (r.finished ? ' · 🏁' : '');
+      }
+      return '<li class="rank-row' + (mine ? ' me' : '') + '"><span class="rank-pos' + (pos <= 3 ? ' top' : '') + '">' + medal + '</span>' +
+        '<span class="rank-face">' + portrait(r.avatar || 'lima', 'feliz') + '</span>' +
+        '<span class="rank-nick">' + esc(r.nick || '???') + '<small>' + esc(sub) + '</small></span>' + right + '</li>';
+    }).join('') + '</ol>';
+  }
+
+  /* ---------- clips 9:16 de la partida (Cocardo.Clip) ---------- */
+
+  function clipsSupported() { try { return !!(Cocardo.Clip && Cocardo.Clip.supported()); } catch (e) { return false; } }
+  // El lienzo del tablero (.cg-board); el de partículas (.cg-fx) cubre toda la pantalla y es transparente
+  function gameCanvas() {
+    var g = doc.getElementById('screen-game');
+    if (!g) return null;
+    return $('canvas.cg-board', g) || $$('canvas', g).filter(function (c) { return !/cg-fx/.test(c.className); })[0] || null;
+  }
+  function clipFooter() {
+    var url = '';
+    try {
+      url = (Cocardo.CloudConfig && Cocardo.CloudConfig.siteUrl) || (/^https?:$/.test(location.protocol) ? location.host + location.pathname.replace(/index\.html$/, '') : '');
+    } catch (e) { url = ''; }
+    url = String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
+    var nick = cloudNick();
+    return (nick ? '@' + nick + ' · ' : '') + (url || 'Cocardo: ¡Rescate Helado!');
+  }
+  function clipHud() {
+    var st = gameCall('_state') || {};
+    var s = session || {};
+    return {
+      title: s.daily ? 'Reto #' + (s.dailyNum || '') : 'Nivel ' + (s.levelId || ''),
+      sub: (s.level && s.level.name) || '',
+      moves: st.movesLeft != null ? st.movesLeft : null,
+      score: st.score != null ? st.score : null,
+      footer: clipFooter(),
+      cta: '¿Puedes tú? 🍦',
+    };
+  }
+  function startClip() {
+    var C = Cocardo.Clip;
+    if (!clipsSupported() || C.recording()) return false;
+    var cv = gameCanvas();
+    if (!cv) return false;
+    var audio = null;
+    try { if (Cocardo.Audio && Cocardo.Audio.captureStream) audio = Cocardo.Audio.captureStream(); } catch (e) { audio = null; }
+    C.discard();
+    if (!C.start({ canvas: cv, hud: clipHud, audio: audio })) return false;
+    showRecDot(true);
+    return true;
+  }
+  // Termina la grabación; devuelve Promise<File|null>. discard = true tira el clip (salir al mapa, apagar el ajuste)
+  function stopClip(discard) {
+    var C = Cocardo.Clip;
+    showRecDot(false);
+    if (!C) return Promise.resolve(null);
+    if (!C.recording()) return Promise.resolve(discard ? null : C.last());
+    return C.stop().then(function (f) {
+      if (discard) { C.discard(); return null; }
+      return f;
+    });
+  }
+  function showRecDot(on) {
+    var d = doc.getElementById('rec-dot');
+    if (!on) { if (d) d.remove(); return; }
+    if (d) return;
+    doc.body.appendChild(el('<div id="rec-dot" class="rec-dot" aria-hidden="true"><i></i>REC</div>'));
+  }
+  // Botón «Compartir clip» en Victoria/Derrota cuando hay un clip de esta partida
+  function attachClipButton(o, textFn) {
+    var C = Cocardo.Clip;
+    if (!C) return;
+    var p = pendingClip || Promise.resolve(C.last());
+    p.then(function (f) {
+      if (!f || !o.isConnected) return;
+      var col = $('.btn-col', o);
+      if (!col || $('.clip-btn', o)) return;
+      var secs = Math.round(((C.lastMeta() || {}).ms || 0) / 1000);
+      var b = el('<button class="btn btn-drama btn-sm clip-btn" data-act="clip">' + icon('video', 20) + ' Compartir clip' + (secs ? ' (' + secs + ' s)' : '') + '</button>');
+      b.addEventListener('click', function (ev) { ev.stopPropagation(); shareClip(typeof textFn === 'function' ? textFn() : ''); });
+      col.appendChild(b);
+    });
+  }
+  function shareClip(text) {
+    var C = Cocardo.Clip;
+    if (!C || !C.last()) { toast('No hay clip de esta partida'); return; }
+    track('clip', {});
+    var url = shareUrl();
+    C.share(C.last(), url ? (text ? text + '\n' : '') + url : (text || '')).then(function (r) {
+      if (r === 'saved') toast('Clip guardado en tus descargas. ¡Súbelo a TikTok!', 3500);
+      else if (r === 'fail') toast('No se pudo compartir el clip');
+    });
+  }
+
+  // Parámetros de la dirección: ?r=apodo (invitación), ?go=daily (acceso directo), ?source=pwa (app instalada)
+  function readQuery() {
+    var q = '';
+    try { q = location.search || ''; } catch (e) { q = ''; }
+    if (!q) return;
+    var m = /[?&]r=([^&#]+)/.exec(q);
+    if (m) {
+      var ref = '';
+      try { ref = decodeURIComponent(m[1]).slice(0, 16); } catch (e) { ref = ''; }
+      var v = Cocardo.Progress ? Cocardo.Progress.validNick(ref) : { ok: false };
+      if (v.ok && !data().ref && ref !== cloudNick()) {
+        data().ref = ref;
+        persist();
+        track('referral', { ref: ref });
+        later(function () { toast('¡Te invitó ' + ref + '! A rescatar frutas 🍦', 3500); }, 900);
+      }
+    }
+    if (/[?&]go=daily\b/.test(q)) pendingGo = 'daily';
+    if (/[?&]source=pwa\b/.test(q)) track('pwa_open', {});
+  }
+
   /* ---------- compartir ---------- */
 
   function shareUrl() {
-    try { return /^https?:$/.test(location.protocol) ? location.href.split('#')[0] : ''; } catch (e) { return ''; }
+    var base = '';
+    try { base = /^https?:$/.test(location.protocol) ? location.href.split('#')[0].split('?')[0] : ''; } catch (e) { base = ''; }
+    if (!base) { try { base = (Cocardo.CloudConfig && Cocardo.CloudConfig.siteUrl) || ''; } catch (e) { base = ''; } }
+    if (!base) return '';
+    // enlace de invitación: ?r=<apodo> (quien lo abre queda como referido y ve «Te invitó …»)
+    var nick = cloudNick();
+    return nick ? base + '?r=' + encodeURIComponent(nick) : base;
   }
 
   // En un iframe sin permiso (p. ej. el artifact) llamar a la API ya ensucia la consola: se pregunta antes
@@ -342,6 +781,7 @@
   }
 
   function share(text) {
+    track('share', { screen: current || '' });
     var url = shareUrl();
     var full = url ? text + '\n' + url : text;
     function copyFallback() {
@@ -664,6 +1104,7 @@
         '<div class="title-bg" aria-hidden="true">' + art('background', 'heladeria') + '</div>' +
         '<div class="awning" aria-hidden="true"></div>' +
         '<div class="flakes" aria-hidden="true">' + flakes + '</div>' +
+        socialRowHtml() + accountChipHtml() +
         '<div class="title-main">' +
           '<h1 class="title-logo" aria-label="Cocardo: ¡Rescate Helado!">' + (art('logo') || '<span class="logo-text">Cocardo<br><small>¡Rescate Helado!</small></span>') + '</h1>' +
           '<div class="title-hero" aria-hidden="true">' +
@@ -678,7 +1119,11 @@
         '</div>' +
         '<footer class="disclaimer">Juego de fans, no oficial. Inspirado en la frutinovela viral <i>La Nieve de Lima</i> (@frutitaenlatada).</footer>' +
       '</div>';
-    sec.addEventListener('click', function () { leaveTitle(); });
+    sec.addEventListener('click', function (ev) {
+      if (ev.target.closest && ev.target.closest('[data-act="account"]')) { ev.stopPropagation(); showAccount(); return; }
+      if (ev.target.closest && ev.target.closest('a')) return;
+      leaveTitle();
+    });
   }
   renderers.title = renderTitle;
 
@@ -699,6 +1144,8 @@
         return;
       }
       sec.classList.remove('title-out');
+      if (pendingGo === 'daily' && dailyUnlocked()) { pendingGo = null; show('daily'); return; }
+      pendingGo = null;
       show('map');
     }, reducedMotion() ? 0 : 260);
   }
@@ -1498,6 +1945,8 @@
       onPause: function () { if (token === playToken) showPause(); },
     });
     requestAnimationFrame(function () { gameCall('resize'); });
+    track('level_start', { level: lv.id || id, daily: !!opts.daily, practice: !!opts.practice });
+    if (data().settings.clips && clipsSupported()) later(function () { if (token === playToken && session && !session.ended) startClip(); }, 350);
     return true;
   }
 
@@ -1513,6 +1962,7 @@
   }
 
   function leaveGame() {
+    stopClip(true);
     gameCall('stop');
     session = null;
     playToken++;
@@ -1553,7 +2003,7 @@
           '<button class="btn btn-gold" data-act="restart">' + icon('retry', 22) + ' Reiniciar</button>' +
           '<button class="btn btn-mint" data-act="map">' + icon('map', 22) + ' Mapa</button>' +
         '</div>' +
-        '<div class="pause-toggles">' + toggleHtml('sound', 'Sonido', data().settings.sound) + toggleHtml('music', 'Música', data().settings.music) + '</div>' +
+        '<div class="pause-toggles">' + toggleHtml('sound', 'Sonido', data().settings.sound) + toggleHtml('music', 'Música', data().settings.music) + (clipsSupported() ? toggleHtml('clips', 'Grabar clip', !!data().settings.clips, '', 'video') : '') + '</div>' +
       '</div>',
     { label: 'Pausa', onEsc: function () { resumeFromPause(); } });
     o.addEventListener('click', function (ev) {
@@ -1586,6 +2036,7 @@
     if (sess.ended) return;
     if (result.interrupted) { recordInterrupted(result, sess); return; }
     sess.ended = true;
+    pendingClip = stopClip(false);
     closeOverlay('pause', true);
     if (sess.daily || result.daily) dailyEnd(result, sess);
     else campaignEnd(result, sess);
@@ -1650,6 +2101,7 @@
       if (b) sum.rewards.push({ kind: 'star3', booster: b });
     }
     persist();
+    cloudPush();
     // escenas pendientes (primera victoria)
     var sc = scenesFor(id);
     var pend = [];
@@ -1662,6 +2114,7 @@
 
   function campaignEnd(result, sess) {
     var id = result.levelId || sess.levelId;
+    track('level_end', { level: id, won: !!result.won, stars: result.stars | 0, moves_used: result.movesUsed | 0, moves_left: result.movesLeft | 0 });
     if (result.won) {
       var sum = recordCampaignWin(result, id);
       showVictory(result, sess, sum);
@@ -1671,6 +2124,7 @@
   }
 
   function dailyEnd(result, sess) {
+    track('daily_end', { num: sess.dailyNum | 0, won: !!result.won, stars: result.stars | 0, moves_used: result.movesUsed | 0, practice: !!sess.practice });
     var sum = recordDaily(result, sess);
     if (result.won) showVictory(result, sess, sum);
     else showDefeat(result, sess, sum);
@@ -1696,6 +2150,8 @@
         num: sess.dailyNum, text: text,
       };
       persist();
+      cloudPush();
+      cloudSubmitDaily(key);
     }
     sum.streak = currentStreak();
     return sum;
@@ -1794,6 +2250,7 @@
         '<div class="btn-col">' + btns + '</div>' +
       '</div>',
     { label: title, guard: true });
+    attachClipButton(o, function () { return daily ? ((data().daily.results[sum.key] || {}).text || '') : campaignShareText(id, stars, rescued); });
     // estrellas que se estampan una por una (~0,3 s cada una)
     var rm = reducedMotion();
     var base = rm ? 120 : 250;
@@ -1947,6 +2404,7 @@
         '<div class="btn-col">' + btns + '</div>' +
       '</div>',
     { label: 'Derrota', guard: true });
+    attachClipButton(o, function () { return daily ? ((data().daily.results[sum.key] || {}).text || '') : ('Casi rescato a las frutas en el nivel ' + id + '… ¿Puedes tú?'); });
     later(function () { play('laugh', { who: villain }); }, reducedMotion() ? 50 : 350);
     o.addEventListener('click', function (ev) {
       var t = ev.target.closest('[data-act]');
@@ -2064,21 +2522,32 @@
           '<small>Mejor racha: ' + (d.daily.bestStreak | 0) + '</small>' +
           '<div class="week">' + weekStrip() + '</div>' +
         '</div>' +
-        '<p class="countdown">Nuevo reto en <b class="js-count">' + fmtCountdown(msToMidnight()) + '</b></p>';
+        '<p class="countdown">Nuevo reto en <b class="js-count">' + fmtCountdown(msToMidnight()) + '</b></p>' +
+        rankingCardHtml();
     }
     sec.innerHTML = '<div class="col sub-col daily-col">' + subbar('Reto Diario', 'calendar') + '<div class="sub-body">' + body + '</div></div>';
     if (!sec.dataset.wired) {
       sec.dataset.wired = '1';
       sec.addEventListener('click', function (ev) {
-        var t = ev.target.closest('[data-act]');
+        var t = ev.target.closest('[data-act], [data-tab]');
         if (!t) return;
+        if (t.hasAttribute('data-tab')) {
+          rankTab = t.getAttribute('data-tab') === 'top' ? 'top' : 'daily';
+          $$('.rank-tab', sec).forEach(function (b) { b.setAttribute('aria-selected', b === t ? 'true' : 'false'); });
+          var body = $('.rank-body', sec);
+          if (body) body.innerHTML = '<p class="rank-empty">Cargando…</p>';
+          loadRanking(dailyInfo().key);
+          return;
+        }
         var act = t.getAttribute('data-act');
         if (act === 'back') show('map');
         else if (act === 'share') shareDailyResult(dailyInfo().key);
         else if (act === 'play') playDaily();
+        else if (act === 'account') showAccount();
       });
     }
     stopDailyTimer();
+    if (unlocked && info.ok) loadRanking(info.key);
     if (unlocked && info.ok) {
       var startKey = info.key;
       dailyTimer = setInterval(function () {
@@ -2235,6 +2704,11 @@
     }
     if (key === 'vibra' && on) { try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) { /* nada */ } }
     btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    if (key === 'clips') {
+      if (on && current === 'game' && session && !session.ended) startClip();
+      else if (!on) stopClip(true);
+      track('clips_toggle', { on: on });
+    }
     if (key === 'sound') { var ic = $('.t-icon', btn); if (ic) ic.innerHTML = icon(on ? 'sound' : 'mute', 24); }
     if (key === 'motion') { var sm = $('.t-label small', btn); if (sm) sm.textContent = 'Menos zooms y sacudidas'; }
   }
@@ -2247,12 +2721,14 @@
     wipeArmed = 0;
     sec.innerHTML = '<div class="col sub-col settings-col">' + subbar('Ajustes', 'settings') +
       '<div class="sub-body">' +
+        accountCardHtml() +
         '<div class="card settings-card">' +
           toggleHtml('sound', 'Sonido', s.sound, 'Efectos del juego') +
           toggleHtml('music', 'Música', s.music, 'Cumbia heladera') +
           toggleHtml('vibra', 'Vibración', s.vibra, 'En celulares compatibles') +
           toggleHtml('motion', 'Movimiento reducido', reducedMotion(), s.motion === 'auto' ? 'Automático (según tu sistema)' : 'Menos zooms y sacudidas') +
           toggleHtml('skipStory', 'Omitir historias', !!s.skipStory, 'Solo verás los «Continuará» y el final') +
+          (clipsSupported() ? toggleHtml('clips', 'Grabar clips', !!s.clips, 'Video 9:16 de cada partida, listo para TikTok', 'video') : '') +
         '</div>' +
         '<div class="card settings-card danger-card">' +
           '<button class="btn btn-cherry wipe-btn" data-act="wipe">Borrar progreso</button>' +
@@ -2272,6 +2748,11 @@
         var act = t.getAttribute('data-act');
         if (act === 'back') show('map');
         else if (act === 'wipe') wipe(t);
+        else if (act === 'google') doSignIn();
+        else if (act === 'anon') doSignInAnon();
+        else if (act === 'profile') showProfileEditor(false);
+        else if (act === 'sync') doSync();
+        else if (act === 'logout') doSignOut();
       });
     }
   }
@@ -2383,10 +2864,13 @@
     }
     // el menú contextual estorba en pantallas táctiles
     doc.addEventListener('contextmenu', function (ev) {
-      if (!ev.target.closest || !ev.target.closest('textarea')) ev.preventDefault();
+      if (!ev.target.closest || !ev.target.closest('textarea, input')) ev.preventDefault();
     });
     var fl = doc.getElementById('flash');
     if (fl) fl.addEventListener('animationend', function () { fl.className = 'flash'; });
+    var c = cloud();
+    if (c && c.onChange) c.onChange(onCloudChange);
+    readQuery();
   }
 
   /* ---------- ganchos de depuración (ARQUITECTURA §12) ---------- */
@@ -2505,5 +2989,7 @@
     _session: function () { return session; },
     _shareImage: buildShareImage,
     _recordCampaignWin: recordCampaignWin,
+    showAccount: showAccount,
+    showProfileEditor: showProfileEditor,
   };
 })();
