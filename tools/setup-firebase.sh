@@ -6,7 +6,8 @@
 # Lo único que Google no deja hacer por API es activar el proveedor **Google** (necesita crear un cliente OAuth):
 # Firebase console → Authentication → Sign-in method → Google → Enable → Save. El script lo comprueba y avisa.
 #
-# Credenciales (una de las dos):
+# Credenciales (una de las tres):
+#   sesión de `firebase login`       la de tu computadora (la más simple: `npx firebase-tools@15 login` una vez).
 #   FIREBASE_TOKEN                   token de `firebase login:ci` (actúa como tu usuario: puede crear el proyecto).
 #                                    Está marcado como «deprecated» en la CLI, pero sigue funcionando en la v15.
 #   GOOGLE_APPLICATION_CREDENTIALS   ruta a un JSON de cuenta de servicio con rol Editor/Owner en un proyecto YA creado
@@ -26,11 +27,17 @@ FB="${FIREBASE_BIN:-}"
 if [ -z "$FB" ]; then
   if command -v firebase >/dev/null 2>&1; then FB="firebase"; else FB="npx --yes firebase-tools@15"; fi
 fi
-if [ -z "${FIREBASE_TOKEN:-}" ] && [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
-  echo "Falta una credencial: FIREBASE_TOKEN (de 'firebase login:ci') o GOOGLE_APPLICATION_CREDENTIALS (JSON de cuenta de servicio)." >&2
+py() { python3 -I -c "$1" "${@:2}"; }
+# Sesión de `firebase login`: la CLI guarda ahí su refresh token; se usa igual que el de login:ci
+FB_STORE="${XDG_CONFIG_HOME:-$HOME/.config}/configstore/firebase-tools.json"
+LOGIN_TOKEN=""
+if [ -z "${FIREBASE_TOKEN:-}" ] && [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] && [ -f "$FB_STORE" ]; then
+  LOGIN_TOKEN=$(py 'import json,sys; print((json.load(open(sys.argv[1])).get("tokens") or {}).get("refresh_token",""))' "$FB_STORE" 2>/dev/null || true)
+fi
+if [ -z "${FIREBASE_TOKEN:-}" ] && [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] && [ -z "$LOGIN_TOKEN" ]; then
+  echo "Falta una credencial: inicia sesión con 'npx firebase-tools@15 login', o usa FIREBASE_TOKEN (de 'firebase login:ci') o GOOGLE_APPLICATION_CREDENTIALS (JSON de cuenta de servicio)." >&2
   exit 2
 fi
-py() { python3 -I -c "$1" "${@:2}"; }
 fb() { $FB "$@" --non-interactive; }
 
 echo "→ Proyecto $PID"
@@ -103,11 +110,12 @@ if [ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
   gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS" --quiet >/dev/null 2>&1 || true
   ACCESS=$(gcloud auth print-access-token 2>/dev/null || true)
 else
-  # el token de login:ci es un refresh token de la CLI oficial: se cambia por un access token con su cliente público
+  # el token de login:ci (o el de `firebase login`) es un refresh token de la CLI oficial: se cambia por un access
+  # token con su cliente público
   ACCESS=$(curl -sS -X POST https://oauth2.googleapis.com/token \
     -d "client_id=${FIREBASE_CLIENT_ID:-563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com}" \
     -d "client_secret=${FIREBASE_CLIENT_SECRET:-j9iVZfS8kkCEFUPaAeJV0sAi}" \
-    -d "refresh_token=$FIREBASE_TOKEN" -d "grant_type=refresh_token" | py 'import json,sys; print(json.load(sys.stdin).get("access_token",""))')
+    -d "refresh_token=${FIREBASE_TOKEN:-$LOGIN_TOKEN}" -d "grant_type=refresh_token" | py 'import json,sys; print(json.load(sys.stdin).get("access_token",""))')
 fi
 if [ -z "$ACCESS" ]; then
   echo "  (sin access token: activa en la consola Authentication → Sign-in method → Anonymous y añade los dominios autorizados)"
