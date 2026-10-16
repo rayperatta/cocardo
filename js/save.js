@@ -36,6 +36,8 @@
       // copia local del perfil en la nube (Cocardo.Cloud) y quién invitó a este jugador (?r=apodo)
       cloud: { on: false, nick: '', avatar: '', uid: '' },
       ref: '',
+      // versión del guardado en la nube que este aparato ya contiene (la pone Cocardo.Cloud; ver Progress.merge)
+      rev: '',
     };
   }
 
@@ -111,6 +113,7 @@
       d.cloud.uid = typeof raw.cloud.uid === 'string' ? raw.cloud.uid.slice(0, 128) : '';
     }
     if (typeof raw.ref === 'string') d.ref = raw.ref.slice(0, 16);
+    if (typeof raw.rev === 'string') d.rev = raw.rev.slice(0, 40);
     // el nivel desbloqueado nunca queda por detrás de lo ya superado
     for (var k = 0; k < LEVELS; k++) {
       if (d.stars[k] > 0) d.unlocked = Math.max(d.unlocked, Math.min(LEVELS, k + 2));

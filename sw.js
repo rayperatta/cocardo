@@ -2,7 +2,7 @@
  * Estrategia: red primero (siempre la versión nueva si hay internet) y caché como respaldo. Solo se cachean
  * los archivos del juego y las fuentes; nunca las llamadas a Firebase/Analytics. Cambia VERSION al publicar. */
 'use strict';
-var VERSION = 'cocardo-v1.1.1';
+var VERSION = 'cocardo-v1.1.2';
 var CORE = [
   './', './index.html', './manifest.webmanifest',
   './css/style.css', './css/game.css',

@@ -292,6 +292,8 @@
     var P = Cocardo.Progress;
     var d = saveData();
     var save = P.forCloud(d);
+    var rev = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);   // marca única de esta subida
+    save.rev = rev;
     save.updatedAt = ts();
     var sum = P.summary(d);
     var batch = db.batch();
@@ -304,6 +306,9 @@
     }
     return batch.commit().then(function () {
       pushing = false;
+      // la nube tiene ya esta versión: al volver a juntar, lo de este aparato manda (ver Progress.merge)
+      d.rev = rev;
+      persist();
       if (pushPending) push(true);
       return true;
     }, function (e) {

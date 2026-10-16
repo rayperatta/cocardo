@@ -727,6 +727,8 @@
     var d = data();
     d.boosters[type] = Math.max(0, (d.boosters[type] || 0) - 1);
     persist();
+    // el gasto también se sube (si hay sesión), para que los otros aparatos lo vean
+    try { if (Cocardo.Cloud) Cocardo.Cloud.push(); } catch (e) { /* nada */ }
     disarm();
     var tut = G.tutorial;
     if (tut && (tut.booster === type || tut.hud)) endTutorial();

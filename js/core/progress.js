@@ -66,8 +66,10 @@
   }
 
   // Junta dos guardados. Reglas: estrellas y récords = el máximo; desbloqueo = el máximo; rescatados y escenas
-  // vistas = la unión; potenciadores = el máximo de cada uno (nunca se duplican); reto diario = la racha más
-  // larga y los resultados de ambos (si un día está en los dos, gana el local). Ajustes: los del primero (local).
+  // vistas = la unión; potenciadores = el máximo de cada uno (nunca se duplican), salvo que el local ya contenga
+  // esa versión de la nube (misma `rev`): entonces son los del local, así uno gastado no reaparece; reto diario =
+  // la racha más larga y los resultados de ambos (si un día está en los dos, gana el local). Ajustes: los del
+  // primero (local). El resultado queda con la `rev` de la nube, porque ya la contiene.
   function merge(local, cloud) {
     var a = isObj(local) ? clone(local) : {};
     var b = isObj(cloud) ? cloud : {};
@@ -85,8 +87,10 @@
     }
     out.boosters = isObj(a.boosters) ? a.boosters : {};
     out.boostersUnlocked = isObj(a.boostersUnlocked) ? a.boostersUnlocked : {};
+    var ahead = typeof a.rev === 'string' && a.rev !== '' && a.rev === b.rev;
     BOOSTERS.forEach(function (k) {
-      out.boosters[k] = Math.max(num(out.boosters[k], 0, 0, 9), num(isObj(b.boosters) ? b.boosters[k] : 0, 0, 0, 9));
+      var mine = num(out.boosters[k], 0, 0, 9);
+      out.boosters[k] = ahead ? mine : Math.max(mine, num(isObj(b.boosters) ? b.boosters[k] : 0, 0, 0, 9));
       out.boostersUnlocked[k] = !!out.boostersUnlocked[k] || !!(isObj(b.boostersUnlocked) && b.boostersUnlocked[k]);
     });
     out.rescued = Array.isArray(a.rescued) ? a.rescued.slice() : [];
@@ -109,6 +113,7 @@
     if (isObj(bd.results)) Object.keys(bd.results).forEach(function (k) { if (/^\d{8}$/.test(k) && isObj(bd.results[k])) out.daily.results[k] = clone(bd.results[k]); });
     if (isObj(ad.results)) Object.keys(ad.results).forEach(function (k) { if (/^\d{8}$/.test(k) && isObj(ad.results[k])) out.daily.results[k] = clone(ad.results[k]); });
     out.settings = isObj(a.settings) ? a.settings : (isObj(b.settings) ? clone(b.settings) : {});
+    if (isObj(cloud)) out.rev = typeof b.rev === 'string' ? b.rev.slice(0, 40) : '';
     return out;
   }
 

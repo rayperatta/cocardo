@@ -88,3 +88,30 @@ test('Progress.forCloud: sin ajustes', () => {
   assert.equal(c.v, 1);
   assert.equal(Array.isArray(c.stars), true);
 });
+
+test('Progress.merge: un potenciador gastado no reaparece al juntar con la nube', () => {
+  const nube = fresh(), local = fresh();
+  nube.boosters.cucharon = 3; nube.rev = 'r1';
+  // este aparato subió la versión r1 y después gastó uno sin llegar a subirlo
+  local.boosters.cucharon = 2; local.rev = 'r1';
+  assert.equal(Progress.merge(local, nube).boosters.cucharon, 2, 'el local ya contiene esa versión: manda el local');
+  // otro aparato subió después: no se sabe quién va adelante y queda el máximo (nunca se pierde nada)
+  nube.rev = 'r2';
+  const m = Progress.merge(local, nube);
+  assert.equal(m.boosters.cucharon, 3);
+  assert.equal(m.rev, 'r2', 'el resultado ya contiene esa versión de la nube');
+  // sin marca (guardados de antes) nunca se da por hecho que el local va adelante
+  local.rev = ''; delete nube.rev;
+  assert.equal(Progress.merge(local, nube).boosters.cucharon, 3);
+  assert.equal(Progress.merge(local, nube).rev, '');
+  local.rev = 'r1';
+  assert.equal(Progress.merge(local, null).rev, 'r1', 'sin nube se conserva la marca local');
+});
+
+test('Save: la marca de la nube (rev) sobrevive a reabrir el juego', () => {
+  Save.reset();
+  Save.get().rev = 'r1';
+  Save.save();
+  assert.equal(Save.load().rev, 'r1');
+  Save.reset();
+});

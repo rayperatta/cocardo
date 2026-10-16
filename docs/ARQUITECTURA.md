@@ -311,9 +311,10 @@ Cocardo.Save = {
 `data = { v:1, unlocked:1, stars:Array(30).fill(0), best:Array(30).fill(0), boosters:{cucharon:0, chorro:0, batido:0},
 boostersUnlocked:{cucharon:false, chorro:false, batido:false}, rescued:[], seen:{}, daily:{ last:0, streak:0,
 bestStreak:0, results:{} }, settings:{ sound:true, vibra:true, motion:'auto'|'on'|'off', music:false, skipStory:false,
-clips:false }, cloud:{ on:false, nick:'', avatar:'', uid:'' }, ref:'' }`.
+clips:false }, cloud:{ on:false, nick:'', avatar:'', uid:'' }, ref:'', rev:'' }`.
 `cloud` is a local copy of the cloud profile (so the title chip renders before the SDK loads); `ref` is the nickname
-that invited this player (`?r=<nick>`), set once.
+that invited this player (`?r=<nick>`), set once; `rev` is the id of the cloud save this device already contains
+(set by `Cocardo.Cloud` after a push or a sync; see `Progress.merge`).
 
 ## 11. `Cocardo.Game` (js/game.js + render.js + fx.js) — the board screen
 
@@ -375,7 +376,9 @@ Respect `prefers-reduced-motion` and the in-game "Movimiento reducido" setting (
 ```js
 Cocardo.Progress = {
   merge(local, cloud) -> data,       // best of both: max stars/best/unlocked/boosters, union of rescued/seen, newest daily
-                                     // streak, both daily results (local wins on ties); settings always from `local`
+                                     // streak, both daily results (local wins on ties); settings always from `local`.
+                                     // If local.rev === cloud.rev (local already contains that cloud save) the boosters
+                                     // are local's, so a spent one never comes back; the result takes cloud.rev
   summary(data) -> { stars, levels, rescued, bestStreak, finished },   // public profile numbers (ranking)
   forCloud(data) -> data without settings,
   validNick(s) -> { ok:true, nick, key } | { ok:false, reason },       // 3–16 [A-Za-z0-9_ + accents], blocked words
@@ -393,7 +396,7 @@ Cocardo.Cloud = {
   signInAnon() -> Promise<user>, signOut() -> Promise,
   suggestNick() -> string, saveProfile({ nick, avatar }) -> Promise<{ ok, nick } | { ok:false, reason }>,  // transaction users + nicknames
   sync() -> Promise<bool>,      // pull users/{uid}/private/save, Progress.merge into Save.get(), push
-  push() -> Promise,            // debounced upload (UI calls it after every win / official daily)
+  push() -> Promise,            // debounced upload with a new `rev` (after every win / official daily / booster used)
   submitDaily(key, result) -> Promise<bool>,   // create-only: the rules reject a second attempt
   dailyTop(key, n), topPlayers(n) -> Promise<rows>,   // public reads via the Firestore REST API (no SDK), cached 45 s
 };

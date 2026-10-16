@@ -117,12 +117,14 @@ Errores típicos y su causa (el juego los muestra como aviso abajo):
 
 ## 6. Costos y límites
 
-Plan **Spark** (gratis): 50 000 lecturas, 20 000 escrituras y 1 GB al día; Authentication sin límite práctico.
+Plan **Spark** (gratis): 50 000 lecturas y 20 000 escrituras al día, y 1 GB de datos guardados en total (no por día;
+alcanza para unas 200 000 cuentas); Authentication sin límite práctico.
 Cómo gasta el juego:
 
 - Ver el ranking: **1 consulta de hasta 20 documentos** (20 lecturas), y el juego no vuelve a pedirlo durante 45 s.
 - Entrar: 2 lecturas (perfil y guardado) + 2 escrituras.
 - Ganar un nivel: 2 escrituras (guardado y perfil); jugar el reto: 1 escritura más.
+- Usar un potenciador: 2 escrituras (se sube el gasto para que los otros aparatos lo vean).
 
 Con 2 000 jugadores diarios activos que miran el ranking dos veces estarías en ~80 000 lecturas: ahí conviene pasar
 a **Blaze** (pago por uso, con el mismo tramo gratis incluido; ~US$0,06 por 100 000 lecturas) o subir `CACHE_MS`
