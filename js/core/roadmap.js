@@ -30,7 +30,7 @@
     { id: 1, name: 'La Nieve de Lima', chapters: [1, 2, 3, 4, 5, 6] },
     { id: 2, name: 'El regreso de Cherry', chapters: [7, 8, 9, 10, 11, 12] },
     { id: 3, name: 'El pedido de Don Piña', chapters: [13, 14, 15, 16, 17, 18] },
-    { id: 4, name: 'La fuga de Cocardo', chapters: [19, 20, 21, 22, 23, 24] },
+    { id: 4, name: 'El último golpecito', chapters: [19, 20, 21, 22, 23, 24] },
   ];
 
   function range(first, n) { var a = []; for (var i = 0; i < n; i++) a.push(first + i); return a; }
@@ -42,17 +42,19 @@
   }
 
   // ---------- capítulos en construcción (continuación propia del juego, no de la serie) ----------
-  // Nombre ≤ 26 caracteres (rótulo del mapa), teaser ≤ 70 (sin spoilers). Fechas: docs/CALENDARIO.md §2.
+  // Nombre ≤ 26 caracteres (rótulo del mapa), teaser ≤ 70 (sin spoilers de temporadas anteriores). Fechas: docs/CALENDARIO.md §2.
+  // La zona debe caer en un fondo que Art.background sepa pintar (zoneKey en js/art.js: cherry, congela, pina/oficina/mansion,
+  // trastienda/callejon, noche/calle/comisaria/policia; lo demás es la heladería). Historia: docs/CALENDARIO.md §6.
   var planned = [
     // ===== Temporada 2 · El regreso de Cherry =====
     C({ id: 7, season: 2, name: 'Cherry… interesante', zone: 'La oficina de Don Piña', color: '#c99a3a', opens: '2026-10-30',
       teaser: 'Don Piña tiene pedidos, dinero… y nadie que le haga el helado.' }),
     C({ id: 8, season: 2, name: 'Se renta local', zone: "Coco's Scoops, cerrada", color: '#7a4a8a', opens: '2026-11',
-      teaser: 'La heladería tiene cinta policial. Alguien quiere entrar igual.' }),
+      teaser: 'Hay letrero nuevo en Coco\'s Scoops. Y alguien entra de noche.' }),
     C({ id: 9, season: 2, name: 'Visita en la cárcel', zone: 'La comisaría', color: '#2f4f7a', opens: '2026-11',
-      teaser: 'Cocardo recibe una visita… y el oficial Sandía no ve nada.' }),
+      teaser: 'Hay visita en la comisaría… y el oficial Sandía no ve nada.' }),
     C({ id: 10, season: 2, name: 'La sucursal', zone: 'La heladería de Cherry', color: '#d61f4b', opens: '2026-12',
-      teaser: 'Nuevo letrero, nuevo congelador rosado. ¿Nuevas víctimas?' }),
+      teaser: 'Letrero nuevo, congelador rosado… y un sabor que sabe a nada.' }),
     C({ id: 11, season: 2, name: 'Todas las unidades', zone: 'La noche de la persecución', color: '#5b1e74', opens: '2027-01',
       teaser: 'Banano y la oficial siguen la pista del camión de helados.' }),
     C({ id: 12, season: 2, name: 'Se derrite el imperio', zone: 'El congelador rosado', color: '#ff6fa5', opens: '2027-01',
@@ -60,25 +62,25 @@
     // ===== Temporada 3 · El pedido de Don Piña =====
     C({ id: 13, season: 3, name: 'Un hombre de palabra', zone: 'La mansión de Don Piña', color: '#8a1c3a', opens: '2027-02',
       teaser: 'Don Piña ya no quiere comprar helado: quiere la fórmula.' }),
-    C({ id: 14, season: 3, name: 'El guardaespaldas', zone: 'El estacionamiento', color: '#3a3f58', opens: '2027-03',
+    C({ id: 14, season: 3, name: 'El guardaespaldas', zone: 'El estacionamiento, de noche', color: '#3a3f58', opens: '2027-03',
       teaser: 'Habla poco, pega fuerte… y ahora maneja el congelador.' }),
-    C({ id: 15, season: 3, name: 'Helado de importación', zone: 'El puerto', color: '#2a6fb0', opens: '2027-04',
+    C({ id: 15, season: 3, name: 'Helado de importación', zone: 'El puerto, de noche', color: '#2a6fb0', opens: '2027-04',
       teaser: 'Contenedores llenos de hielo. Limón vio algo raro en el muelle.' }),
-    C({ id: 16, season: 3, name: 'La reportera', zone: 'El noticiero', color: '#f2b632', opens: '2027-04',
+    C({ id: 16, season: 3, name: 'La reportera', zone: 'La calle del noticiero', color: '#f2b632', opens: '2027-04',
       teaser: 'Investigó demasiado. Hoy no salió al aire.' }),
     C({ id: 17, season: 3, name: 'El socio secreto', zone: 'La trastienda', color: '#4aa8e0', opens: '2027-05',
       teaser: 'Alguien de adentro le pasa la receta a Don Piña.' }),
-    C({ id: 18, season: 3, name: 'Quinientos litros', zone: 'La fábrica', color: '#a1286a', opens: '2027-06',
+    C({ id: 18, season: 3, name: 'Quinientos litros', zone: 'La fábrica congeladora', color: '#a1286a', opens: '2027-06',
       teaser: 'Final de temporada: el pedido más grande de la historia.' }),
-    // ===== Temporada 4 · La fuga de Cocardo =====
-    C({ id: 19, season: 4, name: 'Luces', zone: 'La celda', color: '#2b1630', opens: '2027',
-      teaser: 'En la cárcel se fue la luz. Y la celda de Cocardo está vacía.' }),
-    C({ id: 20, season: 4, name: 'Está experimentado', zone: 'El taller', color: '#7a4a2a', opens: '2027',
+    // ===== Temporada 4 · El último golpecito =====
+    C({ id: 19, season: 4, name: 'Luces', zone: 'La celda de la comisaría', color: '#2b1630', opens: '2027',
+      teaser: 'Se fue la luz en la comisaría. Y el oficial Sandía perdió algo.' }),
+    C({ id: 20, season: 4, name: 'Está experimentado', zone: 'La fábrica congeladora', color: '#7a4a2a', opens: '2027',
       teaser: 'El congelador viejo vuelve a ronronear.' }),
     C({ id: 21, season: 4, name: 'Prima al rescate', zone: 'El callejón', color: '#9be15d', opens: '2027',
-      teaser: 'Lima y Fresa ya no esperan a nadie: van por Cocardo.' }),
-    C({ id: 22, season: 4, name: 'Tres villanos', zone: 'La azotea', color: '#5b1e74', opens: '2027',
-      teaser: 'Cocardo, Cherry y Don Piña en la misma mesa. Mala idea.' }),
+      teaser: 'Lima y Fresa ya no esperan a nadie. Van por el congelador viejo.' }),
+    C({ id: 22, season: 4, name: 'Tres villanos', zone: 'La terraza de la mansión', color: '#5b1e74', opens: '2027',
+      teaser: 'Tres villanos, una mesa y cero confianza. Mala idea.' }),
     C({ id: 23, season: 4, name: 'La gran nevada', zone: 'La ciudad congelada', color: '#bfe9ff', opens: '2027',
       teaser: 'Toda la ciudad amanece bajo escarcha. ¡Drama!' }),
     C({ id: 24, season: 4, name: 'El último sabor', zone: 'El gran congelador', color: '#ffc93c', opens: '2027',

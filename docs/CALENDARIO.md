@@ -91,7 +91,7 @@ interna de trabajo, que pasa a día exacto en el mapa cuando el capítulo anteri
 | 16 | 3 | La reportera | 76-80 | Previsto para abril de 2027 | 23 abr | Tres semanas; fin de semana largo del 1 de mayo en la mayoría de la región justo después. |
 | 17 | 3 | El socio secreto | 81-85 | Previsto para mayo de 2027 | 14 may | Fuera del 10 de mayo (Día de las Madres en México). Formato «¿quién es el traidor?» para comentarios. |
 | 18 | 3 | Quinientos litros | 86-90 | Previsto para junio de 2027 | 4 jun | Final de la temporada 3, antes de las vacaciones de mitad de año. Aquí se decide si existe la temporada 4 o el juego cierra con un final digno y pasa a mantenimiento (Reto Diario y ranking siguen). |
-| 19 | 4 · La fuga de Cocardo | Luces | 91-95 | Previsto para 2027 | 2 jul | **Condicional**: solo si la temporada 3 conservó al menos la mitad de los activos semanales de la 2. Vacaciones de invierno en el Cono Sur y de verano en México. |
+| 19 | 4 · El último golpecito | Luces | 91-95 | Previsto para 2027 | 2 jul | **Condicional**: solo si la temporada 3 conservó al menos la mitad de los activos semanales de la 2. Vacaciones de invierno en el Cono Sur y de verano en México. |
 | 20 | 4 | Está experimentado | 96-100 | Previsto para 2027 | 23 jul | Nivel 100: hito publicable por sí mismo («100 niveles hechos por una sola persona»). |
 | 21 | 4 | Prima al rescate | 101-105 | Previsto para 2027 | 13 ago | Lima y Fresa van por Cocardo. |
 | 22 | 4 | Tres villanos | 106-110 | Previsto para 2027 | 3 sep | «Team Cocardo, Team Cherry o Team Piña» para comentarios. |
@@ -130,7 +130,7 @@ eventos ninguna regla se puede aplicar y ningún capítulo pasa a día exacto.
 | 7 | **Pico social** (surfear sin romper el plan) | GA4 nuevos usuarios por día y `referral`; `share` y `clip` por 100 `level_end`; vistas y comentarios del video de estreno a 48 h frente a la mediana de los videos de lanzamiento (con `?utm_source=tiktok&utm_medium=bio` en el enlace de la bio) | un día con ≥ 3× la mediana de nuevos y ≥ 200 nuevos; o vistas ≥ 2× mediana y nuevos ≥ 1,5× · bajo: video < 2.000 vistas y < 20 comentarios | Alto: acelerar la **comunicación** (countdown del capítulo ya construido, historia del Reto, responder comentarios en video, dúo con el video que trajo gente) y, si hay colchón, adelantar su fecha respetando 7 días. Bajo: cambiar el gancho (`docs/VIDEOS.md` §3), no la cadencia; el siguiente video sale en dos variantes. |
 | 8 | **Capacidad del equipo** (frenar antes de incumplir) | ¿el N+1 pasa `sim.js` + `npm test` 7 días antes de abrir N? ¿está desplegado oculto el martes anterior? horas semanales (videos incluidos) | no, una vez: +7 días (el mapa seguía en mes) · no, dos veces seguidas, o > 15 h/semana dos semanas: la cadencia baja un escalón (2 → 3 → 4 semanas) | **Frenar:** actualizar `opens` a mes, publicar un post transparente de dos líneas («el capítulo X llega la semana del…»), nunca compensar con crunch. Diciembre y vacaciones cuentan como corrimiento planeado, no como fallo. |
 | 9 | **Completistas** (el «mientras tanto» funciona) | Firestore: % de perfiles `finished` con `stars` ≥ 80 de 90; apoyo en GA4: `level_start` con `attempt` > 1 en niveles ya ganados (GA4 no marca «práctica» en la campaña) | ≥ 15 % repiten por 3★ o ya tienen ≥ 80 estrellas · < 5 % | ≥ 15 %: mantener (no hace falta acelerar) y hacer el siguiente video sobre las 90 estrellas y el ranking. < 5 %: antes de más niveles, una recompensa visible por capítulo con 15★ (carta del álbum o insignia), para que la espera tenga algo que hacer. |
-| 10 | **Relojes adelantados** (vigilar, no castigar) | Firestore: perfiles activos (`updatedAt` < 14 días) con `levels` mayor que el último nivel abierto para la fecha | > 2 % de los activos | No bloquear ni borrar: en un juego gratis sin compras el tramposo solo se arruina su estreno. Si pasa del 2 %: topar en el ranking las estrellas visibles a 3 × niveles abiertos hoy y, antes de la temporada 3, anclar `opens` a la cabecera `Date` de una petición cuando hay red (solo para retrasar, nunca para adelantar; el juego sigue funcionando sin red). |
+| 10 | **Relojes adelantados** (vigilar, no castigar) | Firestore: perfiles activos (`updatedAt` < 14 días) con `levels` mayor que el último nivel abierto para la fecha | > 2 % de los activos | No bloquear ni borrar: en un juego gratis sin compras el tramposo solo se arruina su estreno. El ranking **ya** topa las estrellas y niveles visibles a lo abierto para la fecha local de quien mira (así un reloj adelantado no luce estrellas de un capítulo cerrado; entre husos horarios el tope cambia unas horas antes o después). Si pasa del 2 %: anclar `opens` a la cabecera `Date` de una petición cuando hay red (solo para retrasar, nunca para adelantar; el juego sigue funcionando sin red). |
 
 Qué se anota cada lunes en la bitácora (§8): fecha, activos semanales, nuevos, D1/D7 de la cohorte, los 3 niveles con
 más fallo y los 3 con más fuga, `daily_end` medio, toques en la zona en obra, vistas del último video, y una sola línea de
@@ -182,7 +182,7 @@ Con D = viernes de apertura:
    **antes** del push.
 8. **D−3: despliegue oculto.** `git push origin main`; GitHub Pages tarda 1-2 min; purgar la caché de Cloudflare de los
    `.js` si `www` sigue con proxy. En ventana privada en https://cocardo.app: el mapa dice «Se abre el viernes…», el
-   nivel 31 no abre, la ficha muestra teaser, días que faltan y los botones «Reto de hoy» y «Avisar a un amigo»; con la
+   nivel 31 no abre, la ficha muestra teaser, días que faltan y los botones «Reto de hoy» y «Avisar» (compartir la fecha); con la
    fecha adelantada (DevTools → Sensors → Override date, o `debug.today`) abre y la historia corre. En el teléfono con la
    app instalada, cerrar y abrir dos veces para que el service worker tome la versión. **Solo a partir de aquí** se
    menciona la fecha en redes.
@@ -238,7 +238,74 @@ produce nada.
 
 ## 6. Temporadas 2 a 4: esbozo de historia y novedades jugables
 
-(Se completa con el esbozo elegido por el juez de canon; ver §7.)
+Continuación **propia del juego de fans** a partir del final de la temporada 1 (Cocardo preso y vigilado por el
+oficial Sandía; Cherry huida en avión; Don Piña con pedidos y sin productor: «Cherry… interesante»; Banano con Banana;
+las seis víctimas libres; Lima desencantada). Nunca «Parte 14», nunca «oficial», nunca las continuaciones de fans de la
+serie. Solo los 16 personajes; las seis fichas de color siguen siendo Lima, Fresa, Banana, Uva, Naranja y Durazna;
+congelar sigue siendo cómico y reversible; todas las víctimas se rescatan. Se eligió entre dos esbozos con un juez de
+canon; este es el ganador con sus injertos y correcciones.
+
+**Trama larga: la fórmula del congelador viejo.** No es magia: son los renglones que Cocardo escribió con marcador
+dentro de la puerta del congelador de cuatro mil pesos (el golpecito, los grados, cuándo «ronronea»). Cualquier
+congelador congela; solo el viejo, o uno afinado con esa fórmula, da helado *con sabor*, que es lo que Don Piña paga.
+Lima la copió en una servilleta la noche del rescate. Cherry, Don Piña y Cocardo se la disputan durante tres
+temporadas; Lima decide al final que la fórmula se acaba para siempre. Gag recurrente: el helado de Cherry «sabe a
+nada» (sus clientes se pasan al carrito de nieve de lima de verdad que Lima pone frente al local clausurado). Lima jamás
+vuelve con Cocardo.
+
+**Reglas de producción que salen del canon y de las pruebas.** El villano del HUD de un jefe es el dueño del congelador
+(`villainFor(id) === freezer.who`); villanos con `count` 1-2 y `every` ≥ 3; una mecánica de motor nueva por temporada
+como máximo, siempre con alternativa sin motor y su `teach` añadido a la lista de las pruebas; cada rescate de un
+personaje que no es ficha (Limón, Banano, la oficial, el oficial Sandía, el repartidor, la reportera, Cherry) necesita su
+`rescueLines` en `js/story.js`; `engine.js` elige al villano del barajado por id (desde el 21, Cherry): al construir el
+capítulo 7 debe salir de `Story.villainFor(levelId)`; mientras Cocardo esté preso (7, 9, 14, 17) su retrato del HUD usa la
+variante `carcel` y burlas nuevas en voz de celda, y Cherry en 7-8 la variante `huida` (sombrero y lentes); los nombres
+de nivel nuevos no repiten los 30 existentes («Todas las unidades», «Prima al rescate», «Está experimentado» y
+«Tenías suerte» son nombres de capítulo, no de nivel). Don Piña nunca congela a nadie con sus manos.
+
+### Temporada 2 · El regreso de Cherry (capítulos 7-12, villana: Cherry)
+
+Cherry baja del avión contratada por Don Piña. Lo único que hace helado con sabor es el congelador viejo, hoy evidencia
+de la policía. Cierre de la temporada: Lima provoca el apagón («Prende menos luces») y rompe el congelador pintado de rosa.
+
+| Cap. | Nombre · zona | HUD | Novedad jugable | Rescate | Cierre |
+|---|---|---|---|---|---|
+| 7 | Cherry… interesante · La oficina de Don Piña | Cherry (huida) | Reinicio suave: 5 sabores, hielo PV 1-2, cajas cada 6; pedidos de Piña de 2 sabores desde el 32. | Naranja (panecitos, otra vez) | Cherry con sombrero: «Cherry… interesante.» «Lo sé.» |
+| 8 | Se renta local · Coco's Scoops, clausurada | Cherry | Escarcha de fábrica en bloques, hielo PV 3, tableros con forma de mostrador; jefe 40 con el congelador grande (blanco: HUD Cocardo en ese nivel). | Limón (vive dentro «porque el congelador calienta») | «Gracias por la mudanza, cariño.» |
+| 9 | Visita en la cárcel · La comisaría | Cocardo (carcel) | **Mecánica de la temporada: la cinta policial**, bloqueo que solo cortan Paletas, Bombas, Copas y potenciadores (alternativa sin motor: franjas de hielo PV 3). Objetivo de motor: lista para el 27-nov con una quincena de colchón. | Banano | Cherry disfrazada de abogada; «Se lo llevó su abogada», dice Sandía. |
+| 10 | La sucursal · La heladería de Cherry | Cherry | Sin mecánica nueva (vacaciones): 6 sabores, pedidos de 3 sabores (≤ 25), cajas densas; ⚠ con Cherry cada 3. | Durazna | Don Piña: «Sin sabor no hay trato. Dos semanas.» (espeja la cadencia real) |
+| 11 | Todas las unidades · La noche de la persecución | Cherry | Capítulo de fichas (pruebas: hasta 3 en tablero, 6 en total) entre cajas cada 3; tableros alargados como carretera. | — | «Tenías suerte.» |
+| 12 | Se derrite el imperio · El congelador rosado | Cherry | Final tipo 30: congelador viejo pintado de rosa (PV máximo), escarcha ×2 desde el tablero y cajas desde el HUD; doble rescate tras hielo PV 3. | Fresa y Banana | Lima apaga la luz; `FIN DE LA TEMPORADA 2` · «¿Tercera temporada…?» |
+
+### Temporada 3 · El pedido de Don Piña (capítulos 13-18, villano narrativo: Don Piña; en el HUD, Cherry y el congelador)
+
+Don Piña ya no compra helado: quiere la fórmula para producir quinientos litros por sabor sin depender de nadie. Paga la
+fianza de Cherry, le da un teléfono a Cocardo en la celda y sospecha de Lima. Cierre: la fábrica congela a su propio
+guardaespaldas por orden de Piña («Sabor cereza. Por fin.», pero quien aprieta el botón es el contenedor automático).
+
+| Cap. | Nombre · zona | HUD | Novedad jugable | Rescate | Cierre |
+|---|---|---|---|---|---|
+| 13 | Un hombre de palabra · La mansión de Don Piña | Cherry | Vuelven los pedidos de Piña (3 sabores ≤ 25) con hielo PV 2 y escarcha; primer jefe con tres metas. | Uva | Lima: «Mi sabor no se vende, se sirve.» |
+| 14 | El guardaespaldas · El estacionamiento, de noche | Cherry | El ⚠ más duro hasta ahora: escarcha desde el tablero cada 3 y cajas cada 4 en el mismo nivel; columnas vacías como cajones. | La oficial | Banano, al revés: «Entonces tendrás que sacármelas.» |
+| 15 | Helado de importación · El puerto, de noche | Cherry | **Mecánica de la temporada: dos congeladores** en el tablero (meta jefe = suma de PV; exige lista de congeladores en el motor, HUD doble, `sim.js` y relajar «4 C exactas» en las pruebas: ≥ 3 días desde el 1 de marzo; si al D−14 no pasa `npm test`, alternativa: un congelador + cinta policial, y la misma alternativa en 18, 22 y 24). | El repartidor («¿Para qué quiere tanto espacio?») | Limón: «El de la piña trae el frío por mar.» |
+| 16 | La reportera · La calle del noticiero | Cherry | Fichas y rescate en el mismo jefe: las cintas bajan mientras rompes su bloque; 4 sabores con escarcha en masa. | La reportera | Lima frente al micrófono: «Es hora de contar la verdad.» |
+| 17 | El socio secreto · La trastienda | Cocardo (carcel, por teléfono) | Villanos con los papeles cambiados; capítulo de misterio: el hielo de cada nivel dibuja la inicial del sospechoso (F, D, L, N). | Limón | «¿Quién es el traidor?» → Cocardo, por el teléfono de Piña. |
+| 18 | Quinientos litros · La fábrica congeladora | Cherry | Todas las mecánicas de la temporada juntas; jefe 90 con PV récord. | El guardaespaldas y Banano | El guardaespaldas entrega la factura; «El culpable son tres»; `FIN DE LA TEMPORADA 3`. |
+
+### Temporada 4 · El último golpecito (capítulos 19-24, villano: Cocardo, con Cherry y Don Piña)
+
+Condicional (§2). Un apagón pagado por Don Piña deja la celda vacía; Cocardo quiere su heladería, su fórmula y a Lima;
+Cherry quiere el control; Don Piña, sus quinientos litros. Lima decide que la fórmula se acaba para siempre. Los teasers
+de esta temporada no se publican en redes hasta que empiece, y en el mapa no nombran la fuga.
+
+| Cap. | Nombre · zona | HUD | Novedad jugable | Rescate | Cierre |
+|---|---|---|---|---|---|
+| 19 | Luces · La celda de la comisaría | Cocardo | Escarcha desde el HUD cada 3 desde el primer nivel; barrotes de hielo PV 3 que parten el tablero en celdas. | El oficial Sandía | «Gracias por las luces. C.» |
+| 20 | Está experimentado · La fábrica congeladora | Cocardo | Nivel 100: los dos villanos desde el primer nivel; 6 sabores, pedidos de 3 sabores. | Banana | Cherry: «Yo tenía el control antes de que llegaras.» |
+| 21 | Prima al rescate · El callejón | Cocardo | Capítulo de potenciadores: cada nivel se diseña alrededor de uno y regala 3 usos. | Fresa | «No vine por ti. Vine por mi prima.» |
+| 22 | Tres villanos · La terraza de la mansión | Cocardo | Villano alterno por nivel (106 y 108 Cherry con cajas, 107 y 109 Cocardo con escarcha) y el jefe 110 con los dos. | Lima | «Team Cocardo, Team Cherry o Team Piña.» |
+| 23 | La gran nevada · La ciudad congelada | Cocardo | **Mecánica de la temporada: la nieve que crece** (si en un turno no rompes ninguna, se extiende a una vecina; alternativa: escarcha ×2 cada 3 sobre filas `e`). Un rescate por nivel. | Uva, Naranja, Durazna, Limón y la oficial (uno por nivel) | Cinco clips de descongelación. |
+| 24 | El último sabor · El gran congelador | Cocardo | Gran final: tablero COPA, el congelador más grande (PV récord), escarcha ×2 cada 3 y cajas ×2 cada 4; triple rescate. | Fresa, Banana y Banano | Lima vende el congelador viejo como chatarra: «Cuatro mil pesos, una ganga.» «Déjelas prendidas, por favor.» `FIN`. |
 
 ## 7. Decisiones tomadas, riesgos y fuentes
 
@@ -254,7 +321,7 @@ produce nada.
 - *Quincenal solo al principio.* Los grandes publican 15-100 niveles por semana con equipos de decenas de personas;
   para una persona, un capítulo cada 2-4 semanas es lo comparable, y las guías indie marcan «semanal» como agotamiento.
 - *El «mientras tanto» ya existe:* Reto Diario, 3 estrellas por capítulo y ranking son el modo infinito; la ficha del
-  capítulo cerrado siempre ofrece «Reto de hoy» y «Avisar a un amigo» (la única notificación posible sin permisos, y
+  capítulo cerrado siempre ofrece «Reto de hoy» y «Avisar» (compartir la fecha) (la única notificación posible sin permisos, y
   cada aviso lleva `?r=apodo`: la espera genera referidos).
 - *El Reto Diario no cambia de piscina* (niveles 6-25) en la temporada 2: ampliarla cambiaría el tablero del día según
   la versión que tenga cada jugador y rompería el «mismo tablero para todos». Si se amplía, con un corte por clave de

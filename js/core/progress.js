@@ -81,15 +81,17 @@
     var b = isObj(cloud) ? cloud : {};
     var out = a;
     out.v = 1;
-    out.unlocked = Math.max(num(a.unlocked, 1, 1, LEVELS), num(b.unlocked, 1, 1, LEVELS));
     var as = Array.isArray(a.stars) ? a.stars : [], bs = Array.isArray(b.stars) ? b.stars : [];
     var ab = Array.isArray(a.best) ? a.best : [], bb = Array.isArray(b.best) ? b.best : [];
-    out.stars = fill(LEVELS, 0);
-    out.best = fill(LEVELS, 0);
-    for (var i = 0; i < LEVELS; i++) {
+    // nunca se recorta un guardado más largo que el tope de esta copia del juego (una versión más nueva con más niveles)
+    var n = Math.min(1000, Math.max(LEVELS, as.length, bs.length, ab.length, bb.length));
+    out.unlocked = Math.max(num(a.unlocked, 1, 1, n), num(b.unlocked, 1, 1, n));
+    out.stars = fill(n, 0);
+    out.best = fill(n, 0);
+    for (var i = 0; i < n; i++) {
       out.stars[i] = Math.max(num(as[i], 0, 0, 3), num(bs[i], 0, 0, 3));
       out.best[i] = Math.max(num(ab[i], 0, 0, 1e9), num(bb[i], 0, 0, 1e9));
-      if (out.stars[i] > 0) out.unlocked = Math.max(out.unlocked, Math.min(LEVELS, i + 2));
+      if (out.stars[i] > 0) out.unlocked = Math.max(out.unlocked, Math.min(n, i + 2));
     }
     out.boosters = isObj(a.boosters) ? a.boosters : {};
     out.boostersUnlocked = isObj(a.boostersUnlocked) ? a.boostersUnlocked : {};

@@ -551,9 +551,11 @@ Never use `alert`, `confirm` or `prompt`.
 
 ## 14. Persistence (P0)
 
-**Save data:** `localStorage['cocardo.v1']`:
+**Save data:** `localStorage['cocardo.v1']`. The exact, current format (arrays sized to `Roadmap.MAX_LEVELS` = 120,
+`boostersUnlocked`, full `settings`, `cloud`, `ref`, `rev`) is specified in `docs/ARQUITECTURA.md` §10; the sketch below is
+the v1 original:
 ```
-{v:1, unlocked:1, stars:[30], best:[30],
+{v:1, unlocked:1, stars:[MAX], best:[MAX],
  boosters:{cucharon,chorro,batido}, rescued:[],
  seen:{}, daily:{last, streak, bestStreak, results:{}},
  settings:{sound, vibra, motion, music}}

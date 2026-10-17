@@ -77,9 +77,12 @@
   function sanitize(raw) {
     if (!isObj(raw) || raw.v !== 1) return null;
     var d = defaults();
-    d.unlocked = num(raw.unlocked, 1, 1, LEVELS);
-    if (Array.isArray(raw.stars)) for (var i = 0; i < LEVELS; i++) d.stars[i] = num(raw.stars[i], 0, 0, 3);
-    if (Array.isArray(raw.best)) for (var j = 0; j < LEVELS; j++) d.best[j] = num(raw.best[j], 0, 0, 1e9);
+    // un guardado más largo que el tope (versión más nueva del juego) no se recorta
+    var n = Math.min(1000, Math.max(LEVELS, Array.isArray(raw.stars) ? raw.stars.length : 0, Array.isArray(raw.best) ? raw.best.length : 0));
+    if (n > LEVELS) { d.stars = fill(n, 0); d.best = fill(n, 0); }
+    d.unlocked = num(raw.unlocked, 1, 1, n);
+    if (Array.isArray(raw.stars)) for (var i = 0; i < n; i++) d.stars[i] = num(raw.stars[i], 0, 0, 3);
+    if (Array.isArray(raw.best)) for (var j = 0; j < n; j++) d.best[j] = num(raw.best[j], 0, 0, 1e9);
     BOOSTERS.forEach(function (b) {
       if (isObj(raw.boosters)) d.boosters[b] = num(raw.boosters[b], 0, 0, BOOSTER_CAP);
       if (isObj(raw.boostersUnlocked)) d.boostersUnlocked[b] = !!raw.boostersUnlocked[b];
@@ -121,8 +124,8 @@
     if (typeof raw.ref === 'string') d.ref = raw.ref.slice(0, 16);
     if (typeof raw.rev === 'string') d.rev = raw.rev.slice(0, 40);
     // el nivel desbloqueado nunca queda por detrás de lo ya superado
-    for (var k = 0; k < LEVELS; k++) {
-      if (d.stars[k] > 0) d.unlocked = Math.max(d.unlocked, Math.min(LEVELS, k + 2));
+    for (var k = 0; k < d.stars.length; k++) {
+      if (d.stars[k] > 0) d.unlocked = Math.max(d.unlocked, Math.min(d.stars.length, k + 2));
     }
     trimDaily(d);
     return d;

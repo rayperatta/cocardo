@@ -86,10 +86,12 @@ test('Roadmap: textos para el mapa (nunca una fecha vencida como promesa)', () =
 test('Roadmap: capítulos planeados contiguos tras los construidos, 5 niveles, textos cortos y fechas que no retroceden', () => {
   const built = Levels.chapters;
   const lastBuilt = built[built.length - 1];
-  assert.ok(Roadmap.planned.length >= 12, 'al menos dos temporadas en construcción');
+  assert.ok(Roadmap.planned.length >= 12, 'al menos dos temporadas planeadas');
+  // los planeados que ya se construyeron se ignoran (manda Levels.chapters)
+  const pending = Roadmap.planned.filter((p) => p.id > lastBuilt.id);
   let prevId = lastBuilt.id, prevLevel = lastBuilt.levels[lastBuilt.levels.length - 1], prevLast = 0;
   const names = new Set();
-  for (const ch of Roadmap.planned) {
+  for (const ch of pending) {
     assert.equal(ch.id, prevId + 1, `capítulo ${ch.id}: los ids van de corrido`);
     assert.deepEqual(ch.levels, [1, 2, 3, 4, 5].map((k) => prevLevel + k), `capítulo ${ch.id}: niveles`);
     assert.ok(typeof ch.name === 'string' && ch.name.length >= 3 && ch.name.length <= 26, `capítulo ${ch.id}: nombre «${ch.name}» (${ch.name.length})`);
@@ -109,12 +111,12 @@ test('Roadmap: capítulos planeados contiguos tras los construidos, 5 niveles, t
     prevId = ch.id; prevLevel = ch.levels[4]; prevLast = p.last;
   }
   // día exacto solo para lo cercano (≤ 6 semanas desde hoy); después, mes o año
-  for (const ch of Roadmap.planned) {
+  for (const ch of pending) {
     const p = Roadmap.parseOpens(ch.opens);
     if (p.precision === 'dia') assert.ok(Roadmap.daysBetween(TODAY, p.first) <= 42, `capítulo ${ch.id}: día exacto a más de 6 semanas`);
   }
   // temporadas: 6 capítulos cada una, de corrido, y la 1 son los capítulos construidos
-  assert.deepEqual(Roadmap.seasons[0].chapters, built.map((c) => c.id));
+  assert.deepEqual(Roadmap.seasons[0].chapters, [1, 2, 3, 4, 5, 6]);
   let next = 1;
   for (const s of Roadmap.seasons) {
     assert.equal(s.chapters.length, 6, `temporada ${s.id}`);
@@ -127,12 +129,14 @@ test('Roadmap: capítulos planeados contiguos tras los construidos, 5 niveles, t
 
 test('Roadmap: merged pone estado a construidos y planeados; los planeados ya construidos se ignoran', () => {
   const all = Roadmap.merged(Levels.chapters, TODAY);
-  assert.equal(all.length, Levels.chapters.length + Roadmap.planned.length);
+  const lastBuiltId = Levels.chapters[Levels.chapters.length - 1].id;
+  assert.equal(all.length, Levels.chapters.length + Roadmap.planned.filter((p) => p.id > lastBuiltId).length);
   all.slice(0, Levels.chapters.length).forEach((ch, i) => {
     assert.equal(ch.built, true);
-    assert.equal(ch.state, 'abierto', `capítulo ${ch.id}`);
+    assert.ok(ch.state === 'abierto' || ch.state === 'programado', `capítulo ${ch.id}`);
+    if (ch.id <= 6) assert.equal(ch.state, 'abierto', `capítulo ${ch.id}`);
     assert.equal(ch.id, Levels.chapters[i].id);
-    assert.equal(ch.season, 1);
+    assert.equal(ch.season, Roadmap.seasonOf(ch.id).id);
   });
   all.slice(Levels.chapters.length).forEach((ch) => {
     assert.equal(ch.built, false);
@@ -141,7 +145,8 @@ test('Roadmap: merged pone estado a construidos y planeados; los planeados ya co
     assert.ok(ch.seasonName.length > 0);
   });
   // si el capítulo 7 ya está construido (en Levels.chapters), su entrada planeada deja de pintarse
-  const fake = Levels.chapters.concat([{ id: 7, name: 'Siete', zone: 'z', color: '#000000', levels: [31, 32, 33, 34, 35], opens: '2026-10-30' }]);
+  const S1 = Levels.chapters.slice(0, 6);
+  const fake = S1.concat([{ id: 7, name: 'Siete', zone: 'z', color: '#000000', levels: [31, 32, 33, 34, 35], opens: '2026-10-30' }]);
   const m2 = Roadmap.merged(fake, TODAY);
   assert.equal(m2.filter((c) => c.id === 7).length, 1);
   assert.equal(m2[6].built, true);
@@ -155,20 +160,25 @@ test('Roadmap: merged pone estado a construidos y planeados; los planeados ya co
 });
 
 test('Roadmap: openCount y nextOpening respetan la fecha local', () => {
-  assert.equal(Roadmap.openCount(Levels.chapters, TODAY), 30);
+  const S1 = Levels.chapters.slice(0, 6);
+  assert.equal(Roadmap.openCount(S1, TODAY), 30);
+  assert.ok(Roadmap.openCount(Levels.chapters, TODAY) >= 30);
   const ch7 = { id: 7, name: 'Siete', zone: 'z', color: '#000000', levels: [31, 32, 33, 34, 35], opens: '2026-10-30' };
   const ch8 = { id: 8, name: 'Ocho', zone: 'z', color: '#000000', levels: [36, 37, 38, 39, 40] };   // sin fecha: abierto
-  const built = Levels.chapters.concat([ch7, ch8]);
+  const built = S1.concat([ch7, ch8]);
   assert.equal(Roadmap.openCount(built, 20261029), 30, 'el 7 programado tapa también al 8');
   assert.equal(Roadmap.openCount(built, 20261030), 40, 'abre a la medianoche local del día');
   assert.equal(Roadmap.openCount(built, 20270101), 40);
   assert.equal(Roadmap.openCount([], TODAY), 0);
   assert.equal(Roadmap.openCount(null, TODAY), 0);
 
-  const nx = Roadmap.nextOpening(Levels.chapters, TODAY);
+  const nx = Roadmap.nextOpening(S1, TODAY);
   assert.equal(nx.id, 7);
   assert.equal(nx.built, false);
   assert.equal(nx.state, 'construccion');
+  const nxReal = Roadmap.nextOpening(Levels.chapters, TODAY);
+  const firstClosed = Roadmap.merged(Levels.chapters, TODAY).find((c) => c.state !== 'abierto');
+  assert.equal(nxReal && nxReal.id, firstClosed && firstClosed.id);
   const nx2 = Roadmap.nextOpening(built, 20261029);
   assert.equal(nx2.id, 7);
   assert.equal(nx2.state, 'programado');
@@ -178,11 +188,17 @@ test('Roadmap: openCount y nextOpening respetan la fecha local', () => {
   assert.equal(nx3.id, 9, 'con 7 y 8 abiertos, el siguiente es el 9 (en construcción)');
   // todo construido y abierto: no hay siguiente
   const everything = Roadmap.planned.map((c) => ({ id: c.id, name: c.name, zone: c.zone, color: c.color, levels: c.levels }));
-  assert.equal(Roadmap.nextOpening(Levels.chapters.concat(everything), TODAY), null);
-  assert.equal(Roadmap.openCount(Levels.chapters.concat(everything), TODAY), Roadmap.MAX_LEVELS);
-  assert.equal(Roadmap.chapterOfLevel(Levels.chapters, 33).id, 7);
-  assert.equal(Roadmap.chapterOfLevel(Levels.chapters, 12).id, 3);
-  assert.equal(Roadmap.chapterOfLevel(Levels.chapters, 999), null);
+  assert.equal(Roadmap.nextOpening(S1.concat(everything), TODAY), null);
+  assert.equal(Roadmap.openCount(S1.concat(everything), TODAY), Roadmap.MAX_LEVELS);
+  assert.equal(Roadmap.chapterOfLevel(S1, 33).id, 7);
+  assert.equal(Roadmap.chapterOfLevel(S1, 12).id, 3);
+  assert.equal(Roadmap.chapterOfLevel(S1, 999), null);
+  // guardados más largos que el tope (versión más nueva) no se recortan al fusionar ni al sanear
+  const longer = Save.defaults(); longer.stars = Array(Roadmap.MAX_LEVELS + 5).fill(1); longer.best = Array(Roadmap.MAX_LEVELS + 5).fill(9);
+  const ml = Progress.merge(Save.defaults(), longer);
+  assert.equal(ml.stars.length, Roadmap.MAX_LEVELS + 5);
+  assert.equal(ml.stars[Roadmap.MAX_LEVELS + 4], 1);
+  assert.equal(ml.unlocked, Roadmap.MAX_LEVELS + 5);
 });
 
 test('Roadmap: el guardado y la nube ya miden MAX_LEVELS (ningún capítulo nuevo pide migrar)', () => {

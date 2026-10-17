@@ -1388,7 +1388,7 @@
       var btn = ghost || dated;
       var tag = btn ? 'button' : 'div';
       var attrs = btn ? ' type="button" data-chapter="' + ch.id + '" aria-label="' + esc(num + ', ' + ch.name + ', ' + (ch.when || 'en construcción')) + '"' : '';
-      html += '<div class="zone zone-ch' + esc(ch.id) + (ghost ? ' zone-planned zone-' + esc(ch.state || 'construccion') : (isShopZone(ch.zone) ? ' zone-shop' : '')) + (dated ? ' zone-dated' : '') + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
+      html += '<div class="zone zone-ch' + esc(ch.id) + (ghost ? ' zone-planned zone-' + esc(ch.state || 'construccion') : (isShopZone(ch.zone) ? ' zone-shop' : '')) + (dated ? ' zone-dated' : '') + (locked && !ghost ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
         '<div class="zone-bg">' + (ghost ? '' : zoneBg(ch.zone || ch.id)) + '</div>' +
         (ghost && z.idx === geo.zones.length - 1 ? '<div class="zone-fog" aria-hidden="true"></div>' : '') +
         '<' + tag + ' class="zone-head' + (btn ? ' zone-head-btn' : '') + '" style="top:' + (z.headTop + 34) + 'px"' + attrs + '><span class="zone-num">' + esc(num) + '</span><b class="zone-name">' + esc(ch.name) + '</b>' +
@@ -1467,13 +1467,15 @@
       banner.setAttribute('aria-label', 'Próximo rescate: ' + names + ', ' + when2);
       banner.hidden = false;
     } else if (nx && nx.levels && nx.levels.length) {
-      var small = nx.built ? 'Próximo capítulo' : 'Capítulo ' + nx.id + ' en construcción';
+      var lateB = nx.state === 'retrasado';
+      var small = nx.built ? 'Próximo capítulo' : (lateB ? 'Capítulo ' + nx.id : 'Capítulo ' + nx.id + ' en construcción');
+      var big = lateB ? 'Un poquito más… ¡ya casi!' : (nx.when || nx.name);
       banner.innerHTML = '<span class="rb-face rb-build">' + icon('cone', 30) + '</span>' +
-        '<span class="rb-txt"><small>' + esc(small) + '</small><b>' + esc(nx.when || nx.name) + '</b></span>' +
+        '<span class="rb-txt"><small>' + esc(small) + '</small><b>' + esc(big) + '</b></span>' +
         '<span class="rb-flake rb-clock">' + icon('clock', 22) + '</span>';
       banner.setAttribute('data-target', nx.levels[0]);
       banner.setAttribute('data-chapter', nx.id);
-      banner.setAttribute('aria-label', small + ': ' + nx.name + (nx.when ? ', ' + nx.when : ''));
+      banner.setAttribute('aria-label', small + ': ' + nx.name + ', ' + big);
       banner.hidden = false;
     } else if (levelList().length) {
       banner.innerHTML = '<span class="rb-face happy">' + portrait('lima', 'feliz') + '</span><span class="rb-txt"><small>¡Bravo!</small><b>Todas las frutas a salvo</b></span>';
@@ -1495,6 +1497,10 @@
       var key = 'open' + ch.id;
       if (d.seen[key]) return;
       if (ch.levels[0] > d.unlocked || ch.levels[0] > openN) return;
+      // solo se celebra a quien ya vio el final del capítulo anterior (quien acaba de ganarlo verá el rótulo tras las escenas)
+      var prevSc = scenesFor(ch.levels[0] - 1);
+      var prevSeen = prevSc.cliff ? (prevSc.cliff === 'ending' ? !!d.seen.ending : !!d.seen[prevSc.cliff]) : true;
+      if (!prevSeen) return;
       d.seen[key] = true;
       if (!fresh) fresh = ch;
     });
@@ -1904,8 +1910,9 @@
         if (!hasFin) cards.push({ card: 'FIN DE LA TEMPORADA 1' });
         if (!hasSeason) cards.push({ card: '¿Segunda temporada…?' });
         // la respuesta a «¿Segunda temporada…?»: el siguiente capítulo y cuándo se abre
-        var nx = nextOpening();
-        if (nx && nx.when) cards.push({ card: 'Capítulo ' + nx.id + ': ' + nx.when.charAt(0).toLowerCase() + nx.when.slice(1) });
+        var nx = chapterStateOf((lvId | 0) + 1);
+        if (nx && nx.state === 'abierto') cards.push({ card: 'Capítulo ' + nx.id + ': ¡ya te espera!' });
+        else if (nx && nx.when) cards.push({ card: 'Capítulo ' + nx.id + ': ' + nx.when.charAt(0).toLowerCase() + nx.when.slice(1) });
         playStory('ending', step, { level: lvId, extraCards: cards, zone: 'congelador' });
         return;
       }
@@ -1943,7 +1950,7 @@
     opts = opts || {};
     var lv = getLevel(id);
     if (!lv) { toast('Este nivel aún se está congelando…'); return; }
-    if (!playable(id)) {
+    if (!opts.force && !playable(id)) {
       // capítulo construido pero con fecha por llegar: la ficha dice cuándo se abre
       var cs = chapterStateOf(id);
       if (current !== 'map') show('map');
@@ -2371,7 +2378,10 @@
           '<button class="btn btn-mint" data-act="map">' + icon('map', 22) + ' Mapa</button>' +
         '</div>';
     } else {
-      btns = '<button class="btn btn-pink btn-big" data-act="next" data-autofocus>' + (id >= count ? ((sum.pending || []).some(function (x) { return x && x.ending; }) ? '¡Ver el final!' : 'Continuar') : 'Siguiente') + ' ' + icon('next', 24) + '</button>' +
+      // primero lo pendiente: con el final de temporada por ver, el botón lo dice aunque ya haya más niveles abiertos
+      var hasEnding = (sum.pending || []).some(function (x) { return x && x.ending; });
+      var nextLabel = hasEnding ? '¡Ver el final!' : (id >= count ? 'Continuar' : 'Siguiente');
+      btns = '<button class="btn btn-pink btn-big" data-act="next" data-autofocus>' + nextLabel + ' ' + icon('next', 24) + '</button>' +
         '<div class="btn-row tri">' +
           '<button class="btn btn-gold" data-act="replay">' + icon('retry', 22) + ' Repetir</button>' +
           '<button class="btn btn-mint" data-act="map">' + icon('map', 22) + ' Mapa</button>' +
@@ -2462,11 +2472,16 @@
   function afterScenes(id, pend) {
     var count = openCount();
     var hadCliff = pend.some(function (p) { return p && (p.cliff || p.ending); });
+    var nextId = Math.min(count, id + 1);
+    if (hadCliff && id < count) {
+      // el rótulo del capítulo nuevo ya lo anuncia: sin el aviso «¡Capítulo N abierto!» encima
+      var cs = chapterStateOf(nextId);
+      if (cs && cs.built && cs.opens && !data().seen['open' + cs.id]) { data().seen['open' + cs.id] = true; persist(); }
+    }
     // se vuelve a pintar: las escenas recién vistas cambian el aviso de próximo rescate
     if (current !== 'map') show('map');
     else renderMap();
     if (queuedScenes.length) later(flushQueuedScenes, 300);
-    var nextId = Math.min(count, id + 1);
     if (hadCliff && id < count) {
       var ch = chapterOf(nextId);
       if (ch) later(function () { chapterBanner(ch); }, 200);
@@ -2516,12 +2531,21 @@
     track('roadmap_tap', { chapter: ch.id, state: ch.state, days: ch.days == null ? -1 : ch.days, built: !!ch.built });
     var R = roadmap();
     var scheduled = ch.state === 'programado';
-    var late = ch.state === 'retrasado';
-    var daysTxt = (R && ch.days != null && !late && ch.days >= 0 && (scheduled || (R.parseOpens(ch.opens) || {}).precision === 'dia')) ? R.daysText(ch.days) : '';
-    var ribbon = scheduled ? '¡Muy pronto!' : 'En construcción';
-    var first = ch.levels[0], last = ch.levels[ch.levels.length - 1];
+    var prec = (R && R.parseOpens(ch.opens) || {}).precision;
+    // «retrasado», o el día prometido sin el capítulo en esta copia del juego (lo más probable: una versión guardada)
+    var late = ch.state === 'retrasado' || (!ch.built && prec === 'dia' && ch.days === 0);
+    var daysTxt = (R && ch.days != null && !late && ch.days > 0 && (scheduled || prec === 'dia')) ? R.daysText(ch.days) : '';
+    var whenSmall = scheduled ? 'Fecha de apertura' : 'Apertura prevista';
+    var whenBig = ch.when || 'En construcción';
+    if (ch.state === 'retrasado') { whenSmall = 'Estado'; whenBig = '¡Ya casi!'; }
+    else if (/^Previsto para /.test(whenBig)) { whenSmall = 'Previsto para'; whenBig = whenBig.replace(/^Previsto para /, ''); whenBig = whenBig.charAt(0).toUpperCase() + whenBig.slice(1); }
     var online = true;
     try { online = navigator.onLine !== false; } catch (e) { online = true; }
+    var canDaily = dailyUnlocked();
+    var showReload = late && online;
+    var tri = showReload && canDaily;
+    var ribbon = scheduled ? '¡Muy pronto!' : 'En construcción';
+    var first = ch.levels[0], last = ch.levels[ch.levels.length - 1];
     var note = late ? 'Se está tardando un poquito más de lo previsto. ¡Ya casi!' + (online ? ' Si ya se anunció, toca «Actualizar»: puede que tengas una versión guardada del juego.' : ' Abre el juego con internet para recibir la versión nueva.')
       : scheduled ? 'Los niveles ' + first + ' a ' + last + ' ya están listos: se abren solos ese día.'
       : 'Los niveles ' + first + ' a ' + last + ' se están congelando… Mientras tanto: el Reto Diario y las estrellas que te faltan.';
@@ -2536,13 +2560,13 @@
         '<div class="rm-head"><span class="rm-face">' + portrait(face[0], face[1]) + '</span>' +
           '<div class="rm-txt"><h2 class="rm-name">' + esc(ch.name) + '</h2>' + (ch.teaser ? '<p class="rm-teaser">' + esc(ch.teaser) + '</p>' : '') + '</div></div>' +
         '<div class="rm-when"><span class="rm-ico">' + icon(scheduled ? 'calendar' : 'cone', 30) + '</span>' +
-          '<span class="rm-when-txt"><small>' + (scheduled ? 'Fecha de apertura' : 'Apertura prevista') + '</small><b>' + esc(ch.when || 'En construcción') + '</b>' +
+          '<span class="rm-when-txt"><small>' + esc(whenSmall) + '</small><b>' + esc(whenBig) + '</b>' +
           (daysTxt ? '<small class="rm-days">' + esc(daysTxt) + '</small>' : '') + '</span></div>' +
         '<p class="rm-note">' + esc(note) + '</p>' +
-        '<div class="btn-row">' +
-          (late && online ? '<button class="btn btn-pink" data-act="reload">' + icon('retry', 22) + ' Actualizar</button>' : '') +
-          (dailyUnlocked() ? '<button class="btn btn-gold" data-act="daily">' + icon('flame', 22) + ' Reto de hoy</button>' : '') +
-          '<button class="btn btn-ice" data-act="share">' + icon('share', 22) + ' Avisar a un amigo</button>' +
+        '<div class="btn-row' + (tri ? ' tri' : '') + '">' +
+          (showReload ? '<button class="btn btn-pink" data-act="reload">' + icon('retry', 22) + ' Actualizar</button>' : '') +
+          (canDaily ? '<button class="btn btn-gold" data-act="daily">' + icon('flame', 22) + (tri ? ' Reto' : ' Reto de hoy') + '</button>' : '') +
+          '<button class="btn btn-ice" data-act="share" aria-label="Avisar a un amigo">' + icon('share', 22) + ' Avisar</button>' +
         '</div>' +
       '</div>',
     { label: 'Capítulo ' + ch.id, guard: true, onEsc: function () { closeOverlay('roadmap'); } });
@@ -2561,7 +2585,7 @@
   function roadmapShareText(ch) {
     var when = ch.when ? ch.when.charAt(0).toLowerCase() + ch.when.slice(1) : 'en construcción';
     var n = openCount();
-    return '🥥 Cocardo: ¡Rescate Helado!\nCapítulo ' + ch.id + ' «' + ch.name + '»: ' + when + '. ¿Terminas los ' + n + ' niveles antes?';
+    return '🥥 Cocardo: ¡Rescate Helado!\nCapítulo ' + ch.id + ' «' + ch.name + '»: ' + when + (/[!?…]$/.test(when) ? ' ' : '. ') + '¿Terminas los ' + n + ' niveles antes?';
   }
 
   function countUp(node, target, ms, delay) {
@@ -3139,7 +3163,7 @@
         d.unlocked = Math.max(d.unlocked, id);
         persist();
         closeAllOverlays();
-        if (opts && opts.intro) { show('map'); openLevel(id); return true; }
+        if (opts && opts.intro) { show('map'); openLevel(id, { force: true }); return true; }
         return startLevel(id, { seed: opts && opts.seed });
       },
       // Fin forzado: usa Cocardo.Game._debugEnd si existe (resultado real); stars/near fuerzan valores
