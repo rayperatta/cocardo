@@ -29,7 +29,7 @@ const VIEW = { width: 540, height: 960, dpr: 2 };
 // Guardado base: todo desbloqueado, tutoriales e historias vistas, sin música del juego (la pone el montaje)
 function guardadoBase() {
   const seen = {};
-  for (let i = 1; i <= 30; i++) seen['teach' + i] = true;
+  for (let i = 1; i <= 120; i++) seen['teach' + i] = true;   // hasta Roadmap.MAX_LEVELS
   return {
     v: 1, unlocked: 30, stars: Array(30).fill(3), best: Array(30).fill(0),
     boosters: { cucharon: 3, chorro: 3, batido: 3 }, boostersUnlocked: { cucharon: true, chorro: true, batido: true },

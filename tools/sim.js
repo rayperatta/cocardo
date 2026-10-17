@@ -45,14 +45,16 @@ const INTRO_MIN_TURNS = 8; // L1-L5: que no «se juegue solo» (en promedio al m
 function targetFor(lvl) {
   if (lvl.id <= 5) return { kind: lvl.boss ? 'BOSS' : 'intro', lo: 90, hi: 100, aim: lvl.boss ? 94 : 98 };
   if (lvl.final) return { kind: 'FINAL', lo: 35, hi: 55, aim: 50 };
-  if (lvl.boss || lvl.hard) return { kind: lvl.boss ? 'BOSS' : 'hard', lo: 40, hi: 60, aim: Math.round(58 - (lvl.id - 10) * 0.4) };
-  return { kind: 'normal', lo: 60, hi: 85, aim: 82 - (lvl.chapter - 2) * 4 };
+  // la curva baja poco a poco durante la temporada 1 y se queda en el nivel del capítulo 6 para los capítulos
+  // 7+ (temporadas nuevas): la dificultad de ahí en adelante sale de las mecánicas, no de recortar la banda
+  if (lvl.boss || lvl.hard) return { kind: lvl.boss ? 'BOSS' : 'hard', lo: 40, hi: 60, aim: Math.max(50, Math.round(58 - (lvl.id - 10) * 0.4)) };
+  return { kind: 'normal', lo: 60, hi: 85, aim: Math.max(66, 82 - (lvl.chapter - 2) * 4) };
 }
 
 // Curva de movimientos (DISENO §7): rango por capítulo. Nunca menos de 18: el reto diario (niveles 6..25)
 // juega con 2 menos y debe quedar en 16 o más.
 const MOVES_RANGE = { 1: [20, 24], 2: [20, 26], 3: [22, 28], 4: [22, 28], 5: [22, 32], 6: [22, 32] };
-function movesRange(lvl) { return MOVES_RANGE[lvl.chapter] || [18, 32]; }
+function movesRange(lvl) { return MOVES_RANGE[Math.min(6, lvl.chapter)] || [18, 32]; }   // capítulos 7+: como el 6
 
 // ---------------------------------------------------------------- bot
 function isSlot(cell) { return !!cell && !cell.b && !(cell.p && cell.p.frost); }

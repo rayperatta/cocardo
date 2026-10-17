@@ -614,7 +614,8 @@ tests/*.test.js (node --test), tools/sim.js
 
 ## 16. v1 cut-list (do NOT build)
 
-- **Modes:** Pedido Infinito (endless), extra modes, more than 30 levels, level editor.
+- **Modes:** Pedido Infinito (endless), extra modes, level editor. (Levels beyond 30 are no longer cut: they ship chapter by
+  chapter with an opening date — see `docs/CALENDARIO.md` and `js/core/roadmap.js`.)
 - **Monetization:** coins, shop, continues or «+5 movimientos», lives or energy, ads, in-app purchases.
 - **Online:** accounts, leaderboards, analytics.
 - **Extra pieces and mechanics:** 2×2 square matches, the Hélice/propeller, a jelly floor layer, diagonal gravity, conveyors, portals, spreading chocolate, timed levels, pre-level boosters.

@@ -14,8 +14,11 @@ Cocardo descubrió que su congelador viejo hace el helado más rico del mundo…
 quiere 500 litros por sabor, Cherry quiere un imperio y Banano busca a su hermana. Tú eres el ayudante secreto
 que descongela a las víctimas mientras la historia avanza igual que en la serie.
 
-- **30 niveles en 6 capítulos** que siguen el orden de la serie: *La nieve de Lima*, *Necesitamos un nuevo
+- **30 niveles en 6 capítulos** (Temporada 1) que siguen el orden de la serie: *La nieve de Lima*, *Necesitamos un nuevo
   sabor*, *Voy a ampliar el menú*, *Cherry conoce el negocio*, *La fuga* y *Se acabó el sabor*.
+- **Capítulos en construcción con fecha**: el mapa sigue hacia arriba con los capítulos 7 a 24 (temporadas 2 a 4) en
+  obra, cada uno con su fecha de apertura prevista y una ficha con teaser y cuenta regresiva. Un capítulo construido
+  puede llevar fecha y se abre solo ese día (medianoche local). Calendario y reglas: `docs/CALENDARIO.md`.
 - **Escenas de historia con frases reales** de la serie, cliffhangers de «CONTINUARÁ...» y el final de temporada.
 - **16 personajes** con su aspecto de la serie: Cocardo, Lima, Cherry, Don Piña, Banano, Banana, Fresa,
   Durazna, Uva y Naranja, más Limón, la oficial, el oficial Sandía, el guardaespaldas, el repartidor y la
@@ -71,7 +74,8 @@ css/game.css            estilos del tablero
 js/core/rng.js          generador aleatorio con semilla (mulberry32)
 js/core/engine.js       motor match-3 puro y determinista
 js/core/replay.js       reproduce los eventos del motor (lo usan las pruebas)
-js/core/levels.js       los 30 niveles y capítulos
+js/core/levels.js       los niveles y capítulos construidos (30 en la temporada 1; un capítulo puede traer fecha de apertura)
+js/core/roadmap.js      capítulos en construcción con fecha prevista y la lógica de fechas (estados y textos del mapa)
 js/core/daily.js        Reto Diario y texto para compartir
 js/core/progress.js     fusión de guardados local/nube, resumen público y reglas del apodo
 js/story.js             guion, consejos, burlas y álbum
@@ -104,10 +108,12 @@ node tools/sim.js 1-30 --seeds 300   # bots que juegan cada nivel para medir la 
 node tools/build-single.cjs      # versión de un solo archivo en dist/
 node tools/build-icons.cjs       # regenera icons/ (íconos, favicon y la imagen de vista previa) desde el arte SVG
 node tools/record.cjs --level 12 --mp4   # un bot juega el nivel y lo graba en vertical (clips/), para TikTok
+node tools/calendario.js [--hoy 2026-10-30]   # qué capítulos ve el jugador ese día y qué falta por construir o publicar
 ```
 
 Abre `#debug` al final de la dirección (por ejemplo `index.html#debug`) para tener `Cocardo.debug` en la consola:
-`unlockAll()`, `go(n)`, `win()`, `lose()` y otros atajos de prueba.
+`unlockAll()`, `go(n)`, `win()`, `lose()`, `today(20261030)` (simula otra fecha para ver qué capítulos se abren) y otros
+atajos de prueba.
 
 ## Créditos
 

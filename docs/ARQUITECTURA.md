@@ -28,7 +28,7 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
   each file's IIFE. No transpilation: target evergreen browsers (ES2019 is fine: arrow functions, classes, const/let,
   template strings, spread; avoid `?.`/`??` only if you want old Safari 13 — they are allowed).
 - Script load order in `index.html`:
-  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/core/progress.js, js/story.js, js/art.js,
+  `js/core/rng.js, js/core/engine.js, js/core/levels.js, js/core/daily.js, js/core/roadmap.js, js/core/progress.js, js/story.js, js/art.js,
   js/art-characters.js, js/audio.js, js/save.js, js/fx.js, js/render.js, js/game.js, js/cloud-config.js, js/cloud.js,
   js/analytics.js, js/clip.js, js/ui.js, js/main.js`.
 
@@ -38,6 +38,7 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
 |---|---|---|
 | `js/core/rng.js`, `js/core/engine.js`, `js/core/replay.js`, `tests/engine.test.js`, `tests/fuzz.test.js`, `tests/helpers.js` | Engine (done) | pure |
 | `js/core/levels.js`, `js/core/daily.js`, `js/story.js`, `tests/levels.test.js`, `tests/daily.test.js` | Content | pure data/logic |
+| `js/core/roadmap.js`, `tests/roadmap.test.js`, `tools/calendario.js`, `docs/CALENDARIO.md` | Content (live-ops) | pure data/logic |
 | `js/art.js`, `tools/art-preview.html` | Art (board) | browser (strings only, no DOM needed) |
 | `js/art-characters.js`, `tools/portraits-preview.html` | Art (characters) | browser (strings only); adds `Cocardo.Art.characters` and `Cocardo.Art.portrait` |
 | `js/audio.js`, `tools/audio-preview.html` | Audio (done) | browser |
@@ -220,12 +221,18 @@ global state. All randomness comes from `state.rng` through `Cocardo.RNG.next`.
 
 ```js
 Cocardo.Levels = {
-  list: [ level1, ..., level30 ],          // level objects as in 4.1
-  chapters: [ { id:1, name:'La heladería en quiebra', zone:'Heladería', color:'#…', levels:[1,2,3,4,5] }, ... ],  // 6 chapters
+  list: [ level1, ..., levelN ],           // level objects as in 4.1 (built levels only; 30 in season 1)
+  chapters: [ { id:1, name:'La nieve de Lima', zone:"Coco's Scoops", color:'#…', levels:[1,2,3,4,5], opens?:'YYYY-MM-DD' }, ... ],
   get(id) -> level | null,
-  count: 30,
+  count: list.length,
 };
 ```
+
+`chapters[i].opens` (optional, local date) time-gates a **built** chapter: until that day the map shows it as
+«programado» with the date and its levels cannot be started (`UI.openLevel` refuses; `Cocardo.debug.go` ignores
+the gate). Chapters that are not built yet live in `Cocardo.Roadmap.planned` (§17), never here. Level ids stay
+contiguous: chapter `k` owns levels `5k-4 … 5k`. New chapters are appended to `list` and `chapters`; nothing
+else (save format, cloud rules) needs to change up to `Roadmap.MAX_LEVELS` levels.
 
 ## 6. `Cocardo.Daily` (js/core/daily.js) — pure
 
@@ -308,10 +315,12 @@ Cocardo.Save = {
   defaults() -> data,
 };
 ```
-`data = { v:1, unlocked:1, stars:Array(30).fill(0), best:Array(30).fill(0), boosters:{cucharon:0, chorro:0, batido:0},
+`data = { v:1, unlocked:1, stars:Array(MAX).fill(0), best:Array(MAX).fill(0), boosters:{cucharon:0, chorro:0, batido:0},
 boostersUnlocked:{cucharon:false, chorro:false, batido:false}, rescued:[], seen:{}, daily:{ last:0, streak:0,
 bestStreak:0, results:{} }, settings:{ sound:true, vibra:true, motion:'auto'|'on'|'off', music:false, skipStory:false,
 clips:false }, cloud:{ on:false, nick:'', avatar:'', uid:'' }, ref:'', rev:'' }`.
+`MAX` = `Cocardo.Roadmap.MAX_LEVELS` (120 = 24 chapters × 5): the arrays are always that long, so adding a chapter never
+migrates the save; `unlocked` may point past the last built level (the map clamps it to what is playable today).
 `cloud` is a local copy of the cloud profile (so the title chip renders before the SDK loads); `ref` is the nickname
 that invited this player (`?r=<nick>`), set once; `rev` is the id of the cloud save this device already contains
 (set by `Cocardo.Cloud` after a push or a sync; see `Progress.merge`).
@@ -423,4 +432,39 @@ Cocardo.Clip = {
 
 `Cocardo.Track.event(name, params)` sends to GA4 when `CloudConfig.ga4` is set (gtag loaded lazily, events queued
 until then); no-op otherwise. Events: `level_start`, `level_end`, `daily_end`, `share`, `clip`, `clips_toggle`,
-`sign_in`, `sign_out`, `nick_set`, `referral`, `pwa_open`.
+`sign_in`, `sign_out`, `nick_set`, `referral`, `pwa_open`, `roadmap_tap` (`{ chapter, state, days, built }`: a player opened
+the sheet of a chapter that is not playable yet — the demand signal for new levels, see `docs/CALENDARIO.md`).
+
+## 17. `Cocardo.Roadmap` (js/core/roadmap.js) — pure data + date logic
+
+Chapters that are announced but not built yet («en construcción»), plus the date logic shared by the map, the
+tests and `tools/calendario.js`. No `Date` inside: callers pass the local date key `YYYYMMDD` (`UI.todayKey()`,
+overridable with `Cocardo.debugToday` / `Cocardo.debug.today(key)` under `#debug`).
+
+```js
+Cocardo.Roadmap = {
+  LEVELS_PER_CHAPTER: 5,
+  MAX_LEVELS: 120,                       // save arrays, cloud clamps and firestore.rules share this cap
+  seasons: [ { id:1, name:'La Nieve de Lima', chapters:[1..6] }, { id:2, … }, … ],
+  planned: [ { id:7, season:2, name:'…' (≤ 26 chars), zone:'…', color:'#…', teaser:'…' (≤ 70), levels:[31..35], opens:'2026-10-30' }, … ],
+  parseOpens(s) -> { precision:'dia'|'mes'|'anio', first:key, last:key } | null,   // 'YYYY-MM-DD' | 'YYYY-MM' | 'YYYY'
+  stateFor(opens, built, today) -> 'abierto' | 'programado' | 'construccion' | 'retrasado',
+  whenText(opens, built, today) -> 'Se abre el viernes 30 de octubre' | 'Se abre mañana' | '¡Se abre hoy!' | 'Previsto para noviembre' | 'Previsto para 2027' | 'En construcción · ¡ya casi!' | 'Abierto desde el …',
+  daysUntil(opens, today) -> int | null, daysText(n) -> 'faltan 13 días' | 'falta 1 día' | '¡hoy!' | '',
+  dayText(key, withYear) -> 'viernes 30 de octubre', weekday(key) -> 0..6 (domingo = 0), daysBetween(a, b) -> int,
+  seasonOf(chapterId) -> season | null,
+  merged(builtChapters, today) -> [ { …chapter, built, state, when, days, season, seasonName } ],   // built first, then planned ids > last built
+  openCount(builtChapters, today) -> last playable level id (contiguous open built chapters; a scheduled chapter hides everything after it),
+  nextOpening(builtChapters, today) -> merged entry of the first chapter that is not 'abierto' | null,
+  chapterOfLevel(builtChapters, levelId) -> merged entry | null,
+};
+```
+
+States: `abierto` built and playable (no `opens`, or `today >= opens`); `programado` built, `opens` in the future
+(map: locked nodes with a calendar badge, zone head with the date); `construccion` not built, planned date still ahead
+(map: dark «obra» zone with yellow tape, ghost nodes, zone head with `whenText`); `retrasado` not built and the planned
+period is over (map says «¡ya casi!», never a stale date). A day-precision date is a promise: only use it for chapters
+that are built or less than 6 weeks away (`tests/roadmap.test.js` enforces it). To build a chapter: append its 5 levels
+to `Levels.list`, append its chapter (with `opens`) to `Levels.chapters`, add story/tips, run `tools/sim.js` and the
+tests, then `node tools/calendario.js` — the planned entry can stay (it is ignored once the id is built). Full
+procedure and release rules: `docs/CALENDARIO.md`.

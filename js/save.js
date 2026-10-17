@@ -9,7 +9,13 @@
 
   var KEY = 'cocardo.v1';
   var BACKUP_KEY = 'cocardo.v1.backup';   // copia del guardado de una versión más nueva
-  var LEVELS = 30;
+  // Tope de niveles de los arreglos stars/best: Cocardo.Roadmap.MAX_LEVELS (24 capítulos × 5). El guardado
+  // crece una sola vez hasta el tope, así un capítulo nuevo nunca pide migrar el guardado.
+  var LEVELS = 120;
+  try {
+    var RM = Cocardo.Roadmap || (typeof require === 'function' ? require('./core/roadmap.js') : null);
+    if (RM && RM.MAX_LEVELS) LEVELS = RM.MAX_LEVELS;
+  } catch (e) { /* tope por defecto */ }
   var BOOSTERS = ['cucharon', 'chorro', 'batido'];
   var BOOSTER_CAP = 9;
   var DAILY_KEEP = 7;

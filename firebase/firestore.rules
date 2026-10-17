@@ -22,7 +22,7 @@ service cloud.firestore {
     function validProfile(d) {
       return validNick(d.nick) && validKey(d.nickKey)
         && d.avatar is string && d.avatar.size() >= 1 && d.avatar.size() <= 20
-        && isInt(d.stars, 0, 90) && isInt(d.levels, 0, 30) && isInt(d.rescued, 0, 16)
+        && isInt(d.stars, 0, 360) && isInt(d.levels, 0, 120) && isInt(d.rescued, 0, 16)   // 120 niveles = Roadmap.MAX_LEVELS
         && isInt(d.bestStreak, 0, 1000000) && d.finished is bool
         && d.keys().hasOnly(['nick', 'nickKey', 'avatar', 'stars', 'levels', 'rescued', 'bestStreak', 'finished', 'updatedAt']);
     }

@@ -459,6 +459,9 @@
       ] }),
   ];
 
+  // Un capítulo construido puede traer opens: 'YYYY-MM-DD' (fecha local de apertura): hasta ese día el mapa lo
+  // muestra «programado» y no se puede jugar (ver js/core/roadmap.js y docs/CALENDARIO.md). Los capítulos que
+  // todavía no tienen niveles viven en Roadmap.planned, no aquí.
   var chapters = [
     { id: 1, name: 'La nieve de Lima', zone: "Coco's Scoops", color: '#ff6fa5', levels: [1, 2, 3, 4, 5] },
     { id: 2, name: 'Necesitamos un nuevo sabor', zone: "Coco's Scoops", color: '#a1286a', levels: [6, 7, 8, 9, 10] },

@@ -184,6 +184,10 @@ empaquetador; en este proyecto se copia la idea o el código, no la dependencia.
 
 ## 5. Las diez siguientes acciones, por impacto frente a esfuerzo
 
+> **Niveles nuevos:** el calendario de capítulos (7 a 24), las reglas para acelerar o frenar según el recibimiento y el
+> procedimiento para construir y publicar cada capítulo están en `docs/CALENDARIO.md`. El mapa ya muestra los capítulos en
+> construcción con su fecha (`js/core/roadmap.js`).
+
 1. **Comprar cocardo.app + rescatehelado.com** y conectar GitHub Pages (§3). 1 hora.
 2. **Activar Firebase** (`docs/FIREBASE.md`) y probar el ranking con 3 amigos. 1 hora.
 3. **Poner GA4** y mirar `level_end` por nivel tras la primera semana; ajustar los 3 niveles donde más se pierde. 2 horas.

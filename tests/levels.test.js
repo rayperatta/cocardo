@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const Engine = require('../js/core/engine.js');
 const Levels = require('../js/core/levels.js');
 const Story = require('../js/story.js');
+const Roadmap = require('../js/core/roadmap.js');
 
 const COLORS = 'LFBUND';
 const VICTIMS = ['lima', 'fresa', 'banana', 'uva', 'naranja', 'durazna'];
@@ -21,28 +22,40 @@ const goalTypes = (lvl) => lvl.goals.map((g) => g.type);
 const hasGoal = (lvl, t) => goalTypes(lvl).includes(t);
 
 // ======================================================================= estructura
-test('Levels: 30 niveles en orden, get() y count', () => {
-  assert.equal(Levels.count, 30);
-  assert.equal(Levels.list.length, 30);
+// La temporada 1 (niveles 1-30) es canon y queda fija; los capítulos 7+ (js/core/roadmap.js) se añaden al final
+// y estas pruebas los cubren sin reescribirlas: lo cerrado (rescates, jefes, enseñanza) se comprueba hasta el 30.
+const S1 = 30;
+const N = Levels.count;
+
+test('Levels: niveles en orden (temporada 1 = 30), get() y count', () => {
+  assert.ok(Levels.count >= S1 && Levels.count % 5 === 0, 'capítulos completos de 5 a partir de los 30 del canon');
+  assert.equal(Levels.list.length, Levels.count);
   Levels.list.forEach((lvl, i) => {
     assert.equal(lvl.id, i + 1);
     assert.equal(lvl.chapter, Math.ceil(lvl.id / 5));
     assert.equal(Levels.get(lvl.id), lvl);
     assert.equal(Levels.get(String(lvl.id)), lvl);
   });
-  for (const bad of [0, 31, -1, 1.5, 'x', null, undefined]) assert.equal(Levels.get(bad), null);
+  for (const bad of [0, N + 1, -1, 1.5, 'x', null, undefined]) assert.equal(Levels.get(bad), null);
   const names = Levels.list.map((l) => l.name);
   names.forEach((n) => assert.ok(typeof n === 'string' && n.length >= 3 && n.length <= 28, 'nombre: ' + n));
-  assert.equal(new Set(names).size, 30, 'nombres repetidos');
+  assert.equal(new Set(names).size, N, 'nombres repetidos');
   assert.deepEqual(JSON.parse(JSON.stringify(Levels.list)), Levels.list, 'niveles no JSON-clonables');
 });
 
-test('Levels: 6 capítulos del canon con zona, color y 5 niveles cada uno', () => {
+test('Levels: capítulos de 5 niveles; los 6 primeros son el canon de la temporada 1', () => {
   const names = ['La nieve de Lima', 'Necesitamos un nuevo sabor', 'Voy a ampliar el menú', 'Cherry conoce el negocio', 'La fuga', 'Se acabó el sabor'];
-  assert.equal(Levels.chapters.length, 6);
+  assert.ok(Levels.chapters.length >= 6);
+  assert.equal(Levels.chapters.length * 5, N, 'cada nivel pertenece a un capítulo');
   Levels.chapters.forEach((ch, i) => {
     assert.equal(ch.id, i + 1);
-    assert.equal(ch.name, names[i]);
+    if (i < 6) {
+      assert.equal(ch.name, names[i]);
+      assert.equal(ch.opens, undefined, 'la temporada 1 no lleva fecha de apertura');
+    } else {
+      assert.ok(typeof ch.name === 'string' && ch.name.length >= 3 && ch.name.length <= 26, `capítulo ${ch.id}: nombre`);
+      if (ch.opens !== undefined) assert.ok(Roadmap.parseOpens(ch.opens), `capítulo ${ch.id}: opens «${ch.opens}» inválido`);
+    }
     assert.ok(typeof ch.zone === 'string' && ch.zone.length > 3);
     assert.match(ch.color, /^#[0-9a-f]{6}$/i);
     assert.deepEqual(ch.levels, [1, 2, 3, 4, 5].map((k) => i * 5 + k));
@@ -175,7 +188,7 @@ test('Levels: villanos canónicos (Cocardo escarcha, Cherry encajona) y dueños 
       }
     }
   }
-  const owners = Levels.list.filter((l) => l.freezer).map((l) => [l.id, l.freezer.who]);
+  const owners = Levels.list.filter((l) => l.freezer && l.id <= S1).map((l) => [l.id, l.freezer.who]);
   assert.deepEqual(owners, [[10, 'cocardo'], [15, 'cocardo'], [20, 'cocardo'], [25, 'cereza'], [30, 'cocardo']]);
   // jefes con los dos villanos actuando
   for (const id of [20, 30]) assert.deepEqual(Levels.get(id).villains.map((v) => v.who).sort(), ['cereza', 'cocardo'], `L${id}`);
@@ -200,14 +213,15 @@ test('Levels: en los jefes con rescate, los amigos empiezan encajados (el rescat
   }
 });
 
-test('Levels: rescates del canon (cada víctima se rescata una sola vez)', () => {
-  const plan = Levels.list.filter((l) => l.rescue).map((l) => [l.id, l.rescue]);
+test('Levels: rescates del canon (cada víctima se rescata una sola vez en la temporada 1)', () => {
+  const plan = Levels.list.filter((l) => l.rescue && l.id <= S1).map((l) => [l.id, l.rescue]);
   assert.deepEqual(plan, [[10, ['lima']], [13, ['fresa']], [15, ['durazna']], [19, ['naranja']], [30, ['uva', 'banana']]]);
   assert.deepEqual(plan.flatMap((p) => p[1]).sort(), VICTIMS.slice().sort());
 });
 
 test('Levels: orden de enseñanza, ensure, jefes y niveles difíciles', () => {
-  const taught = Levels.list.filter((l) => l.teach).map((l) => [l.id, l.teach]);
+  Levels.list.filter((l) => l.teach).forEach((l) => assert.ok(TEACH.includes(l.teach), `L${l.id}: teach ${l.teach}`));
+  const taught = Levels.list.filter((l) => l.teach && l.id <= S1).map((l) => [l.id, l.teach]);
   assert.deepEqual(taught, [
     [1, 'swap'], [2, 'paleta'], [3, 'bomba'], [4, 'hielo'], [5, 'copa'], [6, 'hp2'], [7, 'cucharon'], [8, 'escarcha'],
     [9, 'villano'], [10, 'congelador'], [11, 'chorro'], [12, 'colores6'], [14, 'batido'], [16, 'cajas'], [17, 'cereza'],
@@ -230,10 +244,12 @@ test('Levels: orden de enseñanza, ensure, jefes y niveles difíciles', () => {
   assert.equal(firstSeen((l) => l.tokens && l.tokens.skin === 'prueba'), 22);
   assert.equal(Levels.get(21).tokens.skin, 'uva');
 
-  assert.deepEqual(Levels.list.filter((l) => l.ensure).map((l) => [l.id, l.ensure]), [[2, 'ph'], [3, 'bomba'], [5, 'copa']]);
-  assert.deepEqual(Levels.list.filter((l) => l.boss).map((l) => l.id), [5, 10, 15, 20, 25, 30]);
-  assert.deepEqual(Levels.list.filter((l) => l.hard).map((l) => l.id), [19, 23, 27, 29]);
-  assert.deepEqual(Levels.list.filter((l) => l.final).map((l) => l.id), [30]);
+  assert.deepEqual(Levels.list.filter((l) => l.ensure && l.id <= S1).map((l) => [l.id, l.ensure]), [[2, 'ph'], [3, 'bomba'], [5, 'copa']]);
+  assert.deepEqual(Levels.list.filter((l) => l.boss && l.id <= S1).map((l) => l.id), [5, 10, 15, 20, 25, 30]);
+  assert.deepEqual(Levels.list.filter((l) => l.hard && l.id <= S1).map((l) => l.id), [19, 23, 27, 29]);
+  assert.deepEqual(Levels.list.filter((l) => l.final).map((l) => l.id), [30], 'solo el 30 dispara el final de la temporada 1');
+  // capítulos nuevos: el 5.º nivel de cada uno es jefe (el mapa y las escenas de cliffhanger lo dan por hecho)
+  Levels.chapters.forEach((ch) => assert.ok(Levels.get(ch.levels[4]).boss, `capítulo ${ch.id}: su último nivel debe ser jefe`));
   // cada jefe tiene un congelador de verdad (salvo el del capítulo 1, que enseña la Copa)
   for (const lvl of Levels.list.filter((l) => l.boss && l.id > 5)) {
     assert.ok(lvl.freezer && lvl.freezer.hp >= 8, `L${lvl.id}: jefe sin congelador de al menos 8 PV`);
@@ -333,7 +349,7 @@ function scriptEntries() { return Object.entries(Story.scripts); }
 function lines(key) { return Story.scripts[key].filter((e) => e.text !== undefined); }
 
 test('Story: forLevel apunta a guiones existentes y los cliffhangers caen en los finales', () => {
-  for (let id = 1; id <= 30; id++) {
+  for (let id = 1; id <= N; id++) {
     const f = Story.forLevel(id);
     for (const k of ['pre', 'post', 'cliff']) if (f[k]) assert.ok(Array.isArray(Story.scripts[f[k]]), `L${id} ${k}: ${f[k]}`);
     assert.ok(f.pre, `L${id} sin escena previa`);
@@ -344,11 +360,16 @@ test('Story: forLevel apunta a guiones existentes y los cliffhangers caen en los
     const sc = Story.scripts[Story.forLevel(id).cliff];
     assert.equal(sc[sc.length - 1].card, 'CONTINUARÁ…', `cliff${id}`);
   }
+  // finales de capítulo de temporadas nuevas: terminan en CONTINUARÁ… o en un fin de temporada
+  for (let id = 35; id <= N; id += 5) {
+    const sc = Story.scripts[Story.forLevel(id).cliff];
+    assert.match(sc[sc.length - 1].card || '', /continuar|fin de la temporada/i, `cliff${id}`);
+  }
   const end = Story.scripts.ending;
   assert.deepEqual(end.slice(-2).map((e) => e.card), ['FIN DE LA TEMPORADA 1', '¿Segunda temporada…?']);
   // todas las escenas se usan
   const used = new Set();
-  for (let id = 1; id <= 30; id++) Object.values(Story.forLevel(id)).forEach((k) => used.add(k));
+  for (let id = 1; id <= N; id++) Object.values(Story.forLevel(id)).forEach((k) => used.add(k));
   scriptEntries().forEach(([k]) => assert.ok(used.has(k), `escena sin usar: ${k}`));
 });
 
@@ -442,7 +463,7 @@ test('Story: frases canónicas en boca de quien las dijo', () => {
 
 test('Story: el guion acompaña a los niveles (rescates, congeladores, Uva fugitiva)', () => {
   // tras cada nivel de rescate, la rescatada habla primero en la escena post
-  for (const lvl of Levels.list.filter((l) => l.rescue && l.id !== 30)) {
+  for (const lvl of Levels.list.filter((l) => l.rescue && !l.final)) {
     const post = Story.forLevel(lvl.id).post;
     assert.ok(post, `L${lvl.id} sin escena post`);
     assert.equal(lines(post)[0].who, lvl.rescue[0], `post${lvl.id}`);
@@ -452,7 +473,7 @@ test('Story: el guion acompaña a los niveles (rescates, congeladores, Uva fugit
   // una víctima no habla congelada después de ser rescatada
   const rescuedAt = {};
   Levels.list.forEach((l) => (l.rescue || []).forEach((w) => { rescuedAt[w] = l.id; }));
-  for (let id = 1; id <= 30; id++) {
+  for (let id = 1; id <= S1; id++) {
     const pre = Story.forLevel(id).pre;
     lines(pre).filter((e) => e.frozen).forEach((e) => assert.ok(id <= rescuedAt[e.who], `pre${id}: ${e.who} ya estaba libre`));
   }
@@ -463,7 +484,7 @@ test('Story: el guion acompaña a los niveles (rescates, congeladores, Uva fugit
 test('Story: helperFor, hintPeeker, villainFor y consejos', () => {
   const rescuedAt = {};
   Levels.list.forEach((l) => (l.rescue || []).forEach((w) => { rescuedAt[w] = l.id; }));
-  for (let id = 1; id <= 30; id++) {
+  for (let id = 1; id <= N; id++) {
     const lvl = Levels.get(id);
     const h = Story.helperFor(id);
     assert.ok(CHARACTERS.includes(h));
@@ -480,7 +501,11 @@ test('Story: helperFor, hintPeeker, villainFor y consejos', () => {
     assert.ok(typeof Story.tips[id] === 'string' && Story.tips[id].length > 10 && Story.tips[id].length <= 90, `tip ${id}`);
   }
   assert.equal(Story.villainFor(16), 'cereza'); // las cajas del inventario son de Cherry
-  assert.equal(Story.chapterTitles.length, 6);
+  assert.ok(Story.chapterTitles.length >= 6);
+  // ids fuera de la temporada 1 no revientan: caen en Cocardo / Banano hasta que el capítulo diga otra cosa
+  assert.ok(['cocardo', 'cereza'].includes(Story.villainFor(999)));
+  assert.equal(Story.helperFor(999), 'banano');
+  assert.equal(Story.hintPeeker(999), 'banano');
 });
 
 test('Story: burlas, textos de cascada y álbum de 16', () => {
@@ -508,7 +533,7 @@ test('Story: burlas, textos de cascada y álbum de 16', () => {
     assert.ok(a.quote.length >= 1 && a.quote.length <= 90, a.id);
     const u = a.unlock;
     assert.ok(['start', 'level', 'rescue'].includes(u.type));
-    if (u.type === 'level') assert.ok(Number.isInteger(u.level) && u.level >= 1 && u.level <= 30);
+    if (u.type === 'level') assert.ok(Number.isInteger(u.level) && u.level >= 1 && u.level <= N);
     if (u.type === 'rescue') {
       assert.equal(u.who, a.id);
       assert.ok(Levels.list.some((l) => (l.rescue || []).includes(a.id)), `${a.id} nunca se rescata`);

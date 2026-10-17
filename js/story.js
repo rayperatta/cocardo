@@ -432,7 +432,9 @@
     return String(id);
   }
 
-  function lvl(id) { var n = Number(id); return Number.isInteger(n) && n >= 1 && n <= 30 ? n : 1; }
+  var SEASON1_LAST = 30;
+  // Acepta cualquier id ≥ 1: los niveles de temporadas futuras (31+) caen en los respaldos de cada tabla
+  function lvl(id) { var n = Number(id); return Number.isInteger(n) && n >= 1 ? n : 1; }
 
   // Villano principal del HUD (burlas). El HUD además muestra a todos los de level.villains/level.freezer.
   var VILLAIN = [null,
@@ -443,11 +445,13 @@
     'cereza', 'cereza', 'cereza', 'cereza', 'cereza', // 21-25: el congelador de Cherry
     'cereza', 'cereza', 'cocardo', 'cereza', 'cocardo', // 26-30: final con el gran congelador de Cocardo
   ];
-  function villainFor(id) { return VILLAIN[lvl(id)]; }
+  // Niveles sin entrada en la tabla (temporadas futuras): Cocardo, salvo que el capítulo diga otra cosa al construirse
+  function villainFor(id) { return VILLAIN[lvl(id)] || 'cocardo'; }
 
   // Quién da el consejo: Lima (aún congelada en 6-10), luego las rescatadas, y Banano desde el capítulo 5.
   function helperFor(id) {
     var n = lvl(id);
+    if (n > SEASON1_LAST) return 'banano';   // temporadas futuras: Banano, hasta que cada capítulo diga la suya
     if (n <= 13) return 'lima';
     if (n <= 15) return 'fresa';
     if (n <= 17) return 'durazna';

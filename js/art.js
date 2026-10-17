@@ -961,7 +961,10 @@
     cloud: '<path d="M7 19.5Q3 19.5 3 15.5Q3 12 6.5 11.5Q7 6.5 12 6.5Q16 6.5 17 10.5Q21 10.5 21 14.5Q21 19.5 16.5 19.5Z" fill="' + C + '"/>',
     medal: '<path d="M8 2.5H16L13.5 9H10.5Z" fill="#d61f4b"/><circle cx="12" cy="14.8" r="6.2" fill="' + C + '" stroke="' + INK + '" stroke-width="1.2"/><path d="M12 11.2L13.1 13.5L15.6 13.8L13.8 15.5L14.3 18L12 16.8L9.7 18L10.2 15.5L8.4 13.8L10.9 13.5Z" fill="#fff6ea"/>',
     logout: '<path d="M10 4.5H6Q4.5 4.5 4.5 6V18Q4.5 19.5 6 19.5H10" fill="none" stroke="' + C + '" stroke-width="2.6" stroke-linecap="round"/><path d="M9.5 12H20M16 7.5L20.5 12L16 16.5" fill="none" stroke="' + C + '" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
-    check: '<path d="M4 12.5L9.5 18L20 6.5" fill="none" stroke="' + C + '" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>'
+    check: '<path d="M4 12.5L9.5 18L20 6.5" fill="none" stroke="' + C + '" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    // cono de obra (capítulos en construcción) y reloj (cuenta regresiva): colores fijos, como star y flame
+    cone: '<path d="M12 2.6Q13.6 2.6 14 4.2L17.6 17.5H6.4L10 4.2Q10.4 2.6 12 2.6Z" fill="#ff8a3d" stroke="' + INK + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.9 8.4H15.1M7.6 13.2H16.4" stroke="#fff6ea" stroke-width="2.4" stroke-linecap="round"/><rect x="3" y="17" width="18" height="4" rx="1.6" fill="' + INK + '"/>',
+    clock: '<circle cx="12" cy="12" r="9" fill="' + C + '" fill-opacity=".18" stroke="' + C + '" stroke-width="2.4"/><path d="M12 6.8V12.3L15.6 14.4" fill="none" stroke="' + C + '" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
   };
   function icon(name, opts) {
     opts = opts || {};

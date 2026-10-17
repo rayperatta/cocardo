@@ -1133,7 +1133,7 @@ const LEVELS_FILE = path.join(__dirname, '..', 'js', 'core', 'levels.js');
 test('fuzz js/core/levels.js (todos los niveles reales, seeds 0-2; si el archivo existe)', () => {
   if (!fs.existsSync(LEVELS_FILE)) { assert.ok(DESIGN.length === 30); return; }
   const Levels = require(LEVELS_FILE);
-  assert.ok(Levels && Array.isArray(Levels.list) && Levels.list.length === 30, 'Levels.list debe tener 30 niveles');
+  assert.ok(Levels && Array.isArray(Levels.list) && Levels.list.length >= 30 && Levels.list.length % 5 === 0, 'Levels.list: al menos los 30 de la temporada 1, en capítulos de 5');
   for (const l of Levels.list) fuzzLevel(l, 'levels.js', [0, 1, 2]);
 });
 test('fuzz: cobertura (≥300 partidas, victorias, derrotas, todos los eventos)', () => {

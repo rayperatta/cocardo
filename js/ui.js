@@ -127,6 +127,50 @@
     try { lv = L && typeof L.get === 'function' ? L.get(id) : null; } catch (e) { lv = null; }
     return lv || levelList()[id - 1] || null;
   }
+  /* ---------- hoja de ruta: capítulos con fecha (Cocardo.Roadmap) ---------- */
+
+  function roadmap() { return Cocardo.Roadmap || null; }
+  // Fecha local de hoy (YYYYMMDD). Con #debug, Cocardo.debugToday = 20261030 simula otro día (o debug.today(k)).
+  function todayKey() {
+    var o = Cocardo.debugToday;
+    if (o && /^\d{8}$/.test(String(o))) return Number(o);
+    return keyOf(dateParts(0));
+  }
+  // Capítulos construidos y en construcción, en orden y con su estado para hoy (Roadmap.merged).
+  // Sin Roadmap: solo los construidos, todos abiertos.
+  function chapterStates() {
+    var R = roadmap();
+    var chs = chapters();
+    if (R) {
+      try { return R.merged(chs, todayKey()); } catch (e) { console.error('[Cocardo.Roadmap.merged]', e); }
+    }
+    return chs.map(function (ch) {
+      return { id: ch.id, name: ch.name, zone: ch.zone, color: ch.color, levels: ch.levels, built: true, state: 'abierto', when: '', days: null, season: 1, seasonName: '' };
+    });
+  }
+  function chapterStateOf(id) {
+    var all = chapterStates();
+    for (var i = 0; i < all.length; i++) if (all[i].levels && all[i].levels.indexOf(id) >= 0) return all[i];
+    return null;
+  }
+  // Último nivel que se puede jugar hoy: capítulos construidos y ya abiertos por fecha, de corrido desde el 1
+  function openCount() {
+    var count = levelCount();
+    var R = roadmap();
+    if (!R) return count;
+    var n = count;
+    try { n = R.openCount(chapters(), todayKey()) | 0; } catch (e) { n = count; }
+    return Math.max(0, Math.min(count, n));
+  }
+  function playable(id) { return id >= 1 && id <= openCount(); }
+  // Tope de niveles del guardado (stars/best): hasta ahí puede avanzar `unlocked` aunque el capítulo no exista aún
+  function maxLevels() { var R = roadmap(); return (R && R.MAX_LEVELS) || levelCount(); }
+  function nextOpening() {
+    var R = roadmap();
+    if (!R) return null;
+    try { return R.nextOpening(chapters(), todayKey()); } catch (e) { return null; }
+  }
+
   // Respaldo por si Cocardo.Levels no cargó: mismos nombres, zonas y colores que js/core/levels.js
   var DEFAULT_CHAPTERS = [
     { id: 1, name: 'La nieve de Lima', zone: "Coco's Scoops", color: '#ff6fa5' },
@@ -644,8 +688,10 @@
         right = '<span class="rank-score' + (r.won ? '' : ' lost') + '">' + (r.won ? '⭐'.repeat(clamp(r.stars | 0, 1, 3)) + ' ' : '❌ ') + (r.score | 0).toLocaleString('es-MX') + '</span>';
         sub = (r.movesUsed | 0) + '/' + (r.movesTotal | 0) + ' movs';
       } else {
-        right = '<span class="rank-score">' + icon('star', 16) + ' ' + (r.stars | 0) + '</span>';
-        sub = (r.levels | 0) + ' niveles · ' + (r.rescued | 0) + ' rescates' + (r.finished ? ' · 🏁' : '');
+        // tope a lo jugable hoy: quien adelanta el reloj del teléfono no luce estrellas de capítulos aún cerrados
+        var capN = openCount();
+        right = '<span class="rank-score">' + icon('star', 16) + ' ' + Math.min(r.stars | 0, capN * 3) + '</span>';
+        sub = Math.min(r.levels | 0, capN) + ' niveles · ' + (r.rescued | 0) + ' rescates' + (r.finished ? ' · 🏁' : '');
       }
       return '<li class="rank-row' + (mine ? ' me' : '') + '"><span class="rank-pos' + (pos <= 3 ? ' top' : '') + '">' + medal + '</span>' +
         '<span class="rank-face">' + portrait(r.avatar || 'lima', 'feliz') + '</span>' +
@@ -1181,30 +1227,36 @@
     return bgCache[zone];
   }
 
+  var GHOST = { STEP: 84, HEAD: 150, TAIL: 34 };   // zonas en construcción: nodos fantasma más juntos
   function mapLayout() {
-    var chs = chapters();
+    var chs = chapterStates();
     var nodes = [];
     var zones = [];
+    var byId = {};
     var y = MAP.PAD_TOP;
     for (var k = chs.length - 1; k >= 0; k--) {
       var ch = chs[k];
+      var ghost = !ch.built;
+      var M = ghost ? GHOST : MAP;
       var n = (ch.levels || []).length;
-      var zh = MAP.HEAD + n * MAP.STEP + MAP.TAIL;
+      var zh = M.HEAD + n * M.STEP + M.TAIL;
       // la zona de arriba cubre el margen superior y la de abajo el inferior (sin huecos)
       var zTop = k === chs.length - 1 ? 0 : y;
       var zH = zh + (y - zTop) + (k === 0 ? MAP.PAD_BOT : 0);
-      zones.unshift({ ch: ch, idx: k, top: zTop, h: zH, headTop: y - zTop });
+      zones.unshift({ ch: ch, idx: k, top: zTop, h: zH, headTop: y - zTop, ghost: ghost });
       for (var j = 0; j < n; j++) {
         var id = ch.levels[j];
         var xf = XPAT[j % XPAT.length];
         if (j === n - 1) xf = 0.5;
         if (k % 2 === 1) xf = 1 - xf;
-        nodes.push({ id: id, ch: ch, chIdx: k, j: j, xf: xf, y: y + zh - MAP.TAIL - 30 - j * MAP.STEP });
+        var node = { id: id, ch: ch, chIdx: k, j: j, xf: xf, y: y + zh - M.TAIL - 30 - j * M.STEP, ghost: ghost };
+        nodes.push(node);
+        byId[id] = node;
       }
       y += zh;
     }
     nodes.sort(function (a, b) { return a.id - b.id; });
-    return { nodes: nodes, zones: zones, height: y + MAP.PAD_BOT };
+    return { nodes: nodes, zones: zones, byId: byId, height: y + MAP.PAD_BOT };
   }
 
   function buildMapShell() {
@@ -1212,7 +1264,7 @@
     sec.innerHTML =
       '<div class="col map-col">' +
         '<header class="topbar">' +
-          '<div class="pill stars-pill" aria-label="Estrellas">' + icon('star', 26) + '<b class="js-stars">0</b><small class="js-stars-max">/90</small></div>' +
+          '<div class="pill stars-pill" aria-label="Estrellas">' + icon('star', 26) + '<b class="js-stars">0</b><small class="js-stars-max">/' + levelCount() * 3 + '</small></div>' +
           '<button class="pill daily-btn" data-act="daily" aria-label="Reto Diario">' + icon('flame', 26) +
             '<span class="daily-txt">Reto</span><b class="js-streak">0</b><i class="dot" hidden></i><span class="mini-lock" hidden>' + icon('lock', 14) + '</span></button>' +
           '<button class="round-btn" data-act="album" aria-label="Álbum">' + icon('album', 26) + '</button>' +
@@ -1229,17 +1281,29 @@
     mapBuilt = true;
   }
 
+  function shakeNode(t) {
+    t.classList.remove('shake');
+    void t.offsetWidth;
+    t.classList.add('shake');
+  }
   function onMapClick(ev) {
-    var t = ev.target.closest('[data-act], [data-level]');
+    var t = ev.target.closest('[data-act], [data-level], [data-chapter]');
     if (!t) return;
     var act = t.getAttribute('data-act');
     if (t.hasAttribute('data-level')) {
       var id = +t.getAttribute('data-level');
+      if (!playable(id)) {
+        // capítulo construido con fecha por llegar: la ficha dice cuándo se abre
+        play('invalid');
+        shakeNode(t);
+        var cs = chapterStateOf(id);
+        if (cs && cs.state !== 'abierto') showRoadmap(cs.id);
+        else toast('Este nivel aún se está congelando…');
+        return;
+      }
       if (id > data().unlocked) {
         play('invalid');
-        t.classList.remove('shake');
-        void t.offsetWidth;
-        t.classList.add('shake');
+        shakeNode(t);
         toast('¡Primero supera el nivel ' + (data().unlocked) + '!');
         return;
       }
@@ -1249,7 +1313,13 @@
     else if (act === 'settings') show('settings');
     else if (act === 'rescue') {
       var lv = +t.getAttribute('data-target');
+      var cid = +t.getAttribute('data-chapter');
       if (lv) scrollMapTo(lv, true);
+      if (cid) later(function () { showRoadmap(cid); }, 350);
+    } else if (t.hasAttribute('data-chapter')) {
+      // nodo fantasma o rótulo de un capítulo en construcción / programado
+      play('tap');
+      showRoadmap(+t.getAttribute('data-chapter'));
     }
   }
 
@@ -1282,15 +1352,17 @@
     var sec = doc.getElementById('screen-map');
     var d = data();
     var count = levelCount();
+    var openN = openCount();
     var world = $('.map-world', sec);
     var geo = mapLayout();
     mapGeom = geo;
-    var cur = Math.min(d.unlocked, count);
-    var done30 = d.stars[count - 1] > 0;
+    var cur = Math.max(1, Math.min(d.unlocked, openN || count));
+    // ¿ya superó todo lo que se puede jugar hoy?
+    var doneAll = openN > 0 && (d.stars[openN - 1] | 0) > 0;
 
     // barra superior
     $('.js-stars', sec).textContent = totalStars();
-    $('.js-stars-max', sec).textContent = '/' + count * 3;
+    $('.js-stars-max', sec).textContent = '/' + (openN || count) * 3;   // máximo alcanzable hoy, no el de capítulos cerrados
     var dBtn = $('.daily-btn', sec);
     var unlockedDaily = dailyUnlocked();
     dBtn.classList.toggle('locked', !unlockedDaily);
@@ -1300,37 +1372,58 @@
     $('.dot', sec).hidden = !unlockedDaily || todayDone;
 
     // mundo
+    var R = roadmap();
     var html = '';
     geo.zones.forEach(function (z) {
       var ch = z.ch;
       var first = ch.levels && ch.levels[0];
-      var locked = first > d.unlocked;
-      var sub = (story().chapterTitles && story().chapterTitles[z.idx]) || '';
-      html += '<div class="zone zone-ch' + esc(ch.id) + (isShopZone(ch.zone) ? ' zone-shop' : '') + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
-        '<div class="zone-bg">' + zoneBg(ch.zone || ch.id) + '</div>' +
-        '<div class="zone-head" style="top:' + (z.headTop + 34) + 'px"><span class="zone-num">Capítulo ' + ch.id + '</span><b class="zone-name">' + esc(ch.name) + '</b>' +
-        (sub ? '<small class="zone-sub">' + esc(sub) + '</small>' : '') + (locked ? '<span class="zone-lock">' + icon('lock', 18) + '</span>' : '') + '</div>' +
+      var ghost = !!z.ghost;
+      var dated = !ghost && !!ch.state && ch.state !== 'abierto';   // construido, con fecha por llegar
+      var locked = ghost || dated || first > d.unlocked;
+      var season = R && ghost ? R.seasonOf(ch.id) : null;
+      var seasonFirst = !!(season && season.chapters[0] === ch.id);
+      var sub = ghost ? (seasonFirst ? ch.seasonName : '') : ((story().chapterTitles && story().chapterTitles[z.idx]) || (ch.season > 1 ? ch.seasonName : '') || '');
+      var num = 'Capítulo ' + ch.id + (ghost && ch.season ? ' · Temporada ' + ch.season : '');
+      var when = (ghost || dated) && ch.when ? '<span class="zone-when">' + icon(dated ? 'calendar' : 'cone', 14) + '<span>' + esc(ch.when) + '</span></span>' : '';
+      var btn = ghost || dated;
+      var tag = btn ? 'button' : 'div';
+      var attrs = btn ? ' type="button" data-chapter="' + ch.id + '" aria-label="' + esc(num + ', ' + ch.name + ', ' + (ch.when || 'en construcción')) + '"' : '';
+      html += '<div class="zone zone-ch' + esc(ch.id) + (ghost ? ' zone-planned zone-' + esc(ch.state || 'construccion') : (isShopZone(ch.zone) ? ' zone-shop' : '')) + (dated ? ' zone-dated' : '') + (locked ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
+        '<div class="zone-bg">' + (ghost ? '' : zoneBg(ch.zone || ch.id)) + '</div>' +
+        (ghost && z.idx === geo.zones.length - 1 ? '<div class="zone-fog" aria-hidden="true"></div>' : '') +
+        '<' + tag + ' class="zone-head' + (btn ? ' zone-head-btn' : '') + '" style="top:' + (z.headTop + 34) + 'px"' + attrs + '><span class="zone-num">' + esc(num) + '</span><b class="zone-name">' + esc(ch.name) + '</b>' +
+        (sub ? '<small class="zone-sub">' + esc(sub) + '</small>' : '') + when + (locked && !ghost ? '<span class="zone-lock">' + icon('lock', 18) + '</span>' : '') + '</' + tag + '>' +
         '</div>';
     });
     geo.zones.forEach(function (z) {
-      if (isShopZone(z.ch.zone)) html += mapNeonHtml(geo, z.idx, (z.ch.levels && z.ch.levels[0]) > d.unlocked);
+      if (!z.ghost && isShopZone(z.ch.zone)) html += mapNeonHtml(geo, z.idx, (z.ch.levels && z.ch.levels[0]) > d.unlocked || z.ch.state !== 'abierto');
     });
     html += '<svg class="map-road" aria-hidden="true"></svg>';
     geo.nodes.forEach(function (n) {
+      var zc = esc(n.ch.color || '#ff6fa5');
+      if (n.ghost) {
+        // nivel en construcción: nodo fantasma que abre la ficha del capítulo
+        html += '<button type="button" class="node node-ghost" data-chapter="' + n.ch.id + '" style="left:' + (n.xf * 100) + '%;top:' + n.y + 'px;--zc:' + zc + '" aria-label="' + esc('Nivel ' + n.id + ', en construcción, ' + (n.ch.when || '')) + '">' +
+          '<span class="node-disc"><span class="node-num">' + n.id + '</span></span>' +
+          (n.j === 0 ? '<span class="node-cone" aria-hidden="true">' + icon('cone', 16) + '</span>' : '') +
+          '</button>';
+        return;
+      }
       var lv = getLevel(n.id) || {};
       var stars = d.stars[n.id - 1] | 0;
-      var locked = n.id > d.unlocked;
-      var isCur = n.id === cur && !(n.id === count && done30);
+      var dated = !!n.ch.state && n.ch.state !== 'abierto';
+      var locked = dated || n.id > d.unlocked;
+      var isCur = n.id === cur && !(n.id === openN && doneAll) && !dated;
       var boss = isFinale(n.id);
-      var cls = 'node' + (boss ? ' node-boss' : '') + (locked ? ' node-locked' : '') + (stars ? ' node-done' : '') + (isCur ? ' node-current' : '');
-      var label = 'Nivel ' + n.id + (lv.name ? ', ' + lv.name : '') + (locked ? ', bloqueado' : (stars ? ', ' + stars + (stars === 1 ? ' estrella' : ' estrellas') : ''));
-      html += '<button class="' + cls + '" data-level="' + n.id + '" style="left:' + (n.xf * 100) + '%;top:' + n.y + 'px;--zc:' + esc(n.ch.color || '#ff6fa5') + '" aria-label="' + esc(label) + '">' +
+      var cls = 'node' + (boss ? ' node-boss' : '') + (locked ? ' node-locked' : '') + (dated ? ' node-dated' : '') + (stars ? ' node-done' : '') + (isCur ? ' node-current' : '');
+      var label = 'Nivel ' + n.id + (lv.name ? ', ' + lv.name : '') + (locked ? (dated ? ', ' + (n.ch.when || 'próximamente') : ', bloqueado') : (stars ? ', ' + stars + (stars === 1 ? ' estrella' : ' estrellas') : ''));
+      html += '<button class="' + cls + '" data-level="' + n.id + '" style="left:' + (n.xf * 100) + '%;top:' + n.y + 'px;--zc:' + zc + '" aria-label="' + esc(label) + '">' +
         (locked ? '' : '<span class="node-stars">' + starsHtml(stars) + '</span>') +
         '<span class="node-disc">' +
           (boss ? '<span class="node-face">' + portrait(bossFace(n.id), locked ? 'normal' : 'burlon') + '</span>' : '') +
           '<span class="node-num">' + n.id + '</span>' +
         '</span>' +
-        (locked ? '<span class="node-lock">' + icon('lock', 18) + '</span>' : '') +
+        (locked ? '<span class="node-lock">' + icon(dated ? 'calendar' : 'lock', dated ? 16 : 18) + '</span>' : '') +
         (lv.hard ? '<span class="node-drama">¡Drama!</span>' : '') +
         '</button>';
       // burbuja de rescate junto al nivel que libera a alguien
@@ -1344,9 +1437,9 @@
         });
       }
     });
-    if (!(done30 && cur === count)) {
+    if (!(doneAll && cur === openN)) {
       // manita que señala el nivel actual (del lado contrario a las burbujas de rescate)
-      var cn = geo.nodes[cur - 1];
+      var cn = geo.byId[cur];
       if (cn) {
         var hs = cn.xf <= 0.5 ? -1 : 1;
         var off = isFinale(cn.id) ? 72 : 60;
@@ -1357,19 +1450,30 @@
     world.innerHTML = html;
     drawRoad();
 
-    // aviso de próximo rescate
+    // aviso de próximo rescate; sin rescates pendientes, el próximo capítulo (programado o en construcción)
     var banner = $('.rescue-banner', sec);
     var nr = nextRescue();
-    if (nr) {
+    var nx = nextOpening();
+    banner.removeAttribute('data-chapter');
+    if (nr && nr.level <= openN) {
       // niveles por jugar contando el actual (actual 9, rescate en 10 -> «faltan 2 niveles»)
       var left = nr.level - cur + 1;
       var names = nr.all.every(captureSeen) ? nr.all.map(nameOf).join(' y ') : '???';
-      var when = left <= 1 ? '¡en este nivel!' : 'faltan ' + left + ' niveles';
+      var when2 = left <= 1 ? '¡en este nivel!' : 'faltan ' + left + ' niveles';
       banner.innerHTML = '<span class="rb-face">' + portrait(nr.who, 'normal', { silhouette: true }) + '</span>' +
-        '<span class="rb-txt"><small>Próximo rescate</small><b>' + esc(names) + ' · ' + esc(when) + '</b></span>' +
+        '<span class="rb-txt"><small>Próximo rescate</small><b>' + esc(names) + ' · ' + esc(when2) + '</b></span>' +
         '<span class="rb-flake">' + icon('snowflake', 22) + '</span>';
       banner.setAttribute('data-target', nr.level);
-      banner.setAttribute('aria-label', 'Próximo rescate: ' + names + ', ' + when);
+      banner.setAttribute('aria-label', 'Próximo rescate: ' + names + ', ' + when2);
+      banner.hidden = false;
+    } else if (nx && nx.levels && nx.levels.length) {
+      var small = nx.built ? 'Próximo capítulo' : 'Capítulo ' + nx.id + ' en construcción';
+      banner.innerHTML = '<span class="rb-face rb-build">' + icon('cone', 30) + '</span>' +
+        '<span class="rb-txt"><small>' + esc(small) + '</small><b>' + esc(nx.when || nx.name) + '</b></span>' +
+        '<span class="rb-flake rb-clock">' + icon('clock', 22) + '</span>';
+      banner.setAttribute('data-target', nx.levels[0]);
+      banner.setAttribute('data-chapter', nx.id);
+      banner.setAttribute('aria-label', small + ': ' + nx.name + (nx.when ? ', ' + nx.when : ''));
       banner.hidden = false;
     } else if (levelList().length) {
       banner.innerHTML = '<span class="rb-face happy">' + portrait('lima', 'feliz') + '</span><span class="rb-txt"><small>¡Bravo!</small><b>Todas las frutas a salvo</b></span>';
@@ -1379,8 +1483,27 @@
       banner.hidden = true;
     }
     requestAnimationFrame(function () { scrollMapTo(cur, false); });
+    announceOpenings(d, openN);
   }
   renderers.map = renderMap;
+
+  // Un capítulo con fecha que ya abrió y el jugador había llegado hasta él: se celebra una sola vez
+  function announceOpenings(d, openN) {
+    var fresh = null;
+    chapterStates().forEach(function (ch) {
+      if (!ch.built || !ch.opens || ch.state !== 'abierto' || !ch.levels || !ch.levels.length) return;
+      var key = 'open' + ch.id;
+      if (d.seen[key]) return;
+      if (ch.levels[0] > d.unlocked || ch.levels[0] > openN) return;
+      d.seen[key] = true;
+      if (!fresh) fresh = ch;
+    });
+    if (!fresh) return;
+    persist();
+    toast('¡Capítulo ' + fresh.id + ' abierto! «' + fresh.name + '»', 3200);
+    play('booster');
+    later(function () { scrollMapTo(fresh.levels[0], true); }, 250);
+  }
 
   // ¿La zona usa el fondo de la heladería? (mismo criterio que Art.background: es el fondo por defecto)
   function isShopZone(zone) {
@@ -1428,13 +1551,18 @@
       }
       return dd;
     }
-    var all = pathFor(pts);
-    var doneN = Math.min(pts.length, data().unlocked);
+    var builtN = 0;
+    mapGeom.nodes.forEach(function (n) { if (!n.ghost) builtN++; });
+    var all = pathFor(pts.slice(0, builtN));
+    // hacia los niveles en construcción el camino sigue punteado, como un plano
+    var future = builtN < pts.length ? pathFor(pts.slice(Math.max(0, builtN - 1))) : '';
+    var doneN = Math.min(builtN, openCount(), data().unlocked);
     var prog = pathFor(pts.slice(0, doneN));
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.setAttribute('width', W);
     svg.setAttribute('height', H);
     svg.innerHTML =
+      (future ? '<path class="road-future" d="' + future + '" fill="none" stroke="#fff6ea" stroke-width="12" stroke-linecap="round"/>' : '') +
       '<path d="' + all + '" fill="none" stroke="#2b1630" stroke-opacity=".55" stroke-width="30" stroke-linecap="round"/>' +
       '<path d="' + all + '" fill="none" stroke="#fff6ea" stroke-width="22" stroke-linecap="round"/>' +
       '<path d="' + all + '" fill="none" stroke="#bfe9ff" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 18"/>' +
@@ -1445,7 +1573,7 @@
     var sec = doc.getElementById('screen-map');
     var sc = $('.map-scroll', sec);
     if (!sc || !mapGeom) return;
-    var n = mapGeom.nodes[id - 1];
+    var n = (mapGeom.byId && mapGeom.byId[id]) || mapGeom.nodes[id - 1];
     if (!n) return;
     var top = Math.max(0, n.y - sc.clientHeight * 0.55);
     try {
@@ -1775,6 +1903,9 @@
         var hasSeason = el2.some(function (l) { return l && l.card && /segunda temporada/i.test(l.card); });
         if (!hasFin) cards.push({ card: 'FIN DE LA TEMPORADA 1' });
         if (!hasSeason) cards.push({ card: '¿Segunda temporada…?' });
+        // la respuesta a «¿Segunda temporada…?»: el siguiente capítulo y cuándo se abre
+        var nx = nextOpening();
+        if (nx && nx.when) cards.push({ card: 'Capítulo ' + nx.id + ': ' + nx.when.charAt(0).toLowerCase() + nx.when.slice(1) });
         playStory('ending', step, { level: lvId, extraCards: cards, zone: 'congelador' });
         return;
       }
@@ -1790,6 +1921,7 @@
   var session = null;
   var playToken = 0;
   var mounted = false;
+  var attempts = {};   // intentos por nivel en esta sesión (se manda a GA4 como `attempt`)
 
   function ensureMounted() {
     if (mounted) return true;
@@ -1811,6 +1943,14 @@
     opts = opts || {};
     var lv = getLevel(id);
     if (!lv) { toast('Este nivel aún se está congelando…'); return; }
+    if (!playable(id)) {
+      // capítulo construido pero con fecha por llegar: la ficha dice cuándo se abre
+      var cs = chapterStateOf(id);
+      if (current !== 'map') show('map');
+      if (cs && cs.state !== 'abierto') showRoadmap(cs.id);
+      else toast('Este nivel aún se está congelando…');
+      return;
+    }
     var fresh = unlockBoostersFor(id);
     var sc = scenesFor(id);
     function next() {
@@ -1852,7 +1992,7 @@
     var best = d.best[id - 1] | 0;
     var fresh = freshBoosters || [];
     var badges = '';
-    if (isFinale(id)) badges += '<span class="badge badge-boss">' + (id === levelCount() ? '¡Gran final!' : 'Final de capítulo') + '</span>';
+    if (isFinale(id)) badges += '<span class="badge badge-boss">' + (lv.final ? '¡Gran final!' : 'Final de capítulo') + '</span>';
     if (lv.hard) badges += '<span class="badge badge-drama">¡Drama!</span>';
     // fila compacta: capítulo + (estrellas y récord solo si ya se jugó)
     var meta = '<p class="intro-chapter">' + esc(ch ? 'Capítulo ' + ch.id + ' · ' + ch.name : '') + '</p>';
@@ -1945,7 +2085,9 @@
       onPause: function () { if (token === playToken) showPause(); },
     });
     requestAnimationFrame(function () { gameCall('resize'); });
-    track('level_start', { level: lv.id || id, daily: !!opts.daily, practice: !!opts.practice });
+    // intentos seguidos del mismo nivel en esta sesión (para ver la «cola larga» en GA4 sin tocar el guardado)
+    if (!opts.daily) { attempts[lv.id || id] = (attempts[lv.id || id] | 0) + 1; }
+    track('level_start', { level: lv.id || id, chapter: (lv.chapter | 0) || chapterOf(lv.id || id).id, daily: !!opts.daily, practice: !!opts.practice, attempt: opts.daily ? 0 : attempts[lv.id || id] });
     if (data().settings.clips && clipsSupported()) later(function () { if (token === playToken && session && !session.ended) startClip(); }, 350);
     return true;
   }
@@ -2078,14 +2220,15 @@
   // Calcula y guarda estrellas, récord, desbloqueo, rescates y premios. Devuelve el resumen para la Victoria.
   function recordCampaignWin(result, id) {
     var d = data();
-    var count = levelCount();
     var i = id - 1;
     var prev = d.stars[i] | 0;
     var stars = clamp((result.stars | 0) || 1, 1, 3);
     var sum = { id: id, stars: stars, prevStars: prev, firstWin: prev === 0, record: false, freed: [], rewards: [], score: result.score | 0 };
     d.stars[i] = Math.max(prev, stars);
     if ((result.score | 0) > (d.best[i] | 0)) { sum.record = prev > 0; d.best[i] = result.score | 0; }
-    d.unlocked = Math.max(d.unlocked, Math.min(count, id + 1));
+    // el desbloqueo puede apuntar a un nivel que todavía no existe (capítulo en construcción): el mapa lo
+    // limita a lo jugable hoy (openCount) y, al abrirse el capítulo, el siguiente nivel ya está libre
+    d.unlocked = Math.max(d.unlocked, Math.min(maxLevels(), id + 1));
     // rescatados: los que informa el motor y, si el nivel tenía objetivo de rescate, todos los de level.rescue
     var lv = getLevel(id);
     var freedNow = (result.rescued || []).slice();
@@ -2107,14 +2250,15 @@
     var pend = [];
     if (sc.post && !d.seen[sc.post] && script(sc.post)) pend.push(sc.post);
     if (sc.cliff && !d.seen[sc.cliff]) pend.push(sc.cliff === 'ending' ? { ending: true } : { cliff: sc.cliff });
-    if (id === count && !d.seen.ending && !pend.some(function (p) { return p && p.ending; })) pend.push({ ending: true });
+    if (lv && lv.final && !d.seen.ending && !pend.some(function (p) { return p && p.ending; })) pend.push({ ending: true });
     sum.pending = pend;
     return sum;
   }
 
   function campaignEnd(result, sess) {
     var id = result.levelId || sess.levelId;
-    track('level_end', { level: id, won: !!result.won, stars: result.stars | 0, moves_used: result.movesUsed | 0, moves_left: result.movesLeft | 0 });
+    track('level_end', { level: id, chapter: chapterOf(id).id, won: !!result.won, stars: result.stars | 0, moves_used: result.movesUsed | 0, moves_left: result.movesLeft | 0, attempt: attempts[id] | 0 });
+    if (result.won) attempts[id] = 0;
     if (result.won) {
       var sum = recordCampaignWin(result, id);
       showVictory(result, sess, sum);
@@ -2205,7 +2349,7 @@
     var daily = !!sum.daily;
     var stars = clamp((result.stars | 0) || 1, 1, 3);
     var id = result.levelId || sess.levelId;
-    var count = levelCount();
+    var count = openCount();   // lo jugable hoy: tras el último nivel abierto, «Continuar» lleva al mapa
     var rescued = (sum.rescuedAll || result.rescued || []).filter(function (w, i, a) { return a.indexOf(w) === i; });
     // un solo renglón aunque sean varios (L30: Uva y Banana), para que la tarjeta quepa sin desplazar
     var rNames = rescued.map(nameOf);
@@ -2313,9 +2457,10 @@
     });
   }
 
-  // Tras las escenas: mapa actualizado y, después de un cliffhanger, el rótulo del capítulo nuevo
+  // Tras las escenas: mapa actualizado y, después de un cliffhanger, el rótulo del capítulo nuevo; si ya no
+  // queda nada abierto, el mapa sube hasta el siguiente capítulo (programado o en construcción) y lo anuncia
   function afterScenes(id, pend) {
-    var count = levelCount();
+    var count = openCount();
     var hadCliff = pend.some(function (p) { return p && (p.cliff || p.ending); });
     // se vuelve a pintar: las escenas recién vistas cambian el aviso de próximo rescate
     if (current !== 'map') show('map');
@@ -2326,6 +2471,12 @@
       var ch = chapterOf(nextId);
       if (ch) later(function () { chapterBanner(ch); }, 200);
       later(function () { scrollMapTo(nextId, true); }, 120);
+    } else if (hadCliff && id >= count) {
+      var nx = nextOpening();
+      if (nx && nx.levels && nx.levels.length) {
+        later(function () { scrollMapTo(nx.levels[0], true); }, 120);
+        later(function () { roadmapBanner(nx); }, 450);
+      }
     }
   }
 
@@ -2337,6 +2488,80 @@
     col.appendChild(b);
     play('drama');
     later(function () { b.remove(); }, 3200);
+  }
+
+  // Rótulo del siguiente capítulo cuando todavía no se puede jugar (con su fecha)
+  function roadmapBanner(ch) {
+    var small = 'Capítulo ' + ch.id + (ch.built ? ' · ¡muy pronto!' : ' · en construcción');
+    var b = el('<div class="chapter-banner cb-roadmap" aria-live="polite"><small>' + esc(small) + '</small><b>' + esc(ch.name) + '</b>' +
+      (ch.when ? '<span class="cb-when">' + icon(ch.built ? 'calendar' : 'cone', 16) + '<span>' + esc(ch.when) + '</span></span>' : '') + '</div>');
+    var col = $('#screen-map .map-col');
+    if (!col) return;
+    col.appendChild(b);
+    play('drama');
+    later(function () { b.remove(); }, 3600);
+  }
+
+  // Cara que presenta cada temporada en la ficha del capítulo (el villano de la temporada)
+  var SEASON_FACE = { 1: ['cocardo', 'burlon'], 2: ['cereza', 'coqueta'], 3: ['pina', 'burlon'], 4: ['cocardo', 'burlon'] };
+
+  // Ficha de un capítulo que todavía no se puede jugar: nombre, teaser, fecha (o «previsto»), cuenta regresiva
+  // y qué hacer mientras tanto. Registra el toque (roadmap_tap): es la señal de cuánta gente espera más niveles.
+  function showRoadmap(cid) {
+    var ch = null;
+    chapterStates().forEach(function (c) { if (c.id === cid) ch = c; });
+    if (!ch) return;
+    if (ch.state === 'abierto') { if (ch.levels && ch.levels.length) scrollMapTo(ch.levels[0], true); return; }
+    if (isOpen('roadmap')) closeOverlay('roadmap', true);
+    track('roadmap_tap', { chapter: ch.id, state: ch.state, days: ch.days == null ? -1 : ch.days, built: !!ch.built });
+    var R = roadmap();
+    var scheduled = ch.state === 'programado';
+    var late = ch.state === 'retrasado';
+    var daysTxt = (R && ch.days != null && !late && ch.days >= 0 && (scheduled || (R.parseOpens(ch.opens) || {}).precision === 'dia')) ? R.daysText(ch.days) : '';
+    var ribbon = scheduled ? '¡Muy pronto!' : 'En construcción';
+    var first = ch.levels[0], last = ch.levels[ch.levels.length - 1];
+    var online = true;
+    try { online = navigator.onLine !== false; } catch (e) { online = true; }
+    var note = late ? 'Se está tardando un poquito más de lo previsto. ¡Ya casi!' + (online ? ' Si ya se anunció, toca «Actualizar»: puede que tengas una versión guardada del juego.' : ' Abre el juego con internet para recibir la versión nueva.')
+      : scheduled ? 'Los niveles ' + first + ' a ' + last + ' ya están listos: se abren solos ese día.'
+      : 'Los niveles ' + first + ' a ' + last + ' se están congelando… Mientras tanto: el Reto Diario y las estrellas que te faltan.';
+    var face = SEASON_FACE[ch.season] || SEASON_FACE[1];
+    var o = openOverlay('roadmap',
+      '<div class="card pop roadmap-card' + (late ? ' rm-late' : '') + '" style="--zc:' + esc(ch.color || '#ff6fa5') + '">' +
+        '<button class="close-btn" data-act="close" aria-label="Cerrar">' + icon('close', 22) + '</button>' +
+        '<div class="ribbon ribbon-drama"><span>' + esc(ribbon) + '</span></div>' +
+        '<div class="rm-tape" aria-hidden="true"></div>' +
+        '<p class="rm-chapter">' + esc('Capítulo ' + ch.id + (ch.season && ch.seasonName ? ' · Temporada ' + ch.season + ': ' + ch.seasonName : '')) + '</p>' +
+        (ch.season > 1 ? '<p class="rm-fan">Historia original del juego de fans · no oficial</p>' : '') +
+        '<div class="rm-head"><span class="rm-face">' + portrait(face[0], face[1]) + '</span>' +
+          '<div class="rm-txt"><h2 class="rm-name">' + esc(ch.name) + '</h2>' + (ch.teaser ? '<p class="rm-teaser">' + esc(ch.teaser) + '</p>' : '') + '</div></div>' +
+        '<div class="rm-when"><span class="rm-ico">' + icon(scheduled ? 'calendar' : 'cone', 30) + '</span>' +
+          '<span class="rm-when-txt"><small>' + (scheduled ? 'Fecha de apertura' : 'Apertura prevista') + '</small><b>' + esc(ch.when || 'En construcción') + '</b>' +
+          (daysTxt ? '<small class="rm-days">' + esc(daysTxt) + '</small>' : '') + '</span></div>' +
+        '<p class="rm-note">' + esc(note) + '</p>' +
+        '<div class="btn-row">' +
+          (late && online ? '<button class="btn btn-pink" data-act="reload">' + icon('retry', 22) + ' Actualizar</button>' : '') +
+          (dailyUnlocked() ? '<button class="btn btn-gold" data-act="daily">' + icon('flame', 22) + ' Reto de hoy</button>' : '') +
+          '<button class="btn btn-ice" data-act="share">' + icon('share', 22) + ' Avisar a un amigo</button>' +
+        '</div>' +
+      '</div>',
+    { label: 'Capítulo ' + ch.id, guard: true, onEsc: function () { closeOverlay('roadmap'); } });
+    o.addEventListener('click', function (ev) {
+      var t = ev.target.closest('[data-act]');
+      if (!t && ev.target === o) { closeOverlay(o); return; }
+      if (!t) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'close') closeOverlay(o);
+      else if (act === 'daily') { closeOverlay(o, true); show('daily'); }
+      else if (act === 'share') share(roadmapShareText(ch));
+      else if (act === 'reload') { try { location.reload(); } catch (e) { /* nada */ } }
+    });
+    return o;
+  }
+  function roadmapShareText(ch) {
+    var when = ch.when ? ch.when.charAt(0).toLowerCase() + ch.when.slice(1) : 'en construcción';
+    var n = openCount();
+    return '🥥 Cocardo: ¡Rescate Helado!\nCapítulo ' + ch.id + ' «' + ch.name + '»: ' + when + '. ¿Terminas los ' + n + ' niveles antes?';
   }
 
   function countUp(node, target, ms, delay) {
@@ -2964,6 +3189,11 @@
         return true;
       },
       screen: function () { var t = topOverlay(); return t ? t.name : current; },
+      // hoja de ruta: today(20261030) simula esa fecha local (null = hoy de verdad); roadmap() da los capítulos con estado
+      today: function (key) { Cocardo.debugToday = key || null; if (current === 'map') renderMap(); return todayKey(); },
+      roadmap: chapterStates,
+      openCount: openCount,
+      showRoadmap: showRoadmap,
       overlays: function () { return stack.map(function (e) { return e.name; }); },
       save: function () { return data(); },
       daily: function () { var i = dailyInfo(); return { key: i.key, num: i.num, levelId: i.level && i.level.id }; },
@@ -2991,5 +3221,6 @@
     _recordCampaignWin: recordCampaignWin,
     showAccount: showAccount,
     showProfileEditor: showProfileEditor,
+    showRoadmap: showRoadmap,
   };
 })();

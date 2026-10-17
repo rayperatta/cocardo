@@ -11,7 +11,7 @@ const Engine = require('../js/core/engine.js');
 const ti = (cascades, combo) => ({ valid: true, cascades, combo: !!combo, cleared: 3, specials: 0 });
 
 test('Daily: módulos puros (sin Date, Math.random ni DOM)', () => {
-  for (const f of ['daily.js', 'levels.js']) {
+  for (const f of ['daily.js', 'levels.js', 'roadmap.js']) {
     const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'core', f), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
     assert.doesNotMatch(src, /\bDate\s*[.(]|new\s+Date|Math\.random|document\.|localStorage|alert\(|confirm\(|prompt\(/, f);

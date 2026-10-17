@@ -14,6 +14,7 @@
 
   var FLAG = 'cocardo.cloud.on';     // hubo sesión en este navegador: al abrir se restaura sola
   var CACHE_MS = 45000;              // los rankings se vuelven a pedir como mucho cada 45 s
+  var MAXL = (Cocardo.Roadmap && Cocardo.Roadmap.MAX_LEVELS) || 120;   // mismo tope que firebase/firestore.rules
   var listeners = [];
   var state = 'off';                 // off | idle | loading | ready | error
   var fb = null, auth = null, db = null;
@@ -143,7 +144,7 @@
       nick: String(raw.nick || '').slice(0, 16),
       nickKey: String(raw.nickKey || '').slice(0, 16),
       avatar: String(raw.avatar || 'lima').slice(0, 20),
-      stars: num(raw.stars, 0, 0, 90), levels: num(raw.levels, 0, 0, 30), rescued: num(raw.rescued, 0, 0, 16),
+      stars: num(raw.stars, 0, 0, MAXL * 3), levels: num(raw.levels, 0, 0, MAXL), rescued: num(raw.rescued, 0, 0, 16),
       bestStreak: num(raw.bestStreak, 0, 0, 1e6), finished: !!raw.finished,
     };
   }

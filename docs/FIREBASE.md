@@ -92,6 +92,12 @@ Las reglas (`firebase/firestore.rules`) garantizan que:
 - los perfiles públicos (apodo, avatar, estrellas) y los rankings los puede leer cualquiera; el guardado completo
   (`users/{uid}/private/save`) solo su dueño.
 
+**Topes de niveles.** `validProfile` acepta hasta **120 niveles y 360 estrellas** (`Roadmap.MAX_LEVELS` en
+`js/core/roadmap.js`, el mismo tope que `js/cloud.js` y el guardado). Las reglas **no** se publican con `git push`: si
+cambias el tope, vuelve a correr `firebase deploy --only firestore:rules` **antes** de abrir el capítulo que lo necesite;
+si no, el perfil del primer jugador que pase de 30 niveles o 90 estrellas se rechaza y su progreso deja de subir
+(`docs/CALENDARIO.md` §4 lo incluye en la lista de publicación de cada capítulo).
+
 Qué se guarda de cada persona: `uid` de Firebase, apodo, avatar (un personaje del juego), estrellas, niveles,
 rescates, racha y el progreso del juego. **No** se guarda el correo ni el nombre de Google. Si publicas el juego
 con cuentas, añade una línea de privacidad en `landing.html` o en el README diciendo esto.

@@ -69,7 +69,7 @@ test('Progress.merge: con nube vacía o basura devuelve el local intacto', () =>
   assert.deepEqual(m.stars, a.stars);
   assert.equal(m.unlocked, 6);
   const m2 = Progress.merge(a, { stars: 'x', unlocked: 999, boosters: 5, daily: 'no' });
-  assert.equal(m2.unlocked, 30, 'el desbloqueo se limita a 30');
+  assert.equal(m2.unlocked, Progress.LEVELS, 'el desbloqueo se limita al tope de niveles (Roadmap.MAX_LEVELS)');
   assert.deepEqual(m2.stars, a.stars);
 });
 

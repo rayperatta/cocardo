@@ -7,7 +7,13 @@
   'use strict';
   var Cocardo = (typeof window !== 'undefined' ? (window.Cocardo = window.Cocardo || {}) : {});
 
-  var LEVELS = 30;
+  // Tope de niveles (Cocardo.Roadmap.MAX_LEVELS = 24 capítulos × 5): stars/best siempre miden esto
+  var LEVELS = 120;
+  try {
+    var RM = Cocardo.Roadmap || (typeof require === 'function' ? require('./roadmap.js') : null);
+    if (RM && RM.MAX_LEVELS) LEVELS = RM.MAX_LEVELS;
+  } catch (e) { /* tope por defecto */ }
+  var SEASON1_LAST = 30;   // «finished» del ranking = terminó la temporada 1 (nivel 30)
   var BOOSTERS = ['cucharon', 'chorro', 'batido'];
   var NICK_RE = /^[A-Za-z0-9_ÁÉÍÓÚÜÑáéíóúüñ]{3,16}$/;
   // palabras reservadas o que no queremos ver en un ranking público (lista corta, sin acentos ni mayúsculas)
@@ -61,7 +67,7 @@
       levels: levels,
       rescued: Array.isArray(d.rescued) ? d.rescued.length : 0,
       bestStreak: num(daily.bestStreak, 0, 0, 1e6),
-      finished: num(stars[LEVELS - 1], 0, 0, 3) > 0,
+      finished: num(stars[SEASON1_LAST - 1], 0, 0, 3) > 0,
     };
   }
 
