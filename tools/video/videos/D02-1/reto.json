@@ -1,0 +1,221 @@
+{
+ "id": "D02-1",
+ "rama": 0,
+ "formato": "F05",
+ "fecha": "2026-10-20",
+ "edicion": "normal",
+ "reto": 20,
+ "clave": 20261020,
+ "nivel": 6,
+ "nombre_nivel": "Uno por persona",
+ "movimientos": 19,
+ "villano": null,
+ "anfitrion": "cocardo",
+ "linea": "Uno por persona… y a ti ya no te quedan.",
+ "sin_rotulo_del_nivel": false,
+ "gancho": "Reto #20: ¿te sobra más de UNO?",
+ "titulo": "Reto #20: ganó por un movimiento",
+ "honesto": {
+  "gano": true,
+  "sobran": 1,
+  "usados": 18,
+  "estrellas": 1,
+  "texto": "ganó con 1 de sobra",
+  "emojis": "⬜⬜🟨⬜⬜⬜⬜🟧⬜⬜🟧🟧🟨🟧⬜🟧🍦⬜",
+  "turnos": [
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "🟨",
+    "cascadas": 2,
+    "combo": false,
+    "piezas": 10
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 3,
+    "combo": false,
+    "piezas": 9
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 3,
+    "combo": false,
+    "piezas": 20
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 3,
+    "combo": false,
+    "piezas": 10
+   },
+   {
+    "emoji": "🟨",
+    "cascadas": 2,
+    "combo": false,
+    "piezas": 7
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 4,
+    "combo": false,
+    "piezas": 21
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 4
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 3,
+    "combo": false,
+    "piezas": 16
+   },
+   {
+    "emoji": "🍦",
+    "cascadas": 1,
+    "combo": true,
+    "piezas": 35
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   }
+  ]
+ },
+ "vidente": {
+  "gano": true,
+  "sobran": 7,
+  "usados": 12,
+  "estrellas": 3,
+  "texto": "ganó con 7 de sobra",
+  "emojis": "⬜⬜🟧⬜🟨⬜🟧🟨🟨🟧🟧🟨",
+  "turnos": [
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 3,
+    "combo": false,
+    "piezas": 14
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 3
+   },
+   {
+    "emoji": "🟨",
+    "cascadas": 2,
+    "combo": false,
+    "piezas": 7
+   },
+   {
+    "emoji": "⬜",
+    "cascadas": 1,
+    "combo": false,
+    "piezas": 4
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 3,
+    "combo": false,
+    "piezas": 9
+   },
+   {
+    "emoji": "🟨",
+    "cascadas": 2,
+    "combo": false,
+    "piezas": 11
+   },
+   {
+    "emoji": "🟨",
+    "cascadas": 2,
+    "combo": false,
+    "piezas": 14
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 4,
+    "combo": false,
+    "piezas": 27
+   },
+   {
+    "emoji": "🟧",
+    "cascadas": 4,
+    "combo": false,
+    "piezas": 23
+   },
+   {
+    "emoji": "🟨",
+    "cascadas": 2,
+    "combo": false,
+    "piezas": 10
+   }
+  ]
+ },
+ "semana": null,
+ "toma": "D02-1-tablero",
+ "generado": "tools/video/formatos/F05/generar.cjs D02-1"
+}

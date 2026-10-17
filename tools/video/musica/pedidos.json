@@ -1,0 +1,81 @@
+{
+  "nota": "Pedidos de música para tools/video/musica/generar.py. Misma semilla y mismos datos = la misma pista. «estilo» es el texto que lee el modelo (en inglés rinde mejor); «descripcion» es para personas. «duracion» es lo que se le pide al modelo; «rango» del grupo, la duración final (s) después de quitar silencios y cortar lo que sobre.",
+  "grupos": {
+    "tema": {"rango": [45, 60], "bpm": [100, 112], "uso": "Cumbia de telenovela alegre, de heladería; se corta en bucle."},
+    "drama": {"rango": [20, 30], "uso": "Cama de tensión para los cliffhangers."},
+    "victoria": {"rango": [8, 12], "uso": "Fiesta corta para cuando se gana."},
+    "calma": {"rango": [29, 30], "uso": "Fondo suave para los ASMR."}
+  },
+  "pedidos": [
+    {
+      "id": "tema-1",
+      "grupo": "tema",
+      "descripcion": "Cumbia colombiana de acordeón: alegre, soleada, de heladería.",
+      "estilo": "instrumental Colombian cumbia, joyful accordion lead melody, guacharaca scraper, congas, tambora, bouncy electric bass, nylon guitar strums, bright and sunny, playful telenovela comedy theme, ice cream parlor, festive, live band recording, no vocals",
+      "bpm": 104, "duracion": 52, "tonalidad": "G major", "semilla": 1111
+    },
+    {
+      "id": "tema-2",
+      "grupo": "tema",
+      "descripcion": "Cumbia con metales y marimba: trompetas y trombón, tono de entrada de telenovela.",
+      "estilo": "instrumental Latin cumbia, cheerful trumpet and trombone section melody, marimba, timbales, congas, cowbell, guira, warm bass, upbeat and colorful, Latin soap opera opening theme, ice cream shop, party mood, no vocals",
+      "bpm": 108, "duracion": 56, "tonalidad": "F major", "semilla": 1102
+    },
+    {
+      "id": "tema-3",
+      "grupo": "tema",
+      "descripcion": "Cumbia peruana (chicha): guitarra eléctrica limpia, órgano y timbales, alegre y retro.",
+      "estilo": "instrumental Peruvian chicha cumbia, twangy clean electric guitar lead with chorus effect, Farfisa organ, timbales, bongos, guiro, bass guitar, happy and nostalgic, retro telenovela, sunny ice cream parlor, no vocals",
+      "bpm": 102, "duracion": 50, "tonalidad": "D major", "semilla": 1103
+    },
+    {
+      "id": "tema-4",
+      "grupo": "tema",
+      "descripcion": "Cumbia juguetona de marimba y pizzicato: tierna, de dibujo animado.",
+      "estilo": "instrumental playful cumbia, marimba and xylophone lead melody, pizzicato strings, accordion fills, light percussion, guira, congas, round bass, cute cartoon comedy, sweet ice cream shop, bouncy and funny, no vocals",
+      "bpm": 106, "duracion": 48, "tonalidad": "Bb major", "semilla": 1114
+    },
+    {
+      "id": "drama-1",
+      "grupo": "drama",
+      "descripcion": "Tensión de telenovela: cuerdas en trémolo, chelo grave y timbales.",
+      "estilo": "instrumental dramatic telenovela suspense cue, tremolo strings, low cello ostinato, timpani rolls and hits, orchestral stabs, ominous brass swells, cinematic tension, soap opera cliffhanger, no vocals",
+      "bpm": 90, "duracion": 26, "tonalidad": "D minor", "semilla": 2111
+    },
+    {
+      "id": "drama-2",
+      "grupo": "drama",
+      "descripcion": "Cliffhanger: ostinato de cuerdas en staccato, piano grave y golpes de orquesta.",
+      "estilo": "instrumental Latin soap opera cliffhanger underscore, staccato string ostinato, deep low piano notes, big orchestral hits, rising tension, dramatic suspense build, cinematic, no vocals",
+      "bpm": 100, "duracion": 24, "tonalidad": "C minor", "semilla": 2102
+    },
+    {
+      "id": "victoria-1",
+      "grupo": "victoria",
+      "descripcion": "Fiesta corta: trompetas triunfales, acordeón y platillo final.",
+      "estilo": "instrumental short festive cumbia victory fanfare, triumphant trumpets, accordion, timbales roll, cymbal crash, confetti party celebration, happy jingle ending, no vocals",
+      "bpm": 112, "duracion": 11, "tonalidad": "C major", "semilla": 3101, "fundido": 0.5
+    },
+    {
+      "id": "victoria-2",
+      "grupo": "victoria",
+      "descripcion": "Fiesta corta: marimba y metales con ritmo de cumbia.",
+      "estilo": "instrumental short joyful victory jingle, marimba and brass hits, cumbia rhythm, guira, congas, celebration, winning level fanfare, bright, no vocals",
+      "bpm": 108, "duracion": 12, "tonalidad": "G major", "semilla": 3102, "fundido": 0.5
+    },
+    {
+      "id": "calma-1",
+      "grupo": "calma",
+      "descripcion": "Fondo suave: arpegio de piano de fieltro que se repite, marimba suave y colchón cálido, sin percusión.",
+      "estilo": "instrumental soft calm loop, gentle repeating felt piano arpeggio pattern, soft marimba, warm pad, steady slow pulse, relaxing, cozy, ASMR background, minimal, no drums, no vocals",
+      "bpm": 72, "duracion": 40, "tonalidad": "F major", "semilla": 4101, "fundido": 1.5
+    },
+    {
+      "id": "calma-2",
+      "grupo": "calma",
+      "descripcion": "Fondo suave: caja de música, celesta y guitarra de nylon, ambiente de hielo.",
+      "estilo": "instrumental gentle lullaby, music box and celesta, soft nylon guitar arpeggios, airy strings pad, dreamy and peaceful, cold ice and snow atmosphere, calm ASMR background, no percussion, no vocals",
+      "bpm": 76, "duracion": 40, "tonalidad": "C major", "semilla": 4112, "fundido": 1.5
+    }
+  ]
+}

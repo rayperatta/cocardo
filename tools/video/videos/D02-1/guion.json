@@ -1,0 +1,16 @@
+[
+  {
+    "quien": "cocardo",
+    "texto": "Uno por persona… y a ti ya no te quedan.",
+    "emocion": "burlon",
+    "escena": "taunts.cocardo.low",
+    "hueco": "burla"
+  },
+  {
+    "quien": "cocardo",
+    "texto": "¿¡Quién me descongeló el menú!?",
+    "emocion": "furioso",
+    "escena": "taunts.cocardo.win",
+    "hueco": "reaccion"
+  }
+]

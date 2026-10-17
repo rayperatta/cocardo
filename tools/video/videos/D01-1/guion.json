@@ -1,0 +1,22 @@
+{
+  "id": "D01-1",
+  "formato": "F01",
+  "voces": [],
+  "musica": "juego (cumbia del juego, callada en «¡faltó UNO!» y agachada en la cámara lenta)",
+  "duracion_s": 18.34,
+  "cifras": {
+    "aperturas_probadas": "1.220.992 (niveles 1-30, semillas 1-5000): node tools/video/formatos/F01/ficha.cjs conteo",
+    "cascadas": "18, hielos 15 de 16, gana 2 jugadas después con 19 de sobra: node tools/video/plan.cjs verificar"
+  },
+  "textos": [
+    { "t": 0.0, "fase": "cascada", "texto": "Probé 1.220.992 jugadas… / y esta fue la MEJOR", "sub": "nivel 4 · primera jugada" },
+    { "t": 1.75, "fase": "cascada", "texto": "CASCADAS x1 → x18 (dorado → rosa → rojo)" },
+    { "t": 8.32, "fase": "falto", "texto": "15 de 16 hielos… / ¡faltó UNO!", "sonido": "risa de Cocardo" },
+    { "t": 9.57, "fase": "x3", "texto": "2 jugadas después… / ▶▶ x3" },
+    { "t": 11.87, "fase": "ultimo", "texto": "¿y el último hielo…?" },
+    { "t": 12.68, "fase": "ultimo", "texto": "¡EL ÚLTIMO! (cámara lenta, confeti; clímax ≈ 69 %)" },
+    { "t": 13.73, "fase": "paletas", "texto": "¡Sobraron 19 movimientos! / ¡cada uno, una PALETA!" },
+    { "t": 16.04, "fase": "reto", "texto": "¿Le ganas a las 18?", "sub": "NIVEL 4 · juega gratis" },
+    { "t": 17.34, "fase": "tarjeta", "texto": "JUEGA GRATIS · link en el perfil · cocardo.app (sube al cuadro 0 en los últimos 0,2 s)" }
+  ]
+}

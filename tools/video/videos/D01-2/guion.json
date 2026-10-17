@@ -1,0 +1,30 @@
+[
+  {
+    "quien": "narrador",
+    "texto": "La frutinovela… ahora se juega.",
+    "emocion": "narracion",
+    "nueva": true,
+    "hueco": "portada"
+  },
+  {
+    "quien": "cocardo",
+    "texto": "No está viejo, está experimentado.",
+    "emocion": "burlon",
+    "escena": "pre2",
+    "hueco": "viejo"
+  },
+  {
+    "quien": "lima",
+    "texto": "Psst… ayudante. Sigo viva aquí adentro.",
+    "emocion": "triste",
+    "escena": "pre6",
+    "hueco": "lima"
+  },
+  {
+    "quien": "cereza",
+    "texto": "Mira, ahí está Banana… esto es hermoso.",
+    "emocion": "sorprendido",
+    "escena": "cliff15",
+    "hueco": "banana"
+  }
+]

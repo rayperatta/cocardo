@@ -1,0 +1,51 @@
+[
+  {
+    "quien": "lima",
+    "texto": "Rompe el congelador viejo y luego mi bloque.",
+    "emocion": "asustado",
+    "escena": "pre10",
+    "hueco": "pide"
+  },
+  {
+    "quien": "narrador",
+    "texto": "Tres.",
+    "emocion": "narracion",
+    "nueva": true,
+    "hueco": "cuenta3"
+  },
+  {
+    "quien": "narrador",
+    "texto": "Dos.",
+    "emocion": "narracion",
+    "nueva": true,
+    "hueco": "cuenta2"
+  },
+  {
+    "quien": "narrador",
+    "texto": "Uno.",
+    "emocion": "narracion",
+    "nueva": true,
+    "hueco": "cuenta1"
+  },
+  {
+    "quien": "lima",
+    "texto": "¡Libre! Gracias, ayudante.",
+    "emocion": "feliz",
+    "escena": "post10",
+    "hueco": "gana"
+  },
+  {
+    "quien": "narrador",
+    "texto": "¿Acertaste?",
+    "emocion": "narracion",
+    "nueva": true,
+    "hueco": "cierre"
+  },
+  {
+    "quien": "narrador",
+    "texto": "¡Comenta tu letra!",
+    "emocion": "narracion",
+    "nueva": true,
+    "hueco": "cierre"
+  }
+]
