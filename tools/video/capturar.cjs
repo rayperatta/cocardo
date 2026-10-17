@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 // Captura una "toma" del juego real, fotograma a fotograma, para editarla después (tools/video/montaje.html).
 // Uso: node tools/video/capturar.cjs <toma.cjs> <carpeta> [--fps 60] [--var <variante>]
+//      node tools/video/capturar.cjs --todas dist/cap [--faltan] [-j 2] [nombre ...]
+//   --todas: captura las tomas del catálogo (tools/video/datos/tomas.cjs) en <carpeta>/<nombre>, como mucho j a la
+//   vez (cada captura ocupa 0,5-0,8 GB de RAM). --faltan salta las que ya tienen toma.json. Rehacer una toma borra sus
+//   fotogramas: no lo hagas mientras se renderiza un montaje que la usa.
+// Las fuentes de Google se guardan en ~/.local/share/cocardo-estudio/fuentes (o COCARDO_FUENTES) la primera vez.
 //
 // Determinismo: reloj falso de Playwright (timers, requestAnimationFrame, performance.now), animaciones CSS
 // pausadas y movidas a mano con la Web Animations API, Math.random con semilla y guardado precargado.
@@ -25,6 +30,33 @@ function loadPlaywright() {
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const VIEW = { width: 540, height: 960, dpr: 2 };
+const ZONA_MUERTA = 15;   // px CSS: radio en que Chromium no entrega touchmove (ver Toma.toque)
+// Caché de Google Fonts fuera del repo: la captura no se cuelga si la red tarda y no cambia si Google
+// actualiza una fuente. La primera vez se descarga; después se sirve del disco.
+const FUENTES = process.env.COCARDO_FUENTES || path.join(require('os').homedir(), '.local', 'share', 'cocardo-estudio', 'fuentes');
+
+async function fuentesLocales(ctx) {
+  fs.mkdirSync(FUENTES, { recursive: true });
+  await ctx.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, async (route) => {
+    const url = route.request().url();
+    const f = path.join(FUENTES, require('crypto').createHash('sha1').update(url).digest('hex'));
+    if (fs.existsSync(f + '.json') && fs.existsSync(f + '.bin')) {
+      const meta = JSON.parse(fs.readFileSync(f + '.json', 'utf8'));
+      return route.fulfill({ status: 200, headers: { 'content-type': meta.tipo, 'access-control-allow-origin': '*' }, body: fs.readFileSync(f + '.bin') });
+    }
+    let r = null;
+    for (let i = 0; i < 3 && !r; i++) { try { r = await route.fetch({ timeout: 20000 }); } catch (e) { r = null; } }
+    if (!r) return route.abort();
+    if (r.ok()) {
+      // se escribe aparte y se renombra: dos capturas a la vez nunca leen un archivo a medias
+      const tmp = f + '.' + process.pid;
+      fs.writeFileSync(tmp + '.bin', await r.body());
+      fs.writeFileSync(tmp + '.json', JSON.stringify({ url, tipo: r.headers()['content-type'] || 'application/octet-stream' }));
+      fs.renameSync(tmp + '.bin', f + '.bin'); fs.renameSync(tmp + '.json', f + '.json');
+    }
+    return route.fulfill({ response: r });
+  });
+}
 
 // Guardado base: todo desbloqueado, tutoriales e historias vistas, sin música del juego (la pone el montaje)
 function guardadoBase() {
@@ -49,6 +81,11 @@ function initScript(cfg) {
   };
   try { if (cfg.save && !sessionStorage.getItem('__cocardoVideo')) { localStorage.setItem('cocardo.v1', cfg.save); sessionStorage.setItem('__cocardoVideo', '1'); } } catch (e) { /* nada */ }
   const rec = (window.__rec = { sounds: [], music: [] });
+  // Toques que ya recibió la página (ver Toma.toque): Chromium entrega los touchmove al ritmo de sus fotogramas reales
+  window.__toques = 0;
+  ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (k) {
+    window.addEventListener(k, function () { window.__toques++; }, { capture: true, passive: true });
+  });
   // Engancha Cocardo.Audio en cuanto audio.js lo define: se anota cada sonido y no suena nada en vivo
   const C = (window.Cocardo = window.Cocardo || {});
   C.debugEnabled = true;
@@ -111,6 +148,8 @@ class Toma {
     this.tiempos = [];
     this.marcas = []; this.dedo = [];
     this.cortes = [];      // tramos sin grabar (el reloj avanzó pero no hay fotogramas)
+    this.toques = 0;       // toques enviados a la página (se comparan con window.__toques)
+    this.avisos = [];      // problemas que no paran la toma pero pueden romper el determinismo
   }
   get t() { return this.ms / 1000; }
   ritmo(fps) { this.fps = fps; this.tick = 0; }
@@ -167,8 +206,24 @@ class Toma {
   async celda(r, c) { return this.ev(([r, c]) => Cocardo.Game._cellCenter(r, c), [r, c]); }
   async toque(tipo, x, y) {
     const tp = tipo === 'touchEnd' ? [] : [{ x, y, id: 1, radiusX: 8, radiusY: 8, force: 1 }];
-    await this.cdp.send('Input.dispatchTouchEvent', { type: tipo, touchPoints: tp });
     this.dedo.push({ t: this.t, x: x * VIEW.dpr, y: y * VIEW.dpr, abajo: tipo !== 'touchEnd' });
+    // Chromium no entrega los touchmove que quedan a 15 px CSS o menos del inicio del toque (zona muerta) hasta que
+    // uno sale de ella: esos ni se envían, la página nunca los vería (medido con Chromium 156)
+    if (tipo === 'touchStart') { this.inicio = { x, y }; this.fuera = false; }
+    if (tipo === 'touchMove' && !this.fuera) {
+      if (Math.hypot(x - this.inicio.x, y - this.inicio.y) <= ZONA_MUERTA) return;
+      this.fuera = true;
+    }
+    await this.cdp.send('Input.dispatchTouchEvent', { type: tipo, touchPoints: tp });
+    // Y entrega los touchmove al ritmo de sus fotogramas reales, no del reloj falso: sin esta espera el gesto cae
+    // uno o dos fotogramas antes o después según la carga de la máquina. Se espera en tiempo real (el reloj no se
+    // mueve) a que la página lo reciba; con un solo toque pendiente a la vez, Chromium tampoco los junta.
+    this.toques++;
+    const limite = Date.now() + 2000;
+    while ((await this.page.evaluate(() => window.__toques)) < this.toques) {
+      if (Date.now() > limite) { this.avisos.push(`t=${this.t.toFixed(3)}: ${tipo} no llegó a la página`); this.toques--; break; }
+      await new Promise((r) => setTimeout(r, 3));
+    }
   }
   // Deslizar de la celda a a la b como un dedo de verdad: se apoya, arrastra y suelta
   async deslizar(a, b, o) {
@@ -226,10 +281,54 @@ class Toma {
   }
 }
 
+// Lote del catálogo: cada toma en su propio proceso (un Chromium por toma), j a la vez; las que fallan se reintentan una vez
+async function lote(argv) {
+  const carpeta = argv[1];
+  if (!carpeta || carpeta.startsWith('-')) { console.error('uso: node tools/video/capturar.cjs --todas <carpeta> [--faltan] [-j 2] [nombre ...]'); process.exit(2); }
+  const cat = require('./datos/tomas.cjs');
+  const iJ = argv.indexOf('-j');
+  const j = iJ > 0 ? Math.max(1, +argv[iJ + 1] || 1) : 2;
+  const pedidas = argv.slice(2).filter((a, i) => !a.startsWith('-') && i + 2 !== iJ + 1);
+  for (const n of pedidas) if (!cat[n]) { console.error('toma desconocida: ' + n + ' (míralas en tools/video/datos/tomas.cjs)'); process.exit(2); }
+  const lista = (pedidas.length ? pedidas : Object.keys(cat))
+    .filter((n) => !argv.includes('--faltan') || !fs.existsSync(path.join(carpeta, n, 'toma.json')));
+  const { spawn } = require('child_process');
+  const una = (n) => new Promise((res) => {
+    const e = cat[n], args = [__filename, path.join(__dirname, 'tomas', e.toma + '.cjs'), path.join(carpeta, n)];
+    if (e.var) args.push('--var', String(e.var));
+    if (e.fps) args.push('--fps', String(e.fps));
+    const p = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '', err = '';
+    p.stdout.on('data', (d) => { out += d; });
+    p.stderr.on('data', (d) => { err += d; });
+    p.on('close', (c) => {
+      const fin = out.split(/[\r\n]/).filter((l) => l.includes('→')).pop();
+      console.log(c === 0 ? '  ' + (fin || n).trim() : '  FALLÓ ' + n + '\n' + err.trim().split('\n').slice(-4).join('\n'));
+      res(c === 0);
+    });
+  });
+  const correr = async (nombres) => {
+    const cola = nombres.slice(), malas = [];
+    await Promise.all(Array.from({ length: Math.min(j, cola.length) }, async () => {
+      while (cola.length) { const n = cola.shift(); if (!(await una(n))) malas.push(n); }
+    }));
+    return malas;
+  };
+  console.log(`${lista.length} tomas, ${j} a la vez → ${carpeta}`);
+  let malas = await correr(lista);
+  if (malas.length) { console.log('reintento: ' + malas.join(', ')); malas = await correr(malas); }
+  if (malas.length) { console.error('sin capturar: ' + malas.join(', ')); process.exit(1); }
+}
+
 (async () => {
   const argv = process.argv.slice(2);
+  if (argv[0] === '--todas') return lote(argv);
   const [tomaFile, out] = argv;
-  if (!tomaFile || !out) { console.error('uso: node tools/video/capturar.cjs <toma.cjs> <carpeta> [--fps 60]'); process.exit(2); }
+  if (!tomaFile || !out) {
+    console.error('uso: node tools/video/capturar.cjs <toma.cjs> <carpeta> [--fps 60] [--var <variante>]\n' +
+      '     node tools/video/capturar.cjs --todas <carpeta> [--faltan] [-j 2] [nombre ...]');
+    process.exit(2);
+  }
   const iF = argv.indexOf('--fps');
   const fps = iF > 0 ? +argv[iF + 1] : 60;
   const toma = require(path.resolve(tomaFile));
@@ -245,6 +344,7 @@ class Toma {
   const browser = await chromium.launch({ args: ['--force-device-scale-factor=' + VIEW.dpr] });
   const ctx = await browser.newContext({ viewport: { width: VIEW.width, height: VIEW.height }, deviceScaleFactor: VIEW.dpr,
     isMobile: true, hasTouch: true, locale: 'es-MX', timezoneId: 'America/Mexico_City' });
+  await fuentesLocales(ctx);
   await ctx.addInitScript(initScript, { semilla: (typeof toma.semilla === 'function' ? toma.semilla(variante) : toma.semilla) || 12345, save: JSON.stringify(save) });
   const page = await ctx.newPage();
   const errores = [];
@@ -266,13 +366,14 @@ class Toma {
     fps, fotogramas: T.n, duracion: T.t, tiempos: T.tiempos, ancho: VIEW.width * VIEW.dpr, alto: VIEW.height * VIEW.dpr,
     sonidos: rec.sounds.map((s) => ({ t: +((s.t - base) / 1000).toFixed(4), name: s.name, opts: s.opts })).filter((s) => s.t >= -0.05 && s.t <= T.t + 0.05),
     musica: rec.music.map((m) => ({ t: (m.t - base) / 1000, on: m.on })),
-    marcas: T.marcas, dedo: T.dedo, errores,
+    marcas: T.marcas, dedo: T.dedo, errores, avisos: T.avisos,
     // centro de cada celda en píxeles de la toma: x = x0 + c·paso, y = y0 + r·paso
     tablero: T.tablero ? { filas: T.tablero.filas, cols: T.tablero.cols, x0: T.tablero.x0 * VIEW.dpr, y0: T.tablero.y0 * VIEW.dpr,
       paso: (T.tablero.x1 - T.tablero.x0) / Math.max(1, T.tablero.cols - 1) * VIEW.dpr } : null,
   };
   fs.writeFileSync(path.join(out, 'toma.json'), JSON.stringify(log, null, 1));
   await browser.close();
-  console.log(`\r${path.basename(tomaFile)} → ${out}: ${T.n} fotogramas (${T.t.toFixed(1)} s) en ${((Date.now() - t0) / 1000).toFixed(0)} s, ${log.sonidos.length} sonidos${errores.length ? ', ' + errores.length + ' errores' : ''}`);
+  console.log(`\r${path.basename(tomaFile)} → ${out}: ${T.n} fotogramas (${T.t.toFixed(1)} s) en ${((Date.now() - t0) / 1000).toFixed(0)} s, ${log.sonidos.length} sonidos${errores.length ? ', ' + errores.length + ' errores' : ''}${T.avisos.length ? ', ' + T.avisos.length + ' avisos' : ''}`);
   if (errores.length) console.error(errores.slice(0, 5).join('\n'));
+  if (T.avisos.length) console.error(T.avisos.slice(0, 5).join('\n'));
 })().catch((e) => { console.error(e); process.exit(1); });

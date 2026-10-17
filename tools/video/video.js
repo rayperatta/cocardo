@@ -65,6 +65,63 @@
     }
   }
 
+  /* ---------- Audio de archivo (voces, música): grabar.cjs sirve la raíz del repo ---------- */
+
+  // Descarga y decodifica un audio (WAV, MP3, OGG, FLAC) remuestreado a 44,1 kHz
+  function cargarAudio(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('no pude cargar el audio ' + url + ' (' + r.status + ')');
+      return r.arrayBuffer();
+    }).then(function (ab) {
+      return new OfflineAudioContext(2, 1, SR).decodeAudioData(ab);
+    });
+  }
+
+  // Nivel RMS de un AudioBuffer contando solo bloques de 100 ms con sonido (sobre -50 dBFS)
+  function rmsSonoro(buf) {
+    var B = SR / 10, acc = 0, n = 0;
+    for (var ch = 0; ch < buf.numberOfChannels; ch++) {
+      var d = buf.getChannelData(ch);
+      for (var i = 0; i + B <= d.length; i += B) {
+        var s = 0;
+        for (var j = i; j < i + B; j++) s += d[j] * d[j];
+        if (s / B > 1e-5) { acc += s; n += B; }
+      }
+    }
+    return n ? Math.sqrt(acc / n) : 0;
+  }
+
+  // [inicio, fin] en segundos de la parte que suena (sin los silencios de los extremos; umbral -40 dBFS)
+  function tramoSonoro(buf, umbral) {
+    var u = umbral || 0.01, a = buf.length, b = 0;
+    for (var ch = 0; ch < buf.numberOfChannels; ch++) {
+      var d = buf.getChannelData(ch), i;
+      for (i = 0; i < a; i++) if (Math.abs(d[i]) > u) { a = i; break; }
+      for (i = d.length - 1; i > b; i--) if (Math.abs(d[i]) > u) { b = i; break; }
+    }
+    return a >= b ? [0, buf.duration] : [a / SR, b / SR];
+  }
+
+  // Baja la pista a `nivel` en cada tramo [desde, hasta]: bajada antes del tramo y subida después (o.bajada, o.subida).
+  // Si dos tramos se pisan no se multiplican: manda el más bajo.
+  function atenuar(p, tramos, nivel, o) {
+    o = o || {};
+    var baja = Math.max(1e-3, o.bajada == null ? 0.08 : o.bajada), sube = Math.max(1e-3, o.subida == null ? 0.25 : o.subida);
+    var n = p[0].length;
+    if (!tramos.length || nivel >= 1) return;
+    var env = new Float32Array(n).fill(1);
+    tramos.forEach(function (b) {
+      var i0 = Math.max(0, Math.floor((b[0] - baja) * SR)), i1 = Math.min(n, Math.ceil((b[1] + sube) * SR));
+      for (var i = i0; i < i1; i++) {
+        var tt = i / SR, g = nivel;
+        if (tt < b[0]) g = 1 + (nivel - 1) * Math.min(1, (tt - (b[0] - baja)) / baja);
+        else if (tt > b[1]) g = nivel + (1 - nivel) * Math.min(1, (tt - b[1]) / sube);
+        if (g < env[i]) env[i] = g;
+      }
+    });
+    for (var ch = 0; ch < 2; ch++) for (var i = 0; i < n; i++) p[ch][i] *= env[i];
+  }
+
   function mono(p) {
     var m = new Float32Array(p[0].length);
     for (var i = 0; i < m.length; i++) m[i] = 0.5 * (p[0][i] + p[1][i]);
@@ -276,7 +333,7 @@
     W: W, H: H, SR: SR, C: C, FONT: FONT, SAFE: SAFE,
     lienzo: lienzo, fuentesListas: fuentesListas,
     renderSonidos: renderSonidos, pista: pista, mezclar: mezclar, mono: mono, normalizar: normalizar,
-    wavBase64: wavBase64,
+    wavBase64: wavBase64, cargarAudio: cargarAudio, rmsSonoro: rmsSonoro, tramoSonoro: tramoSonoro, atenuar: atenuar,
     rr: rr, texto: texto, toldo: toldo, fondo: fondo, analizar: analizar, osciloscopio: osciloscopio,
     barras: barras, chip: chip, pop: pop, hash: hash,
   };

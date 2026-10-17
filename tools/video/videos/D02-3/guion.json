@@ -1,0 +1,59 @@
+[
+  {
+    "quien": "lima",
+    "texto": "Necesitamos ayuda de verdad.",
+    "emocion": "enojado",
+    "escena": "pre1"
+  },
+  {
+    "quien": "fresa",
+    "texto": "¡Prima, ya voy!",
+    "emocion": "feliz"
+  },
+  {
+    "quien": "durazna",
+    "texto": "¿Helado gratis de por vida?",
+    "emocion": "feliz",
+    "escena": "pre12"
+  },
+  {
+    "quien": "uva",
+    "texto": "Llegué hace unos días…",
+    "emocion": "feliz",
+    "escena": "pre14"
+  },
+  {
+    "quien": "naranja",
+    "texto": "¿Alguien quiere panecitos?",
+    "emocion": "feliz"
+  },
+  {
+    "quien": "banana",
+    "texto": "¿Dónde está mi hermano?",
+    "emocion": "nervioso"
+  },
+  {
+    "quien": "banano",
+    "texto": "Solo quiero respuestas.",
+    "emocion": "enojado",
+    "escena": "pre22"
+  },
+  {
+    "quien": "pina",
+    "texto": "Me agradas.",
+    "emocion": "feliz",
+    "escena": "pre17"
+  },
+  {
+    "quien": "cereza",
+    "texto": "Yo vi una oportunidad.",
+    "emocion": "coqueta",
+    "escena": "pre17"
+  },
+  {
+    "quien": "cocardo",
+    "texto": "Dale un golpecito.",
+    "emocion": "burlon",
+    "escena": "pre5"
+  }
+]

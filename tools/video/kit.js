@@ -1,13 +1,18 @@
 /* Cocardo — kit de montaje para videos con gameplay real (tools/video/montaje.html).
    Un montaje (tools/video/montajes/*.js) llama a K.montaje({ dur, tomas, clips, capas, audio }).
    Las tomas las graba tools/video/capturar.cjs y se sirven en /cap/<carpeta>/ (grabar.cjs --cap).
-   Lienzo 1080x1920. Tiempos en segundos del video final salvo que se diga otra cosa. */
+   Lienzo 1080x1920. Tiempos en segundos del video final salvo que se diga otra cosa.
+   Voces y subtítulos: K.guion (JSON de tools/video/voz/voz.py) o audio.voces, y K.subtitulo para subtítulos sueltos.
+   Los audios de archivo (voces, música externa) se leen del repositorio que sirve grabar.cjs: rutas dist/estudio/... */
 (function () {
   'use strict';
-  var V = window.Video, C = V.C, F = V.FONT, W = V.W, H = V.H, SR = V.SR;
+  var V = window.Video, C = V.C, F = V.FONT, W = V.W, H = V.H, SR = V.SR, SAFE = V.SAFE;
   var K = (window.K = {});
-  K.W = W; K.H = H; K.C = C; K.F = F; K.V = V;
+  K.W = W; K.H = H; K.C = C; K.F = F; K.V = V; K.SAFE = SAFE;
   K.BEAT = 60 / 104;   // la cumbia del juego va a 104 BPM
+  var VOZ_RMS = 0.09;       // nivel al que se lleva cada voz (RMS de lo que suena) antes de su `gain`
+  var MUSICA_RMS = 0.0135;  // RMS de la cumbia de _renderMusic: la música externa se iguala a ella
+  var ZONA = /[?&]zona\b/.test(location.search);   // montaje.html?m=...&zona: dibuja la zona segura encima
 
   /* ---------------- curvas ---------------- */
   var E = {
@@ -172,6 +177,34 @@
   K.precargar = function () {
     return Promise.all(Object.keys(svgCache).map(function (k) { return svgCache[k].listo; }));
   };
+  // nombre y color de un personaje (ids de js/art-characters.js; también 'cherry', 'piña'…); 'narrador' va sin nombre
+  var ALIAS = { cherry: 'cereza', 'piña': 'pina', don_pina: 'pina', 'limón': 'limon', 'brócoli': 'brocoli', sandia: 'policia_sandia',
+    mango: 'guardaespaldas' };
+  K.personaje = function (quien) {
+    var id = String(quien || '').toLowerCase().trim(), todos = (window.Cocardo && Cocardo.Art && Cocardo.Art.characters) || {};
+    id = ALIAS[id] || id;
+    if (!id || id === 'narrador') return { id: 'narrador', nombre: '', color: C.drama, narrador: true };
+    // también vale el nombre visible («Don Piña», «La reportera»)
+    if (!todos[id]) Object.keys(todos).forEach(function (k) { if (todos[k].name.toLowerCase() === id) id = k; });
+    var ch = todos[id];
+    return ch ? { id: id, nombre: ch.name, color: ch.color } : { id: id, nombre: String(quien), color: C.pink };
+  };
+
+  /* ---------------- audios de archivo ---------------- */
+  // ruta de un archivo del repo → URL del servidor de grabar.cjs (que sirve la raíz del repo).
+  // Acepta 'dist/estudio/x.wav', una ruta absoluta del disco dentro del repo, o un nombre suelto relativo a `base`.
+  function urlArchivo(ruta, base) {
+    ruta = String(ruta);
+    if (/^(https?:|data:|blob:)/.test(ruta)) return ruta;
+    if (ruta[0] === '/') { var i = ruta.indexOf('/dist/'); return i > 0 ? ruta.slice(i) : ruta; }
+    ruta = ruta.replace(/^\.\//, '');
+    if (base && !/^(dist|tools|js|cap|assets)\//.test(ruta)) return base + ruta;
+    return '/' + ruta;
+  }
+  K.url = urlArchivo;
+  var audios = {};
+  function cargar(url) { return audios[url] || (audios[url] = V.cargarAudio(url)); }
+  K.cargarAudio = function (ruta) { return cargar(urlArchivo(ruta)); };
 
   /* ---------------- dibujo ---------------- */
   var cv, ctx;
@@ -207,6 +240,45 @@
     var dx = (x - info.fx) * info.z, dy = (y - info.fy) * info.z, c = Math.cos(info.r), s = Math.sin(info.r);
     return { x: W / 2 + info.sx + dx * c - dy * s, y: H / 2 + info.sy + dx * s + dy * c };
   };
+
+  /* ---------------- cuadro de diálogo del juego en las escenas de historia ---------------- */
+  // Zona del cuadro (con la placa del nombre y su sombra) en píxeles de la toma (vista 540x960 a 2x, css/style.css .story-box)
+  K.CUADRO = { x0: 10, y0: 1572, x1: 1070, y1: 1916 };
+  // Encuadre que deja el cuadro fuera de pantalla: los retratos quedan abajo, cortados por el borde
+  K.CAM_SIN_CUADRO = { z: 1.25, x: 540, y: 790 };
+  // Tapa el cuadro para que el texto no se lea dos veces cuando hay subtítulos encima. En un clip: tapa: true | 'placa' | {…};
+  // desde capas: K.tapa(extra.img, extra.info, o). o: { modo: 'desenfoque' (por defecto) | 'placa', x0, y0, x1, y1, oscuro, color }
+  K.tapa = function (img, info, o) {
+    if (!img || !info) return;
+    o = o === true || o == null ? {} : typeof o === 'string' ? { modo: o } : o;
+    var R = K.CUADRO, x0 = o.x0 != null ? o.x0 : R.x0, y0 = o.y0 != null ? o.y0 : R.y0;
+    var x1 = o.x1 != null ? o.x1 : R.x1, y1 = o.y1 != null ? o.y1 : R.y1;
+    ctx.save();
+    ctx.translate(W / 2 + info.sx, H / 2 + info.sy);
+    if (info.r) ctx.rotate(info.r);
+    ctx.scale(info.z, info.z);
+    ctx.translate(-info.fx, -info.fy);
+    V.rr(ctx, x0, y0, x1 - x0, y1 - y0, 40);
+    ctx.clip();
+    if (o.modo === 'placa') {
+      ctx.fillStyle = o.color || C.ink;
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    } else {
+      // base lisa (el borde del desenfoque se vuelve transparente) y encima el mismo trozo del fotograma muy desenfocado
+      ctx.fillStyle = C.ink; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+      var m = 90, kx = (img.naturalWidth || W) / W, ky = (img.naturalHeight || H) / H;
+      var sx = Math.max(0, x0 - m), sy = Math.max(0, y0 - m), sw = Math.min(W, x1 + m) - sx, sh = Math.min(H, y1 + m) - sy;
+      ctx.filter = 'blur(' + (o.blur || 26) + 'px) saturate(1.15)';
+      ctx.drawImage(img, sx * kx, sy * ky, sw * kx, sh * ky, sx, sy, sw, sh);
+      ctx.filter = 'none';
+      ctx.fillStyle = 'rgba(43,22,48,' + (o.oscuro == null ? 0.5 : o.oscuro) + ')';
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    }
+    ctx.restore();
+  };
+  function tapaActiva(tp, t) {
+    return tp && (typeof tp !== 'object' || ((tp.desde == null || t >= tp.desde) && (tp.hasta == null || t < tp.hasta)));
+  }
 
   // Mano del tutorial del juego sobre el dedo de la toma
   function dedoEn(tm, s) {
@@ -504,8 +576,221 @@
     V.texto(ctx, o.cta || 'JUEGA GRATIS', 0, 4, { size: 92, fill: C.cream, strokeW: 16, sombra: false });
     ctx.restore();
     K.popTexto(t, t0 + 0.55, o.sub || 'link en el perfil', W / 2, 935, { font: F.body, weight: '900', size: 62, fill: C.gold, strokeW: 13 });
-    K.popTexto(t, t0 + 0.7, 'juego de fans · no oficial', W / 2, 1015, { font: F.body, weight: '800', size: 36, fill: C.cream, strokeW: 9 });
+    // tercera línea (o.pie; '' la quita)
+    var pie = o.pie != null ? o.pie : 'cocardo.app';
+    if (pie) K.popTexto(t, t0 + 0.7, pie, W / 2, 1018, { font: F.body, weight: '900', size: 48, fill: C.cream, strokeW: 11 });
   };
+
+  /* ---------------- subtítulos ---------------- */
+  // Medidas por defecto: letra de 68 px, placa centrada en la zona segura con 12 px de aire a cada lado, borde de abajo en y=1410
+  var SUB = { size: 68, padX: 28, padY: 20, y: 1410, aire: 12 };
+  K.SUB = SUB;
+  var maquetas = {};
+  // Reparte el texto en páginas de 1 o 2 líneas que quepan en maxW (líneas parejas, mejor si cortan tras una pausa)
+  function maquetar(texto, fuente, maxW) {
+    var clave = fuente + '|' + maxW + '|' + texto;
+    if (maquetas[clave]) return maquetas[clave];
+    ctx.save(); ctx.font = fuente;
+    var esp = ctx.measureText(' ').width;
+    var pal = texto.split(/\s+/).filter(Boolean).map(function (p) { return { p: p, w: ctx.measureText(p).width }; });
+    ctx.restore();
+    var cum = [0];
+    pal.forEach(function (w, i) { cum.push(cum[i] + w.w + esp); });
+    function ancho(a, b) { return cum[b] - cum[a] - esp; }
+    function pausa(i) { return /[.!?…]["»”)]*$/.test(pal[i].p) ? 1 : /[,;:]["»”)]*$/.test(pal[i].p) ? 0.45 : 0; }
+    // corte malo: la línea termina con el «¿» o «¡» que abre la frase siguiente
+    function malo(i) { return i < pal.length - 1 && /^["«“(]*[¿¡]/.test(pal[i].p); }
+    function partir(a, b) {
+      if (b - a <= 1 || ancho(a, b) <= maxW) return [[a, b]];
+      var mejor = null;
+      for (var s = a + 1; s < b; s++) {
+        var w1 = ancho(a, s), w2 = ancho(s, b);
+        if (w1 > maxW || w2 > maxW) continue;
+        var coste = Math.max(w1, w2) - pausa(s - 1) * maxW * 0.12 + (malo(s - 1) ? maxW * 0.5 : 0);
+        if (!mejor || coste < mejor.c) mejor = { s: s, c: coste };
+      }
+      return mejor ? [[a, mejor.s], [mejor.s, b]] : null;
+    }
+    // la primera repartición que cabe; si deja un corte malo, se prueba con una página más
+    var paginas = null, total = cum[pal.length], malos = 0, primera = 0;
+    for (var n = 1; n <= pal.length; n++) {
+      var cortes = [0];
+      for (var k = 1; k < n; k++) {
+        var meta = total * k / n, mejor = -1, mc = Infinity;
+        for (var s = cortes[k - 1] + 1; s <= pal.length - (n - k); s++) {
+          var c = Math.abs(cum[s] - meta) - pausa(s - 1) * total / n * 0.35;
+          if (c < mc) { mc = c; mejor = s; }
+        }
+        cortes.push(mejor);
+      }
+      cortes.push(pal.length);
+      var pags = [];
+      for (k = 0; k < n; k++) { var ls = partir(cortes[k], cortes[k + 1]); if (!ls) break; pags.push(ls); }
+      if (pags.length < n) { if (paginas) break; continue; }
+      var m = 0;
+      pags.forEach(function (pg) { pg.forEach(function (l) { if (malo(l[1] - 1)) m++; }); });
+      if (!paginas) primera = n;
+      if (!paginas || m < malos) { paginas = pags; malos = m; }
+      if (!malos || n > primera) break;
+    }
+    // peso de cada palabra para repartir el tiempo: letras + pausa tras la puntuación
+    var pesos = pal.map(function (w, i) { return w.p.replace(/[^\p{L}\p{N}]/gu, '').length + 1.2 + pausa(i) * 3; });
+    return (maquetas[clave] = { pal: pal, esp: esp, ancho: ancho, paginas: paginas || [], pesos: pesos });
+  }
+  // [inicio, fin] de cada palabra: los dados (si hay uno por palabra) o repartidos por peso entre h0 y h1
+  function tiemposPalabras(mq, dados, h0, h1) {
+    if (dados && dados.length === mq.pal.length) return dados.map(function (d) { return [d.t0, d.t1]; });
+    var tot = 0, acc = 0, d = Math.max(0.2, h1 - h0), out = [];
+    mq.pesos.forEach(function (p) { tot += p; });
+    mq.pesos.forEach(function (p) { var a = h0 + d * acc / tot; acc += p; out.push([a, h0 + d * acc / tot]); });
+    return out;
+  }
+  // Subtítulo grande de t0 a t1 dentro de la zona segura. o: { quien, nombre (false = sin placa de nombre), color, size,
+  //   y (borde de abajo de la placa), arriba (pegado arriba de la zona segura), x, placa (false = sin placa), resalta (false = sin
+  //   palabra resaltada), colorResalta, habla: [inicio, fin] de la voz, palabras: [{t0, t1}] por palabra, pop (false) }.
+  // Más de 2 líneas → páginas que se cambian al ritmo de la voz. Devuelve la caja de la placa en reposo y su escala k.
+  K.subtitulo = function (t, t0, t1, texto, o) {
+    o = o || {};
+    if (t < t0 || t >= t1 || !texto) return null;
+    var per = K.personaje(o.quien), color = o.color || per.color;
+    var nombre = o.nombre === false ? '' : o.nombre != null ? o.nombre : per.nombre;
+    var size = o.size || SUB.size, fam = o.font || F.body, peso = o.weight || '900';
+    var izq = o.izq != null ? o.izq : SAFE.left + SUB.aire, der = o.der != null ? o.der : SAFE.right - SUB.aire;
+    var maxW = der - izq - 2 * SUB.padX;
+    var mq = maquetar(texto, peso + ' ' + size + 'px ' + fam, maxW);
+    if (!mq.paginas.length) return null;
+    var h0 = o.habla ? o.habla[0] : t0 + 0.05, h1 = o.habla ? o.habla[1] : t1 - 0.15;
+    var tw = tiemposPalabras(mq, o.palabras, h0, h1), pg = 0;
+    for (var k = 1; k < mq.paginas.length; k++) if (t >= tw[mq.paginas[k][0][0]][0]) pg = k;
+    var lineas = mq.paginas[pg], pIni = pg ? tw[lineas[0][0]][0] : t0;
+    var lh = size * 1.2, anchos = lineas.map(function (l) { return mq.ancho(l[0], l[1]); });
+    var esc = anchos.map(function (w) { return Math.min(1, maxW / w); });
+    var bw = Math.max.apply(null, anchos.map(function (w, i) { return w * esc[i]; })) + 2 * SUB.padX;
+    var sube = nombre ? 14 : 0;   // con placa de nombre, el texto baja un poco para no rozarla
+    var bh = lineas.length * lh + 2 * SUB.padY + sube, cx = o.x != null ? o.x : (izq + der) / 2;
+    var yb = o.y != null ? o.y : o.arriba ? SAFE.top + 56 + bh : SUB.y, cy = yb - bh / 2;
+    // entra con un pop corto y sale con un fundido; el rebote nunca saca la placa de la zona segura
+    var k1 = o.pop === false ? 1 : 0.7 + 0.3 * V.pop(t - t0, 0.24);
+    if (pg) k1 *= 0.94 + 0.06 * V.pop(t - pIni, 0.18);
+    k1 = Math.min(k1, Math.max(1, Math.min(cx - SAFE.left, SAFE.right - cx) / (bw / 2)));
+    var sale = 1 - K.p(t, t1 - 0.14, t1, E.in);
+    ctx.save();
+    ctx.globalAlpha = sale * Math.min(1, (t - t0) / 0.06);
+    ctx.translate(cx, cy); ctx.scale(k1, k1);
+    if (o.placa !== false) {
+      V.rr(ctx, -bw / 2, -bh / 2, bw, bh, Math.min(40, bh / 2));
+      ctx.fillStyle = per.narrador ? 'rgba(91,30,116,0.9)' : 'rgba(43,22,48,0.84)'; ctx.fill();
+      ctx.lineWidth = 7; ctx.strokeStyle = color; ctx.stroke();
+    }
+    if (nombre) {
+      ctx.font = '400 46px ' + F.display;
+      var nw = ctx.measureText(nombre).width + 48, nh = 64;
+      ctx.save(); ctx.translate(-bw / 2 + 26 + nw / 2, -bh / 2 - nh * 0.12); ctx.rotate(-0.03);
+      V.rr(ctx, -nw / 2, -nh / 2, nw, nh, nh / 2); ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = 7; ctx.strokeStyle = C.ink; ctx.stroke();
+      V.texto(ctx, nombre, 0, 2, { size: 46, fill: C.cream, strokeW: 10, sombra: false });
+      ctx.restore();
+    }
+    var actual = -1;
+    if (o.resalta !== false) for (var i = 0; i < tw.length; i++) if (t >= tw[i][0] && t < tw[i][1]) actual = i;
+    lineas.forEach(function (l, li) {
+      var y = -bh / 2 + SUB.padY + sube + lh * (li + 0.5), e = esc[li];
+      ctx.save(); ctx.translate(-anchos[li] * e / 2, y); ctx.scale(e, e);
+      var x = 0;
+      for (var j = l[0]; j < l[1]; j++) {
+        var w = mq.pal[j], on = j === actual, kk = on ? 1.06 + 0.08 * (1 - K.p(t, tw[j][0], tw[j][0] + 0.14, E.out)) : 1;
+        ctx.save(); ctx.translate(x + w.w / 2, 0); ctx.scale(kk, kk);
+        V.texto(ctx, w.p, 0, 0, { size: size, font: fam, weight: peso, fill: on ? (o.colorResalta || C.gold) : (o.fill || C.cream),
+          strokeW: Math.round(size * 0.2), sombraDist: Math.round(size * 0.06) });
+        ctx.restore();
+        x += w.w + mq.esp;
+      }
+      ctx.restore();
+    });
+    ctx.restore();
+    return { x: cx - bw / 2, y: yb - bh, w: bw, h: bh, arriba: nombre ? yb - bh - nh * 0.62 : yb - bh, k: k1,
+      paginas: mq.paginas.length, pagina: pg };
+  };
+  // Líneas de la zona segura (para revisar encuadres: montaje.html?m=...&zona)
+  K.zonaSegura = function () {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,40,60,0.16)';
+    ctx.fillRect(0, SAFE.bottom, W, H - SAFE.bottom); ctx.fillRect(SAFE.right, 0, W - SAFE.right, SAFE.bottom);
+    ctx.fillRect(0, 0, SAFE.right, SAFE.top); ctx.fillRect(0, SAFE.top, SAFE.left, SAFE.bottom - SAFE.top);
+    ctx.setLineDash([24, 14]); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,40,60,0.9)';
+    ctx.strokeRect(SAFE.left, SAFE.top, SAFE.right - SAFE.left, SAFE.bottom - SAFE.top);
+    ctx.restore();
+  };
+
+  /* ---------------- guion: voces + subtítulos ---------------- */
+  // K.guion(fuente, entradas, o): lee el JSON de tools/video/voz/voz.py (o un objeto con la misma forma) y deja cada línea
+  // a su hora. Sirve a la vez para el audio (se mezcla solo) y para los subtítulos (se dibujan solos encima de las capas).
+  //   fuente: ruta del JSON o { lineas: [{ id?, quien, texto, archivo?, duracion?, palabras? }] } (o la lista sola)
+  //   entradas: número (hora de la 1.ª línea; las demás se encadenan con o.pausa), lista de horas (null = encadenar),
+  //             { id: hora } o función (linea, i, anterior) → hora
+  //   o: { pausa: 0.25, gain: 1, solo: [ids o índices], audio: false (sin voz), subtitulos: false (los dibujas tú con
+  //        g.dibujar(t)), cola: 0.35 (s que el subtítulo sigue tras la voz), y demás opciones de K.subtitulo }
+  // Tras cargar (en antes() y capas) cada línea trae: quien, texto, t0, t1, dur, voz: [inicio, fin] de lo que suena. g.fin = t1 de la última.
+  var guiones = [];
+  K.guiones = guiones;
+  function horaDe(e, l, i, prev, pausa) {
+    var v = null;
+    if (typeof e === 'function') v = e(l, i, prev);
+    else if (Array.isArray(e)) v = e[i];
+    else if (e && typeof e === 'object') v = e[l.id];
+    else if (typeof e === 'number' && i === 0) v = e;
+    if (v != null) return v;
+    return prev ? prev.t1 + (pausa == null ? 0.25 : pausa) : 0;
+  }
+  K.guion = function (fuente, entradas, o) {
+    o = o || {};
+    var g = { lineas: [], o: o, fin: 0 };
+    var url = typeof fuente === 'string' ? urlArchivo(fuente) : null, base = url ? url.replace(/[^\/]*$/, '') : '';
+    var datos = url ? fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('no encontré el guion ' + fuente + ' (' + r.status + ')');
+      return r.json();
+    }) : Promise.resolve(fuente);
+    g.listo = datos.then(function (j) {
+      var lista = Array.isArray(j) ? j : (j.lineas || j.lines || []);
+      if (o.solo) lista = lista.filter(function (l, i) { return o.solo.indexOf(l.id) >= 0 || o.solo.indexOf(i) >= 0; });
+      return Promise.all(lista.map(function (l) {
+        var ar = l.archivo || l.wav || l.ruta || l.path || l.file;
+        return ar ? cargar(urlArchivo(ar, base)).then(function (buf) { return { l: l, buf: buf }; }) : { l: l, buf: null };
+      }));
+    }).then(function (items) {
+      var prev = null;
+      items.forEach(function (it, i) {
+        var l = it.l, texto = l.texto || l.text || '';
+        var dur = it.buf ? it.buf.duration : +(l.duracion || l.dur || l.duration || 0) || Math.max(1.2, texto.length / 14);
+        var son = it.buf ? V.tramoSonoro(it.buf) : [0, dur];
+        var ln = { i: i, id: l.id, quien: l.quien || l.personaje || l.who || l.voz, texto: texto, buf: it.buf, dur: dur,
+          gain: l.gain == null ? 1 : l.gain };
+        ln.t0 = horaDe(entradas, l, i, prev, o.pausa);
+        ln.t1 = ln.t0 + dur;
+        ln.voz = [ln.t0 + son[0], ln.t0 + son[1]];
+        var pw = l.palabras || l.words;
+        if (pw && pw.length) ln.palabras = pw.map(function (w) {
+          return { t0: ln.t0 + +(w.t0 != null ? w.t0 : w.inicio != null ? w.inicio : w.start), t1: ln.t0 + +(w.t1 != null ? w.t1 : w.fin != null ? w.fin : w.end) };
+        });
+        g.lineas.push(ln); prev = ln;
+      });
+      g.fin = prev ? prev.t1 : 0;
+      return g;
+    });
+    g.dibujar = function (t) {
+      var L = g.lineas, cola = o.cola == null ? 0.35 : o.cola;
+      for (var i = 0; i < L.length; i++) {
+        var ln = L[i], sig = L[i + 1];
+        if (!ln.texto) continue;
+        var a = ln.voz[0] - 0.08, b = ln.voz[1] + cola;
+        if (sig && sig.texto && b > sig.voz[0] - 0.08) b = Math.max(a + 0.3, sig.voz[0] - 0.08);
+        if (t >= a && t < b) K.subtitulo(t, a, b, ln.texto, Object.assign({}, o, { quien: ln.quien, habla: ln.voz, palabras: ln.palabras }));
+      }
+    };
+    guiones.push(g);
+    return g;
+  };
+  function esperarGuiones() { return Promise.all(guiones.map(function (g) { return g.listo; })); }
 
   /* ---------------- sonido propio (whoosh, subida, golpe, rebobinado) ---------------- */
   function ruido(octx, secs) {
@@ -583,9 +868,36 @@
     return o.startRendering();
   }
 
+  /* ---------------- música de archivo ---------------- */
+  // Carga audio.musicaArchivo igualado a la cumbia del juego (audio.musicaNivel: 'igual' o ganancia fija) y, si los tramos
+  // piden más de lo que dura, lo repite con un cruce de 50 ms (audio.musicaBucle: false para no repetir)
+  function musicaDeArchivo(A, mus) {
+    return cargar(urlArchivo(A.musicaArchivo)).then(function (buf) {
+      var nivel = A.musicaNivel == null || A.musicaNivel === 'igual' ? MUSICA_RMS / Math.max(1e-4, V.rmsSonoro(buf)) : A.musicaNivel;
+      var hace = Math.max.apply(null, mus.map(function (m) { return (m.desde || 0) + m.t1 - m.t0; }));
+      var L = buf.length, n = A.musicaBucle === false ? L : Math.max(L, Math.ceil((hace + 1) * SR));
+      var out = new AudioBuffer({ length: n, numberOfChannels: 2, sampleRate: SR });
+      var Fz = Math.min(Math.round(0.05 * SR), L >> 2), P = L - Fz;
+      for (var ch = 0; ch < 2; ch++) {
+        var src = buf.getChannelData(Math.min(ch, buf.numberOfChannels - 1)), d = out.getChannelData(ch);
+        if (n <= L) { for (var i = 0; i < n; i++) d[i] = src[i] * nivel; continue; }
+        for (var ini = 0, k = 0; ini < n; ini += P, k++) {
+          for (var j = 0; j < L && ini + j < n; j++) {
+            var w = 1;
+            if (k > 0 && j < Fz) w = j / Fz;
+            if (j >= P) w *= (L - j) / Fz;
+            d[ini + j] += src[j] * w * nivel;
+          }
+        }
+      }
+      return out;
+    });
+  }
+
   /* ---------------- montaje ---------------- */
+  // M.dur puede ser una función: se evalúa cuando ya cargaron los guiones (por ejemplo, function () { return g.fin + 2.5; })
   K.montaje = function (M) {
-    var DUR = M.dur, clips = (M.clips || []).map(prepararClip);
+    var DUR = typeof M.dur === 'function' ? 0 : M.dur, clips = (M.clips || []).map(prepararClip);
     clips.sort(function (a, b) { return a.de - b.de; });
     M.clips = clips;
     K.M = M;
@@ -602,12 +914,45 @@
         var nom = Object.keys(M.tomas || {});
         return Promise.all(nom.map(function (n) { return cargarToma(n, M.tomas[n]); }));
       }).then(function () {
+        return esperarGuiones();
+      }).then(function () {
+        if (typeof M.dur === 'function') { DUR = M.dur(); window.Escena.duracion = DUR; }
+        M.duracion = DUR;
         if (M.antes) M.antes();
         K.icono('hand');
-        return K.precargar();
+        return Promise.all([K.precargar(), esperarGuiones()]);
       }).then(function () {
         return mezclarAudio();
       });
+    }
+
+    // voces de audio.voces y de los guiones, cargadas y llevadas a VOZ_RMS (audio.vozNivel: 'auto' o ganancia fija)
+    function cargarVoces(A) {
+      var lista = (A.voces || []).map(function (v) {
+        return cargar(urlArchivo(v.archivo)).then(function (buf) { return { buf: buf, t: v.t || 0, gain: v.gain == null ? 1 : v.gain }; });
+      });
+      guiones.forEach(function (g) {
+        if (g.o.audio === false) return;
+        g.lineas.forEach(function (ln) { if (ln.buf) lista.push({ buf: ln.buf, t: ln.t0, gain: (g.o.gain == null ? 1 : g.o.gain) * ln.gain }); });
+      });
+      return Promise.all(lista).then(function (vs) {
+        return vs.map(function (v) {
+          var son = V.tramoSonoro(v.buf), auto = A.vozNivel == null || A.vozNivel === 'auto';
+          var nivel = auto ? VOZ_RMS / Math.max(1e-4, V.rmsSonoro(v.buf)) : A.vozNivel;
+          return { buf: v.buf, t: v.t, gain: v.gain * nivel, habla: [v.t + son[0], v.t + son[1]] };
+        });
+      });
+    }
+
+    // audio.pistas = [{ archivo, t, desde?, dur?, gain?, fadeIn?, fadeOut?, nivel? }]: música extra a su hora, igualada a la
+    // cumbia del juego como musicaArchivo (nivel: 'igual' o ganancia fija)
+    function cargarPistas(A) {
+      return Promise.all((A.pistas || []).map(function (q) {
+        return cargar(urlArchivo(q.archivo)).then(function (buf) {
+          var nivel = q.nivel == null || q.nivel === 'igual' ? MUSICA_RMS / Math.max(1e-4, V.rmsSonoro(buf)) : q.nivel;
+          return { buf: buf, q: q, nivel: nivel };
+        });
+      }));
     }
 
     function mezclarAudio() {
@@ -630,17 +975,26 @@
       var promesas = claves.map(function (k) { return V.renderSonidos(grupos[k], DUR + 1); });
       promesas.push(renderSfx(A.sfx || [], DUR));
       var mus = A.musica || [];
-      promesas.push(mus.length ? Cocardo.Audio._renderMusic(Math.ceil((DUR + 20) / 18.4)) : Promise.resolve(null));
-      return Promise.all(promesas).then(function (r) {
+      // música externa sin tramos: suena de principio a fin
+      if (A.musicaArchivo && !mus.length) mus = [{ t0: 0, t1: DUR, desde: 0, fadeIn: 0.02, fadeOut: 0.8 }];
+      promesas.push(!mus.length ? Promise.resolve(null) : A.musicaArchivo ? musicaDeArchivo(A, mus)
+        : Cocardo.Audio._renderMusic(Math.ceil((DUR + 20) / 18.4)));
+      return Promise.all([Promise.all(promesas), cargarVoces(A), cargarPistas(A)]).then(function (rv) {
+        var r = rv[0], voces = rv[1], pistas = rv[2];
         var p = V.pista(DUR);
         claves.forEach(function (k, i) { V.mezclar(p, r[i], 0, { gain: +k }); });
         var sfx = r[claves.length], musica = r[claves.length + 1];
         if (sfx) V.mezclar(p, sfx, 0, { gain: A.sfxGain || 1 });
+        // mientras hablan, bajan los sonidos del juego y la música (audio.ducking: { musica, juego, bajada, subida } o false)
+        var duck = voces.length && A.ducking !== false ? (A.ducking || {}) : null;
+        var habla = voces.map(function (v) { return v.habla; });
+        if (duck) V.atenuar(p, habla, duck.juego == null ? 0.6 : duck.juego, duck);
+        var destino = duck && (musica || pistas.length) ? V.pista(DUR) : p;
         if (musica) {
           mus.forEach(function (m) {
             var tmp = V.pista(DUR);
             V.mezclar(tmp, musica, m.t0, { desde: m.desde || 0, dur: (m.t1 - m.t0), gain: m.gain == null ? 1.6 : m.gain,
-              fadeIn: m.fadeIn || 0.02, fadeOut: m.fadeOut || 0.4 });
+              fadeIn: m.fadeIn != null ? m.fadeIn : 0.02, fadeOut: m.fadeOut != null ? m.fadeOut : 0.4 });
             // atenuar la música bajo momentos clave
             // b = [desde, hasta, nivel]: baja en 80 ms, sube en 250 ms
             (m.bajar || []).forEach(function (b) {
@@ -653,11 +1007,27 @@
                 tmp[0][i] *= gk; tmp[1][i] *= gk;
               }
             });
-            for (var ch = 0; ch < 2; ch++) for (var i = 0; i < p[ch].length; i++) p[ch][i] += tmp[ch][i];
+            for (var ch = 0; ch < 2; ch++) for (var i = 0; i < p[ch].length; i++) destino[ch][i] += tmp[ch][i];
           });
         }
+        // pistas extra de música (golpe de victoria encima del tema, drama tras la calma…): van al mismo bus que la
+        // música, así que también se agachan bajo las voces
+        pistas.forEach(function (x) {
+          var q = x.q;
+          V.mezclar(destino, x.buf, q.t || 0, { desde: q.desde || 0, dur: q.dur, gain: (q.gain == null ? 1.6 : q.gain) * x.nivel,
+            fadeIn: q.fadeIn != null ? q.fadeIn : 0.02, fadeOut: q.fadeOut != null ? q.fadeOut : 0.3 });
+        });
+        if (destino !== p) {
+          V.atenuar(destino, habla, duck.musica == null ? 0.3 : duck.musica, duck);
+          for (var ch = 0; ch < 2; ch++) for (var i = 0; i < p[ch].length; i++) p[ch][i] += destino[ch][i];
+        }
+        voces.forEach(function (v) { V.mezclar(p, v.buf, v.t, { gain: v.gain }); });
         V.normalizar(p, 0.5);
-        return { duracion: DUR, fps: 30, wav: V.wavBase64(p) };
+        var res = { duracion: DUR, fps: 30, wav: V.wavBase64(p) };
+        // con voces o música de archivo, grabar.cjs ajusta el volumen con ganancia fija (no deshace el ducking);
+        // audio.normalizar: 'loudnorm' | 'ganancia' lo fuerza
+        if (A.normalizar ? A.normalizar === 'ganancia' : voces.length || A.musicaArchivo || pistas.length) res.normalizar = 'ganancia';
+        return res;
       });
     }
 
@@ -682,13 +1052,17 @@
           if (c.trans === 'barrido') bar = (1 - K.p(t, c.de, c.de + 0.16, E.out)) * 260;
           info = dibujarFotograma(img, cam, sh.x + bar, sh.y, c.grado, c.libre);
           if (bar > 2) { ctx.save(); ctx.globalAlpha = 0.35; dibujarFotograma(img, cam, sh.x + bar * 1.6, sh.y, c.grado, c.libre); ctx.restore(); }
+          if (tapaActiva(c.tapa, t)) K.tapa(img, info, c.tapa);
           if (c.dedo !== false) { var dp = dedoEn(tomas[c.toma], s); if (dp) dibujarDedo(info, dp); }
           if (c.vineta !== false) vineta(c.vineta);
           if (c.trans === 'flash') K.flash(t, c.de, 0.2, '#fff', 0.85);
           if (c.trans === 'negro') K.negro(1 - K.p(t, c.de, c.de + 0.3));
           c._info = info;
         }
-        if (M.capas) M.capas(ctx, t, { clip: c, info: info, src: c ? K.srcDe(c, t) : 0 });
+        if (M.capas) M.capas(ctx, t, { clip: c, info: info, src: c ? K.srcDe(c, t) : 0, img: img });
+        // subtítulos de los guiones, encima de todo
+        guiones.forEach(function (g) { if (g.o.subtitulos !== false) g.dibujar(t); });
+        if (ZONA) K.zonaSegura();
         return cv.toDataURL('image/png');
       });
     }

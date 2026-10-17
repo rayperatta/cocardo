@@ -6,9 +6,6 @@ dueña de la cuenta solo los publica. Se apoya en `docs/PERSONAJES.md` (aspecto 
 
 ## 0. Reglas que no se rompen
 
-- **Nunca "oficial".** Muchas cuentas copia dicen ser la oficial; nosotros somos un juego de fans y lo decimos en el texto
-  del post: «Juego de fans, no oficial. Inspirado en La Nieve de Lima». Nada de «Parte 14» ni de hacerse pasar por la
-  creadora.
 - **Ángulo de rescate, no de "comerse a las frutas".** La cuenta original cayó entre denuncias por «canibalismo» y hay
   avisos sobre niños y frutinovelas. En los videos se **descongela y rescata**; Cocardo y Cherry son villanos cómicos.
   Nada de raspar víctimas, sangre ni sustos.
@@ -38,8 +35,13 @@ Ya existe:
   `node tools/video/grabar.cjs tools/video/sonidos.html dist/videos/01-sonidos.mp4 [--fotos 0,5.5]`
   (`--fotos` guarda PNG de esos segundos para revisar o para la portada; `dist/` no se sube al repo).
 - `tools/video/video.js`: utilidades de las escenas (colores de marca, texto tipo sticker, toldo, osciloscopio, barras,
-  render y mezcla de audio, WAV).
+  render y mezcla de audio, WAV, carga de audios de archivo y ducking).
 - Una escena es un `.html` en `tools/video/` que define `window.Escena = { duracion, fps, preparar(), dibujar(t) }`.
+- `tools/video/kit.js` + `montaje.html`: montajes con tomas del juego real (`tools/video/montajes/*.js`). Además de
+  clips, cámara y textos, mezcla **voces** de personajes con **subtítulos grandes**, **música de archivo** y tapa el cuadro
+  de diálogo del juego. API en §7.
+- `tools/video/revisar.cjs`: revisa el MP4 terminado (formato, duración, volumen, negros, congelados y silencios) y
+  hace una hoja de contacto con la zona segura marcada. `grabar.cjs --revisar` lo corre al final.
 
 Falta construir:
 
@@ -53,9 +55,8 @@ Falta construir:
 4. **Montaje** con `ffmpeg`: textos, zooms y tarjeta de «CONTINUARÁ...». De cada video salen 2 o 3 variantes de gancho
    para probar cuál funciona mejor.
 
-**Límites:** no hay voz en off (no hay síntesis de voz en el entorno; la voz de texto a voz de TikTok o una voz humana
-se agregan al subir). La música de moda con licencia también se agrega en la app al subir. Las métricas solo las puedo
-ver si me las pasan.
+**Límites:** la música de moda con licencia se agrega en la app al subir. Las métricas solo las puedo ver si me las
+pasan.
 
 ### Prueba de concepto (14 oct 2026)
 
@@ -132,8 +133,7 @@ otro gancho) en vez de cambiar de idea.
 
 - **Plataforma:** el juego sale primero como página web HTML (gratis). Si le va bien, se publica en Play Store. Los
   videos invitan a jugar «gratis en la web» con el enlace en la bio.
-- **Creadora:** por ahora no se menciona; el parecido con la serie se ve solo. Se mantiene «juego de fans, no
-  oficial».
+- **Creadora:** por ahora no se menciona; el parecido con la serie se ve solo.
 - **Edición:** Claude entrega cada video terminado (MP4 listo para subir, portada y texto del post). Quien publica no
   edita nada: sube el archivo y pega el texto. No hace falta agregar música de TikTok: el sonido propio es parte del
   video.
@@ -162,46 +162,44 @@ fotograma a fotograma; ninguna jugada es falsa (las encuentra `tools/video/plan.
 
 ### Textos para publicar (TikTok e Instagram)
 
-Cada texto: frase gancho, pregunta para comentar, aviso de juego de fans y 5-6 etiquetas. Sin mencionar a la creadora.
+Cada texto: frase gancho, pregunta para comentar, «gratis en la web» y 5-6 etiquetas. Sin mencionar a la creadora.
 
 1. **Sonidos.** Hice TODOS los sonidos de mi juego de Cocardo sin grabar nada: cada uno es puro código 🥥🍦 La risa de
-   Cherry me da miedo… ¿qué sonido le falta? 👇 Juego de fans (no oficial), gratis en la web: link en el perfil.
+   Cherry me da miedo… ¿qué sonido le falta? 👇 Gratis en la web: link en el perfil.
    `#cocardo #frutinovela #lanievedelima #cocosscoops #juegosindie #gamedev`
 2. **Tráiler.** La frutinovela… ¡ahora se juega! 🥥🍦 Cocardo: ¡Rescate Helado! — 30 niveles, 16 personajes y Cherry
-   tramando algo. Gratis en la web, link en el perfil. ¿Lo jugarías? 👇 Juego de fans (no oficial).
+   tramando algo. Gratis en la web, link en el perfil. ¿Lo jugarías? 👇
    `#cocardo #frutinovela #lanievedelima #cocosscoops #juegosindie #videojuegos`
 3. **Mejor jugada.** Probé 472.206 jugadas en mi juego de Cocardo y esta fue la mejor: 18 cascadas seguidas… y faltó UN
-   hielo 😭 ¿Cuál es tu récord? 👇 Juego de fans (no oficial), gratis en la web.
+   hielo 😭 ¿Cuál es tu récord? 👇 Gratis en la web.
    `#cocardo #frutinovela #satisfying #match3 #juegosindie #lanievedelima`
 4. **Acertijo.** Último movimiento: solo UNA jugada rescata a Lima. ¿A, B o C? Comenta ANTES de ver la respuesta 👇
-   Juego de fans (no oficial), gratis en la web.
+   Gratis en la web.
    `#cocardo #frutinovela #acertijo #reto #match3 #lanievedelima`
 5. **Perdí por uno.** Perdí por UN hielo 😭 y Cocardo se rió en mi cara. Rebobiné y esto es lo que debí hacer… ¿te ha
-   pasado? 👇 Juego de fans (no oficial), gratis en la web.
+   pasado? 👇 Gratis en la web.
    `#cocardo #frutinovela #casi #match3 #juegosindie #lanievedelima`
 6. **Congelador.** «¡Mi congelador no! ¡Costó cuatro mil pesos!» 🥶 Le rompí el congelador viejo a Cocardo en 8
-   jugadas y liberé a Lima. ¿A quién rescato después? 👇 Juego de fans (no oficial), gratis en la web.
+   jugadas y liberé a Lima. ¿A quién rescato después? 👇 Gratis en la web.
    `#cocardo #frutinovela #lanievedelima #lima #match3 #juegosindie`
-7. **Personajes.** Hice a los 16 personajes de Cocardo para mi juego 🥥🍒🍌 ¿Quién es tu favorito? 👇 Juego de fans (no
-   oficial), gratis en la web.
+7. **Personajes.** Hice a los 16 personajes de Cocardo para mi juego 🥥🍒🍌 ¿Quién es tu favorito? 👇 Gratis en la web.
    `#cocardo #frutinovela #lanievedelima #cherry #fanart #juegosindie`
 8. **Combos.** Todos los combos de mi juego de Cocardo, del PEOR al MEJOR 🍦 El #1 se lleva TODO el tablero. ¿Cuál es
-   tu favorito? 👇 Juego de fans (no oficial), gratis en la web.
+   tu favorito? 👇 Gratis en la web.
    `#cocardo #frutinovela #satisfying #match3 #combos #lanievedelima`
 9. **Cherry.** Cherry descubrió el secreto de Cocardo… y todo cambió 🍒 «No me hizo socia. Yo vi una oportunidad.»
-   ¿Team Cocardo o Team Cherry? 👇 Juego de fans (no oficial), gratis en la web.
+   ¿Team Cocardo o Team Cherry? 👇 Gratis en la web.
    `#cocardo #cherry #frutinovela #lanievedelima #telenovela #juegosindie`
 10. **Último movimiento.** Nivel ⚠️ ¡DRAMA!: 4 movimientos, Cherry llenando todo de cajas… y lo gané en el ÚLTIMO 😮‍💨
-    ¿Cuál es tu nivel más difícil? 👇 Juego de fans (no oficial), gratis en la web.
+    ¿Cuál es tu nivel más difícil? 👇 Gratis en la web.
     `#cocardo #frutinovela #clutch #match3 #juegosindie #lanievedelima`
 11. **Rescates.** Rescaté a las 6 frutas congeladas 🧊 Lima, Fresa, Durazna, Naranja, Banana… y Uva en el último
-    movimiento. ¿Cuál es tu favorita? 👇 Juego de fans (no oficial), gratis en la web.
+    movimiento. ¿Cuál es tu favorita? 👇 Gratis en la web.
     `#cocardo #frutinovela #lanievedelima #rescate #match3 #juegosindie`
-12. **ASMR.** ASMR de hielo 🧊🔊 (sube el volumen). Cada crujido está hecho con código. ¿Otro? 👇 Juego de fans (no
-    oficial), gratis en la web.
+12. **ASMR.** ASMR de hielo 🧊🔊 (sube el volumen). Cada crujido está hecho con código. ¿Otro? 👇 Gratis en la web.
     `#asmr #satisfying #cocardo #frutinovela #icebreaking #juegosindie`
 13. **Final.** ⚠️ SPOILER: así termina mi juego de Cocardo. El congelador rosa de Cherry, Uva en el último movimiento… y
-    «¿segunda temporada?» 😭 ¿La quieres? 👇 Juego de fans (no oficial), gratis en la web.
+    «¿segunda temporada?» 😭 ¿La quieres? 👇 Gratis en la web.
     `#cocardo #frutinovela #lanievedelima #final #cherry #juegosindie`
 
 ### Orden de publicación sugerido (2 por día: 13-14 h y 19-21 h, hora de México)
@@ -221,16 +219,17 @@ la vida de esos posts.
 
 ## 7. Cómo se rehacen
 
-Las capturas pesan (unos 300 KB por fotograma), así que no se suben al repositorio; se regeneran idénticas:
+Las capturas pesan (unos 300 KB por fotograma), así que van en `dist/cap/` (git la ignora; `cap/` no) y se
+regeneran idénticas:
 
 ```bash
 # 1) tomas (lista completa en el encabezado de cada archivo de tools/video/tomas/)
-node tools/video/capturar.cjs tools/video/tomas/cascada.cjs cap/cascada
-node tools/video/capturar.cjs tools/video/tomas/acertijo.cjs cap/acertijo2-C --var C
-node tools/video/capturar.cjs tools/video/tomas/historia.cjs cap/hist-pre10 --var pre10
-node tools/video/capturar.cjs tools/video/tomas/nivel.cjs cap/hielo12 --var 12:1:0:8:60
-# 2) montaje → MP4 (las carpetas de cap/ se llaman como en `tomas:` de cada montaje)
-node tools/video/grabar.cjs "tools/video/montaje.html?m=montajes/cascada.js" dist/videos/03-mejor-jugada.mp4 --cap cap
+node tools/video/capturar.cjs tools/video/tomas/cascada.cjs dist/cap/cascada
+node tools/video/capturar.cjs tools/video/tomas/acertijo.cjs dist/cap/acertijo2-C --var C
+node tools/video/capturar.cjs tools/video/tomas/historia.cjs dist/cap/hist-pre10 --var pre10
+node tools/video/capturar.cjs tools/video/tomas/nivel.cjs dist/cap/hielo12 --var 12:1:0:8:60
+# 2) montaje → MP4 (las carpetas de dist/cap/ se llaman como en `tomas:` de cada montaje); --revisar lo revisa al final
+node tools/video/grabar.cjs "tools/video/montaje.html?m=montajes/cascada.js" dist/videos/03-mejor-jugada.mp4 --cap dist/cap --revisar
 ```
 
 Tomas que usa cada montaje: `cascada` (cascada); `acertijo2-A/B/C` (acertijo); `casi-pierde`, `casi-gana` (casi13);
@@ -242,3 +241,73 @@ Tomas que usa cada montaje: `cascada` (cascada); `acertijo2-A/B/C` (acertijo); `
 Detalles que importan: la captura usa el juego sin «movimiento reducido» (efectos completos) y suaviza solo en video
 el destello blanco del juego, que al acelerar o ralentizar se encadena y además dispara avisos de fotosensibilidad.
 La portada del juego trae un pie con el nombre de la creadora: en el tráiler queda fuera de cuadro.
+
+### Voces, subtítulos y música (kit.js)
+
+Todo es opcional: un montaje que no lo usa sale igual que antes (salvo el pie de la tarjeta final).
+
+```js
+// antes: python3 tools/video/voz/voz.py lote.json --salida dist/estudio/voz/cap7 > dist/estudio/voz/cap7.json
+var g = K.guion('dist/estudio/voz/cap7.json', [0.4, null, 6.0], { pausa: 0.3 });
+K.montaje({
+  dur: function () { return g.fin + 2.8; },               // la duración puede salir del guion
+  tomas: { h: 'hist-pre10' },
+  clips: [{ toma: 'h', de: 0, a: 30, libre: true, cam: [[0, { z: 1, x: 540, y: 1410 }]], tapa: true }],
+  capas: function (ctx, t) { if (t >= g.fin + 0.3) K.tarjetaFinal(t, g.fin + 0.3); },
+  audio: { musicaArchivo: 'dist/estudio/musica/bucles/tema-1-larga.wav', ducking: { musica: 0.3, juego: 0.6 } },
+});
+```
+
+- **`K.guion(fuente, entradas, o)`**: `fuente` es la ruta del JSON que imprime `tools/video/voz/voz.py`
+  (`{ lineas: [{ id, quien, texto, ruta, duracion }] }`) o el objeto ya hecho. La ruta del WAV vale en `ruta` o
+  `archivo`: relativa al repo, absoluta dentro de él o un nombre suelto junto al JSON. Los WAV tienen que estar dentro
+  del repo (`dist/estudio/…`), porque `grabar.cjs` solo sirve esa carpeta. `entradas`: número (hora de la primera
+  línea; las demás se encadenan con `o.pausa`, 0,25 s), lista de horas (`null` = encadenar), `{ id: hora }` o una
+  función. Cada línea se mezcla y se subtitula sola. Ya cargada (en `antes()` y `capas`) trae `t0`, `t1` y `voz`
+  ([inicio, fin] de lo que suena); `g.fin` es el final de la última. Opciones: `gain`, `solo` (ids), `audio: false`
+  (solo subtítulos), `subtitulos: false` (los dibujas tú con `g.dibujar(t)`), `cola` y las de `K.subtitulo`.
+- **`audio.voces = [{ archivo, t, gain, quien }]`**: voces sueltas, sin subtítulo automático.
+- **Nivel y ducking:** cada voz se lleva a un RMS fijo (0,09) antes de su `gain` (`audio.vozNivel: 'auto'` o una
+  ganancia fija). Mientras suena, la música baja a 0,3 y los sonidos del juego y los `sfx` a 0,6, con bajada de 80 ms
+  y subida de 250 ms como `bajar` (`audio.ducking: false` lo apaga). Con voces o música de archivo, `grabar.cjs` ajusta
+  el volumen con una ganancia fija medida en dos pasadas en vez del loudnorm dinámico (que deshace el ducking);
+  `audio.normalizar: 'loudnorm'` o `--volumen loudnorm` vuelve al de antes.
+- **`K.subtitulo(t, t0, t1, texto, o)`**: Nunito 900 de 68 px en placa oscura con el borde y la placa de nombre del
+  color del personaje (`quien`; el narrador va sin nombre, en morado). Máximo 2 líneas parejas; si no cabe, pasa a
+  páginas al ritmo de la voz. Resalta en dorado la palabra que suena (repartida por letras y pausas dentro de
+  `o.habla`, o exacta con `o.palabras: [{ t0, t1 }]`). Queda dentro de la zona segura: centrado en x = 500 y con el
+  borde de abajo en y = 1410 (`arriba: true` lo pega arriba). Otras opciones: `y`, `size`, `nombre: false`,
+  `placa: false`, `resalta: false`, `colorResalta`, `pop: false`.
+- **Cuadro de diálogo del juego** (escenas de historia): `tapa: true` en el clip lo cubre con el mismo fotograma
+  desenfocado y oscurecido; `tapa: 'placa'`, con una placa lisa; `{ modo, desde, hasta }` solo un rato. Otra salida es
+  encuadrarlo fuera: `cam: [[t, K.CAM_SIN_CUADRO]]`. Desde `capas`: `K.tapa(extra.img, extra.info, o)`.
+- **`audio.musicaArchivo`**: WAV, MP3, OGG o FLAC dentro del repo (`dist/estudio/musica/…`) en lugar de la cumbia
+  del juego, con los mismos tramos de `audio.musica` (`t0`, `t1`, `desde`, `gain`, `fadeIn`, `fadeOut`, `bajar`). Se
+  iguala al nivel de la cumbia (`audio.musicaNivel: 'igual'` o una ganancia fija), así los `gain` valen lo mismo. Sin
+  tramos suena de principio a fin; si un tramo pide más de lo que dura, se repite con un cruce de 50 ms. La música
+  elegida de cada tipo (tema, drama, victoria, calma) está en `dist/estudio/musica/elegidas.json` (campo `archivo`);
+  se cambia en `dist/estudio/musica/index.html` o con `tools/video/musica/elegir.py`.
+- **`audio.pistas = [{ archivo, t, desde, dur, gain, fadeIn, fadeOut, nivel }]`**: música extra a su hora sobre la
+  principal (el golpe de victoria encima del tema, el drama al final de una calma). Se iguala como `musicaArchivo` y va
+  al mismo bus, así que también se agacha bajo las voces. `fadeIn: 0` y `fadeOut: 0` ya valen (antes se cambiaban por
+  el valor por defecto).
+- **Tarjeta final:** `pie` es la tercera línea (por defecto «cocardo.app»; `''` la quita).
+- `montaje.html?m=…&zona` dibuja la zona segura encima de cada fotograma, para revisar encuadres.
+
+Prueba de todo junto: `tools/video/montajes/prueba-voces.js` (voces sintéticas hechas con ffmpeg en
+`dist/estudio/prueba/`; no es voz real).
+
+### Revisión automática
+
+```bash
+node tools/video/revisar.cjs dist/videos/09-traicion-cherry.mp4 [--json r.json] [--dir carpeta] [--breve]
+```
+
+`grabar.cjs` ya deja el pico real por debajo de -1 dBTP: si el AAC lo sube (pasa 1-3 dB por encima del limitador),
+rehace solo el audio con la baja justa y copia el video.
+
+Aprueba con 1080×1920, 30 fps, H.264 (yuv420p) + AAC, de 6 a 60 s, -14 LUFS ± 1,5, pico real ≤ -1 dBTP y sin negros
+de más de 0,5 s ni en el primer fotograma. Las imágenes quietas (1,5 s o más) y los silencios (1 s o más) solo dan
+avisos. Deja `revision.json`, `hoja.png` (un fotograma por segundo con la zona segura en rojo) y `primero.png` en
+`dist/estudio/revision/<nombre>/`, y sale con 1 si no aprueba. Los umbrales se cambian con `--lufs`, `--tol`, `--tp`,
+`--min`, `--max` y `--negro-max`.

@@ -1,0 +1,1073 @@
+{
+  "_ayuda": "Reparto de voces del estudio. «personajes.<id>.voz» es la voz por defecto (cámbiala con voz.py --elegir <id> <voz>). Cada voz se diseña con Qwen3-TTS VoiceDesign a partir de «diseno» (instruccion en inglés porque el modelo la entiende mejor; «descripcion» es para personas) y luego se genera con su «motor»: chatterbox (clona la referencia y controla la emoción con exageracion/cfg) o qwen (clona la referencia con Qwen3-TTS Base; la emoción sale del texto). velocidad = 1,0 normal; tono en semitonos. «emociones» usa los ánimos de js/story.js.",
+  "motores": {
+    "chatterbox": {
+      "venv": "~/.local/share/cocardo-estudio/voz-chatterbox",
+      "modelo": "ResembleAI/Chatterbox-Multilingual-es-mx-latam",
+      "revision": "27e595bf2fe7be0533ca299d9afafcde08b7cca7",
+      "t3": "t3_es_mx_latam.safetensors",
+      "s3gen": "s3gen_v3.safetensors",
+      "base": "ResembleAI/chatterbox",
+      "base_revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
+      "licencia": "MIT"
+    },
+    "qwen": {
+      "venv": "~/.local/share/cocardo-estudio/voz-qwen",
+      "modelo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+      "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+      "licencia": "Apache-2.0"
+    },
+    "qwen-diseno": {
+      "venv": "~/.local/share/cocardo-estudio/voz-qwen",
+      "modelo": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+      "revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+      "licencia": "Apache-2.0"
+    }
+  },
+  "revision": {
+    "venv": "~/.local/share/cocardo-estudio/voz-whisper",
+    "modelo": "dropbox-dash/faster-whisper-large-v3-turbo",
+    "licencia": "MIT",
+    "wer_max": 0.15,
+    "ritmo": [
+      1.8,
+      4.5
+    ]
+  },
+  "emociones": {
+    "normal": {
+      "exageracion": 0.5,
+      "cfg": 0.5,
+      "instruccion": ""
+    },
+    "feliz": {
+      "exageracion": 0.6,
+      "cfg": 0.5,
+      "instruccion": "Tone: happy and warm."
+    },
+    "burlon": {
+      "exageracion": 0.65,
+      "cfg": 0.45,
+      "instruccion": "Tone: mocking, smug and playful."
+    },
+    "coqueta": {
+      "exageracion": 0.6,
+      "cfg": 0.45,
+      "instruccion": "Tone: flirtatious and sly."
+    },
+    "triste": {
+      "exageracion": 0.45,
+      "cfg": 0.5,
+      "instruccion": "Tone: sad and tired."
+    },
+    "nervioso": {
+      "exageracion": 0.65,
+      "cfg": 0.4,
+      "instruccion": "Tone: nervous and hesitant."
+    },
+    "asustado": {
+      "exageracion": 0.75,
+      "cfg": 0.4,
+      "instruccion": "Tone: scared, urgent."
+    },
+    "sorprendido": {
+      "exageracion": 0.7,
+      "cfg": 0.45,
+      "instruccion": "Tone: surprised, astonished."
+    },
+    "enojado": {
+      "exageracion": 0.75,
+      "cfg": 0.4,
+      "instruccion": "Tone: angry and firm."
+    },
+    "furioso": {
+      "exageracion": 0.9,
+      "cfg": 0.35,
+      "instruccion": "Tone: furious, shouting."
+    },
+    "carcajada": {
+      "exageracion": 1.0,
+      "cfg": 0.3,
+      "instruccion": "Tone: laughing loudly, triumphant."
+    },
+    "llorando": {
+      "exageracion": 0.8,
+      "cfg": 0.4,
+      "instruccion": "Tone: crying with emotion."
+    },
+    "narracion": {
+      "exageracion": 0.7,
+      "cfg": 0.3,
+      "instruccion": "Tone: dramatic trailer narration, slow and intense."
+    },
+    "noticia": {
+      "exageracion": 0.65,
+      "cfg": 0.45,
+      "instruccion": "Tone: energetic TV news anchor, breaking news."
+    }
+  },
+  "personajes": {
+    "cocardo": {
+      "nombre": "Cocardo",
+      "direccion": "Hombre adulto, villano cómico y exagerado de telenovela; risa «ja, ja, ja».",
+      "voz": "cocardo-c"
+    },
+    "cereza": {
+      "nombre": "Cherry",
+      "direccion": "Mujer joven, astuta y coqueta; risita «ji, ji, ji».",
+      "voz": "cereza-a"
+    },
+    "lima": {
+      "nombre": "Lima",
+      "direccion": "Joven, dulce pero firme.",
+      "voz": "lima-b"
+    },
+    "pina": {
+      "nombre": "Don Piña",
+      "direccion": "Hombre mayor, grave, empresario poderoso.",
+      "voz": "pina-a"
+    },
+    "banano": {
+      "nombre": "Banano",
+      "direccion": "Hombre joven, investigador decidido.",
+      "voz": "banano-c"
+    },
+    "banana": {
+      "nombre": "Banana",
+      "direccion": "Mujer joven (las cinco víctimas, voces bien distintas): la más aguda e ingenua.",
+      "voz": "banana-b"
+    },
+    "fresa": {
+      "nombre": "Fresa",
+      "direccion": "Mujer joven: la más enérgica y peleonera.",
+      "voz": "fresa-a"
+    },
+    "durazna": {
+      "nombre": "Durazna",
+      "direccion": "Mujer joven: la de voz más grave, ruda y valiente.",
+      "voz": "durazna-b"
+    },
+    "uva": {
+      "nombre": "Uva",
+      "direccion": "Mujer joven: tímida y nerviosa, recién llegada.",
+      "voz": "uva-a"
+    },
+    "naranja": {
+      "nombre": "Naranja",
+      "direccion": "Mujer joven: la vecina más cálida y sonriente.",
+      "voz": "naranja-b"
+    },
+    "limon": {
+      "nombre": "Limón",
+      "direccion": "Vagabundo de voz rasposa.",
+      "voz": "limon-a"
+    },
+    "policia_fresa": {
+      "nombre": "La oficial",
+      "direccion": "Voz secundaria clara: policía firme.",
+      "voz": "policia_fresa-b"
+    },
+    "policia_sandia": {
+      "nombre": "El oficial Sandía",
+      "direccion": "Voz secundaria clara: policía seco y serio.",
+      "voz": "policia_sandia-b"
+    },
+    "guardaespaldas": {
+      "nombre": "El guardaespaldas",
+      "direccion": "Voz secundaria clara: grave, calmada, amenazante.",
+      "voz": "guardaespaldas-b"
+    },
+    "reportera": {
+      "nombre": "La reportera",
+      "direccion": "Mujer adulta, presentadora de noticiero de TV: clara y enérgica.",
+      "voz": "reportera-a"
+    },
+    "narrador": {
+      "nombre": "Narrador",
+      "direccion": "Voz intensa de tráiler de telenovela.",
+      "voz": "narrador-c"
+    }
+  },
+  "voces": {
+    "cocardo-a": {
+      "personaje": "cocardo",
+      "motor": "chatterbox",
+      "descripcion": "Barítono cálido de unos 40 años, teatral y exagerado, encanto de vendedor y carcajada grande.",
+      "diseno": {
+        "instruccion": "Adult man around 40, warm baritone voice, comic telenovela villain, theatrical and over-the-top, sly salesman charm, big booming exaggerated laugh. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Ja, ja, ja! ¡Pásele, pásele! Tenemos la famosa nieve de Lima y el nuevo sabor de fresa. Mañana habrá un sabor nuevo.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.64,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/cocardo-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.6,
+      "cfg": 0.5
+    },
+    "cocardo-b": {
+      "personaje": "cocardo",
+      "motor": "chatterbox",
+      "descripcion": "Bajo rasposo de mediana edad, maquinador y siniestro pero chistoso, amenazante y con risotadas.",
+      "diseno": {
+        "instruccion": "Middle-aged man, deep raspy bass voice, scheming cartoon villain, sinister but funny, menacing but lively delivery at a natural conversational pace, with sudden bursts of laughter. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Ja, ja, ja! ¡Pásele, pásele! Tenemos la famosa nieve de Lima y el nuevo sabor de fresa. Mañana habrá un sabor nuevo.",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.49,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/cocardo-b.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.6,
+      "cfg": 0.5
+    },
+    "cocardo-c": {
+      "personaje": "cocardo",
+      "motor": "qwen",
+      "descripcion": "Tenor enérgico de unos 35 años, heladero parlanchín convertido en villano, nervioso y dramático.",
+      "diseno": {
+        "instruccion": "Man in his thirties, bright energetic tenor, fast-talking ice cream vendor turned comedic villain, nervous and dramatic, exaggerated reactions. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Ja, ja, ja! ¡Pásele, pásele! Tenemos la famosa nieve de Lima y el nuevo sabor de fresa. Mañana habrá un sabor nuevo.",
+        "semilla": 103,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.6,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/cocardo-c.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "cereza-a": {
+      "personaje": "cereza",
+      "motor": "chatterbox",
+      "descripcion": "Contralto sedosa de unos 25 años, villana astuta y coqueta, tono juguetón, risita suave.",
+      "diseno": {
+        "instruccion": "Young woman around 25, smooth silky alto voice, cunning and flirtatious telenovela villainess, playful teasing tone, soft mischievous giggle. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Ji, ji, ji. Te dije que valían el triple, cariño. Esto va a ser un imperio… y nadie abre mis cajas, ¿eh?",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.05,
+          "palabras_por_s": 2.23,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/cereza-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.55,
+      "cfg": 0.5
+    },
+    "cereza-b": {
+      "personaje": "cereza",
+      "motor": "chatterbox",
+      "descripcion": "Soprano dulce y brillante que esconde malicia, coqueta y manipuladora, entonación cantadita.",
+      "diseno": {
+        "instruccion": "Young woman, bright sweet soprano voice that hides malice, coquettish and manipulative, slightly breathy, sing-song intonation. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Ji, ji, ji. Te dije que valían el triple, cariño. Esto va a ser un imperio… y nadie abre mis cajas, ¿eh?",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.15,
+          "palabras_por_s": 2.52,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/cereza-b.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.55,
+      "cfg": 0.5
+    },
+    "cereza-c": {
+      "personaje": "cereza",
+      "motor": "qwen",
+      "descripcion": "Voz grave y sensual de casi 30, femme fatale segura, habla despacio con una sonrisa traviesa.",
+      "diseno": {
+        "instruccion": "Woman in her late twenties, low sultry husky voice, confident femme fatale, slow seductive delivery with a mischievous smile in the voice. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Ji, ji, ji. Te dije que valían el triple, cariño. Esto va a ser un imperio… y nadie abre mis cajas, ¿eh?",
+        "semilla": 104,
+        "revision": {
+          "wer": 0.05,
+          "palabras_por_s": 2.04,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/cereza-c.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "lima-a": {
+      "personaje": "lima",
+      "motor": "chatterbox",
+      "descripcion": "Mezzosoprano cálida de unos 22 años, dulce pero firme y decidida, sincera.",
+      "diseno": {
+        "instruccion": "Young woman around 22, sweet warm mezzo-soprano voice, kind but firm and determined, clear and sincere. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Ya sé, ya sé, Cocardo. Tú, sí, tú: acomoda la fruta en la vitrina. ¡Junta tres iguales! Esa cosa nos va a salir carísimo.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.49,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/lima-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "lima-b": {
+      "personaje": "lima",
+      "motor": "chatterbox",
+      "descripcion": "Voz suave y aguda, tierna y cariñosa, que se pone firme cuando va en serio.",
+      "diseno": {
+        "instruccion": "Young woman, soft gentle high voice, tender and caring, becomes firm and assertive when serious. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Ya sé, ya sé, Cocardo. Tú, sí, tú: acomoda la fruta en la vitrina. ¡Junta tres iguales! Esa cosa nos va a salir carísimo.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.19,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/lima-b.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "lima-c": {
+      "personaje": "lima",
+      "motor": "qwen",
+      "descripcion": "Voz clara y luminosa, práctica y de carácter, heroína de telenovela con un toque pícaro.",
+      "diseno": {
+        "instruccion": "Young woman in her twenties, bright clear voice, practical and strong-willed, warm with a touch of sass, expressive telenovela heroine. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Ya sé, ya sé, Cocardo. Tú, sí, tú: acomoda la fruta en la vitrina. ¡Junta tres iguales! Esa cosa nos va a salir carísimo.",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.042,
+          "palabras_por_s": 2.34,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/lima-c.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "pina-a": {
+      "personaje": "pina",
+      "motor": "chatterbox",
+      "descripcion": "Bajo profundo y resonante de unos 60 años, millonario poderoso, calmado y lento, cada palabra pesa.",
+      "diseno": {
+        "instruccion": "Older man around 60, very deep resonant bass voice, powerful wealthy businessman, calm, slow and authoritative, every word carries weight. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¿Tú eres Cocardo? Me agradas. Empiezo a entender por qué la hiciste tu socia. Mientras cumplan con el pedido, no es asunto mío.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.98,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/pina-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.45,
+      "cfg": 0.4
+    },
+    "pina-b": {
+      "personaje": "pina",
+      "motor": "chatterbox",
+      "descripcion": "Barítono áspero de unos 55, magnate frío y calculador, intimida en voz baja.",
+      "diseno": {
+        "instruccion": "Mature man in his fifties, gravelly baritone, cold and calculating tycoon, quiet intimidating tone, measured pace. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¿Tú eres Cocardo? Me agradas. Empiezo a entender por qué la hiciste tu socia. Mientras cumplan con el pedido, no es asunto mío.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.53,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/pina-b.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.45,
+      "cfg": 0.4
+    },
+    "pina-c": {
+      "personaje": "pina",
+      "motor": "qwen",
+      "descripcion": "Señor mayor de voz grave y tersa, elegante y arrogante, patriarca de telenovela.",
+      "diseno": {
+        "instruccion": "Elderly gentleman, rich smooth deep voice, elegant and arrogant millionaire, slightly amused, theatrical telenovela patriarch. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¿Tú eres Cocardo? Me agradas. Empiezo a entender por qué la hiciste tu socia. Mientras cumplan con el pedido, no es asunto mío.",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.19,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/pina-c.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "banano-a": {
+      "personaje": "banano",
+      "motor": "chatterbox",
+      "descripcion": "Barítono firme de unos 30 años, investigador decidido, serio, directo e intenso.",
+      "diseno": {
+        "instruccion": "Young man around 30, firm masculine baritone, determined investigator, serious, direct and intense, a little rough. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Otra vez no… esto me resulta demasiado familiar. Solo quiero respuestas. Ya casi te tengo, Cocardo.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.01,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/banano-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "banano-b": {
+      "personaje": "banano",
+      "motor": "chatterbox",
+      "descripcion": "Voz grave y ronca de detective rudo con buen corazón, urgente cuando habla de su hermana.",
+      "diseno": {
+        "instruccion": "Young man, deep husky voice, tough detective with a big heart, urgent and emotional when talking about his sister. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Otra vez no… esto me resulta demasiado familiar. Solo quiero respuestas. Ya casi te tengo, Cocardo.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.062,
+          "palabras_por_s": 2.37,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/banano-b.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "banano-c": {
+      "personaje": "banano",
+      "motor": "qwen",
+      "descripcion": "Tenor claro y fuerte de unos 32, héroe de acción valiente, enérgico y seguro.",
+      "diseno": {
+        "instruccion": "Man in his early thirties, clear strong tenor, brave action hero, energetic, confident and decisive. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Otra vez no… esto me resulta demasiado familiar. Solo quiero respuestas. Ya casi te tengo, Cocardo.",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.29,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/banano-c.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "banana-a": {
+      "personaje": "banana",
+      "motor": "chatterbox",
+      "descripcion": "Voz aguda y alegre de unos 20 años, dulce, algo ingenua y emotiva.",
+      "diseno": {
+        "instruccion": "Young woman around 20, bright cheerful high voice, sweet and a little naive, emotional, easily moved to tears of joy. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Libre! ¿Dónde está mi hermano? Me ofrecieron un trabajo en la heladería y mira cómo terminé.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.062,
+          "palabras_por_s": 2.09,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/banana-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "banana-b": {
+      "personaje": "banana",
+      "motor": "qwen",
+      "descripcion": "Voz ligera y aireada, suave y vulnerable, cálida.",
+      "diseno": {
+        "instruccion": "Young woman, soft breathy light voice, gentle and vulnerable, warm. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Libre! ¿Dónde está mi hermano? Me ofrecieron un trabajo en la heladería y mira cómo terminé.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.062,
+          "palabras_por_s": 2.21,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/banana-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "fresa-a": {
+      "personaje": "fresa",
+      "motor": "chatterbox",
+      "descripcion": "Voz enérgica y fuerte de unos 23 años, peleonera, de mecha corta, respondona.",
+      "diseno": {
+        "instruccion": "Young woman around 23, energetic loud lively voice, feisty, short-tempered and sassy. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Prima! ¡Aquí estoy! ¡Tengo frío! ¿Cinco? Si Lima y yo ya salimos… ¡Ese coco no sabe contar!",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.059,
+          "palabras_por_s": 2.22,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/fresa-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "fresa-b": {
+      "personaje": "fresa",
+      "motor": "qwen",
+      "descripcion": "Voz brillante y burbujeante, dramática, habla rápido.",
+      "diseno": {
+        "instruccion": "Young woman, high bright bubbly voice, dramatic, fast-talking. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Prima! ¡Aquí estoy! ¡Tengo frío! ¿Cinco? Si Lima y yo ya salimos… ¡Ese coco no sabe contar!",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.9,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/fresa-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "durazna-a": {
+      "personaje": "durazna",
+      "motor": "chatterbox",
+      "descripcion": "Contralto cálida de unos 25 años, ruda y valiente, contundente.",
+      "diseno": {
+        "instruccion": "Young woman around 25, low warm alto voice, tough and brave, punchy and assertive. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¿Helado gratis? ¡Mejor libertad gratis! Gracias, ayudante. Cuenta conmigo. ¡Qué estafa!",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.06,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/durazna-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "durazna-b": {
+      "personaje": "durazna",
+      "motor": "qwen",
+      "descripcion": "Voz media tersa y dulce, entusiasta, que se vuelve feroz.",
+      "diseno": {
+        "instruccion": "Young woman, smooth sweet medium-pitched voice, excited and enthusiastic, then fierce, speaks at a lively quick pace without long pauses. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¿Helado gratis? ¡Mejor libertad gratis! Gracias, ayudante. Cuenta conmigo. ¡Qué estafa!",
+        "semilla": 105,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.85,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/durazna-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "uva-a": {
+      "personaje": "uva",
+      "motor": "chatterbox",
+      "descripcion": "Voz suave y tímida de unos 21 años, recién llegada, nerviosa, algo temblorosa.",
+      "diseno": {
+        "instruccion": "Young woman around 21, soft timid light voice, shy and nervous newcomer, slightly shaky. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Espera… ¿por qué volvemos aquí? ¡Me descongelé con el apagón! ¡Tengo que salir de aquí!",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.25,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/uva-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "uva-b": {
+      "personaje": "uva",
+      "motor": "qwen",
+      "descripcion": "Voz clara y melosa, educada, tranquila y amable.",
+      "diseno": {
+        "instruccion": "Young woman, clear mellow voice, polite and soft-spoken, calm and gentle. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Espera… ¿por qué volvemos aquí? ¡Me descongelé con el apagón! ¡Tengo que salir de aquí!",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.45,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/uva-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "naranja-a": {
+      "personaje": "naranja",
+      "motor": "chatterbox",
+      "descripcion": "Voz muy cálida de unos 24 años, vecina amable y risueña, entonación alegre.",
+      "diseno": {
+        "instruccion": "Young woman around 24, very warm friendly voice, sunny kind neighbor, you can hear her big smile, cheerful sing-song intonation. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Libre! ¿Alguien quiere panecitos? Ayudante, ¡son los dos a la vez! Rompe ese congelador.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.143,
+          "palabras_por_s": 2.03,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/naranja-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "naranja-b": {
+      "personaje": "naranja",
+      "motor": "qwen",
+      "descripcion": "Voz chispeante y parlanchina, dulce y animada.",
+      "diseno": {
+        "instruccion": "Young woman, bright chirpy voice, bubbly and talkative, sweet. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "¡Libre! ¿Alguien quiere panecitos? Ayudante, ¡son los dos a la vez! Rompe ese congelador.",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.22,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/naranja-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "limon-a": {
+      "personaje": "limon",
+      "motor": "chatterbox",
+      "descripcion": "Viejo de unos 70 años, voz muy rasposa, cansada y misteriosa, lenta pero entendible.",
+      "diseno": {
+        "instruccion": "Old homeless man around 70, very raspy gravelly voice, rough and tired, mysterious, slow but understandable. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Oye, tú… sí, tú. Tiene que ver con su nieve. Los vi entrar de noche al callejón, con cajas y cajas.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.92,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/limon-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.4
+    },
+    "limon-b": {
+      "personaje": "limon",
+      "motor": "qwen",
+      "descripcion": "Anciano de voz ronca y cascada, callejero, pícaro y reservado.",
+      "diseno": {
+        "instruccion": "Elderly man, hoarse croaky voice, street-wise, sly and secretive, still clear. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Oye, tú… sí, tú. Tiene que ver con su nieve. Los vi entrar de noche al callejón, con cajas y cajas.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.69,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/limon-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 0.88,
+      "tono": 0
+    },
+    "policia_fresa-a": {
+      "personaje": "policia_fresa",
+      "motor": "chatterbox",
+      "descripcion": "Policía de unos 35 años, voz media clara y firme, profesional, sin rodeos.",
+      "diseno": {
+        "instruccion": "Woman police officer around 35, firm clear medium-pitched voice, professional, no-nonsense, authoritative. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Sin una orden no entro. Tráeme más pruebas. Todas las unidades que estén cerca, ahora mismo.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.89,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/policia_fresa-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "policia_fresa-b": {
+      "personaje": "policia_fresa",
+      "motor": "qwen",
+      "descripcion": "Detective de voz algo ronca, cansada y sarcástica, pero al mando.",
+      "diseno": {
+        "instruccion": "Woman detective, slightly husky alto voice, tired and sarcastic but in charge. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Sin una orden no entro. Tráeme más pruebas. Todas las unidades que estén cerca, ahora mismo.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.2,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/policia_fresa-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 0.9,
+      "tono": 0
+    },
+    "policia_sandia-a": {
+      "personaje": "policia_sandia",
+      "motor": "chatterbox",
+      "descripcion": "Policía de unos 40 años, voz grave y seca, cortante y serio.",
+      "diseno": {
+        "instruccion": "Male police officer around 40, deep stern voice, curt and serious, few words. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Luces. ¿Cuántas unidades? Quédese quieto, está bajo arresto. Aquí nadie sale sin permiso.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.23,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/policia_sandia-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.5
+    },
+    "policia_sandia-b": {
+      "personaje": "policia_sandia",
+      "motor": "qwen",
+      "descripcion": "Hombre grandote, bajo retumbante, custodio de cárcel, pesado y firme.",
+      "diseno": {
+        "instruccion": "Big man, booming bass voice, gruff prison guard, heavy and firm, steady normal pace. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Luces. ¿Cuántas unidades? Quédese quieto, está bajo arresto. Aquí nadie sale sin permiso.",
+        "semilla": 105,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.04,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/policia_sandia-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.15,
+      "tono": 0
+    },
+    "guardaespaldas-a": {
+      "personaje": "guardaespaldas",
+      "motor": "chatterbox",
+      "descripcion": "Guardaespaldas musculoso de unos 35, voz muy grave y calmada, amenazante, habla bajo.",
+      "diseno": {
+        "instruccion": "Muscular bodyguard around 35, very low deep calm voice, menacing and cool, speaks slowly and quietly. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Entonces tendrás que sacármelas. Don Piña no recibe visitas. Da un paso más y te vas.",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.83,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/guardaespaldas-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.4
+    },
+    "guardaespaldas-b": {
+      "personaje": "guardaespaldas",
+      "motor": "qwen",
+      "descripcion": "Grandote rudo, barítono ronco, intimidante y cortante.",
+      "diseno": {
+        "instruccion": "Big tough man, gruff husky baritone, intimidating, blunt. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Entonces tendrás que sacármelas. Don Piña no recibe visitas. Da un paso más y te vas.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.17,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/guardaespaldas-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "reportera-a": {
+      "personaje": "reportera",
+      "motor": "chatterbox",
+      "descripcion": "Presentadora de noticiero de unos 35 años, voz media brillante, clara y enérgica, segura frente a la cámara.",
+      "diseno": {
+        "instruccion": "Adult woman around 35, bright clear medium-pitched voice of a TV news anchor, energetic and confident broadcast delivery, crisp articulation, lively but natural pace. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Buenas noches. Última hora desde la heladería: las autoridades confirman la noticia. En un momento les contamos todos los detalles.",
+        "semilla": 100,
+        "revision": {
+          "wer": 0.1,
+          "palabras_por_s": 2.17,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/reportera-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 0.9,
+      "tono": 0,
+      "exageracion": 0.55,
+      "cfg": 0.5
+    },
+    "reportera-b": {
+      "personaje": "reportera",
+      "motor": "qwen",
+      "descripcion": "Conductora de noticias de voz media cálida y firme, tono urgente de última hora, muy bien articulada.",
+      "diseno": {
+        "instruccion": "Adult woman, warm firm mid-range voice of a television newscaster, authoritative and energetic, urgent breaking-news tone, very clear articulation, steady normal pace. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Buenas noches. Última hora desde la heladería: las autoridades confirman la noticia. En un momento les contamos todos los detalles.",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 2.36,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/reportera-b.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    },
+    "narrador-a": {
+      "personaje": "narrador",
+      "motor": "chatterbox",
+      "descripcion": "Locutor de tráiler, bajo profundo y retumbante, dramático, pausas de suspenso.",
+      "diseno": {
+        "instruccion": "Male movie trailer narrator, very deep booming bass voice, dramatic and intense telenovela trailer style, slow with suspenseful pauses. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Una heladería en quiebra. Un congelador viejo. Y un secreto que lo cambiará todo. Continuará…",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.83,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/narrador-a.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.35
+    },
+    "narrador-b": {
+      "personaje": "narrador",
+      "motor": "chatterbox",
+      "descripcion": "Locutor de barítono áspero y poderoso, épico, como promo de telenovela.",
+      "diseno": {
+        "instruccion": "Male announcer, powerful gravelly baritone, epic and suspenseful, emphatic dramatic delivery like a Latin soap opera promo. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Una heladería en quiebra. Un congelador viejo. Y un secreto que lo cambiará todo. Continuará…",
+        "semilla": 101,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.84,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/narrador-b.flac",
+      "semilla": 7,
+      "temperatura": 0.8,
+      "velocidad": 1.0,
+      "tono": 0,
+      "exageracion": 0.5,
+      "cfg": 0.35
+    },
+    "narrador-c": {
+      "personaje": "narrador",
+      "motor": "qwen",
+      "descripcion": "Narradora de contralto ahumada, misteriosa e intensa, tráiler de telenovela.",
+      "diseno": {
+        "instruccion": "Female narrator, deep smoky alto voice, mysterious and dramatic, intense soap opera trailer delivery. Speaks Latin American Spanish with a neutral Mexican accent, clear diction, seseo (no Castilian lisp).",
+        "texto": "Una heladería en quiebra. Un congelador viejo. Y un secreto que lo cambiará todo. Continuará…",
+        "semilla": 102,
+        "revision": {
+          "wer": 0.0,
+          "palabras_por_s": 1.89,
+          "idioma": "es",
+          "ok": true
+        },
+        "aprobada": true
+      },
+      "referencia": "referencias/narrador-c.flac",
+      "semilla": 7,
+      "temperatura": 0.9,
+      "velocidad": 1.0,
+      "tono": 0
+    }
+  }
+}

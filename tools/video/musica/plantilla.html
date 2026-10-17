@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Música del estudio</title>
+<!-- Plantilla de tools/video/musica/elegir.py: pega musica.json en DATOS, elegidas.json en ELEGIDAS y la entrada de
+     cada pista en ENTRADAS, y la guarda como dist/estudio/musica/index.html. Página local, sin nada externo: se abre
+     con doble clic. -->
+<style>
+  :root {
+    --fondo: #fff6ea; --tarjeta: #ffffff; --tinta: #2b1630; --suave: #6d5a70; --borde: #ead9c8;
+    --acento: #d61f4b; --acento-suave: #ffe3ec; --ok: #1f8a57; --ok-suave: #dcf5e8; --mal: #b3261e; --mal-suave: #fde4e1;
+    --chip: #f6ecdf;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fondo: #1b1020; --tarjeta: #2a1a30; --tinta: #fbeef5; --suave: #c4adc8; --borde: #45304c;
+      --acento: #ff6fa5; --acento-suave: #4a2038; --ok: #5fd39a; --ok-suave: #193a2a; --mal: #ff8a80; --mal-suave: #4a1e1c;
+      --chip: #3a2840;
+    }
+  }
+  :root[data-theme="dark"] {
+    --fondo: #1b1020; --tarjeta: #2a1a30; --tinta: #fbeef5; --suave: #c4adc8; --borde: #45304c;
+    --acento: #ff6fa5; --acento-suave: #4a2038; --ok: #5fd39a; --ok-suave: #193a2a; --mal: #ff8a80; --mal-suave: #4a1e1c;
+    --chip: #3a2840;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.7rem; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 36px 0 2px; }
+  .sub { color: var(--suave); margin: 0 0 8px; }
+  .grupo-nota { color: var(--suave); margin: 0 0 12px; font-size: .95rem; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 14px; }
+  .pista { background: var(--tarjeta); border: 2px solid var(--borde); border-radius: 14px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 8px; }
+  .pista.elegida { border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
+  .cabeza { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cabeza strong { font-size: 1.05rem; }
+  .estado { font-size: .8rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .estado.ok { background: var(--ok-suave); color: var(--ok); }
+  .estado.mal { background: var(--mal-suave); color: var(--mal); }
+  .desc { margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; }
+  .chips li { background: var(--chip); border-radius: 8px; padding: 2px 8px; font-size: .85rem;
+    font-variant-numeric: tabular-nums; }
+  .fallos { margin: 0; color: var(--mal); font-size: .9rem; }
+  .avisos { margin: 0; color: var(--suave); font-size: .9rem; font-style: italic; }
+  audio { width: 100%; height: 40px; }
+  .rotulo { font-size: .8rem; color: var(--suave); margin: 2px 0 -4px; }
+  details { font-size: .85rem; color: var(--suave); }
+  details p { margin: 4px 0; }
+  button { font: inherit; cursor: pointer; border-radius: 10px; border: 2px solid var(--acento);
+    background: transparent; color: var(--acento); padding: 6px 14px; font-weight: 600; }
+  button[aria-pressed="true"] { background: var(--acento); color: #fff; }
+  button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+  .eleccion { margin-top: 40px; background: var(--tarjeta); border: 2px solid var(--borde); border-radius: 14px;
+    padding: 16px; }
+  .eleccion h2 { margin-top: 0; }
+  pre { background: var(--chip); border-radius: 10px; padding: 12px; overflow-x: auto; font-size: .85rem;
+    margin: 8px 0 12px; white-space: pre-wrap; word-break: break-word; }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .aviso { color: var(--suave); font-size: .9rem; }
+  .marca { font-size: .8rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--acento);
+    color: #fff; }
+  .puntaje { font-size: .8rem; color: var(--suave); margin-left: auto; font-variant-numeric: tabular-nums; }
+  code { background: var(--chip); border-radius: 6px; padding: 1px 6px; font-size: .85rem; word-break: break-all; }
+  .resumen { margin: 0 0 12px; padding-left: 20px; }
+  .eleccion details { color: var(--tinta); font-size: .9rem; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Música para los videos</h1>
+  <p class="sub">Candidatos instrumentales hechos con ACE-Step 1.5 en esta PC. En cada grupo viene marcada la que
+    eligieron las medidas (o la que elegiste tú antes). Escúchalas y, si prefieres otra, toca «Elegir esta».</p>
+  <p class="sub">«Bucle ×3» repite el tramo de bucle tres veces seguidas: si no notas el salto, sirve de fondo
+    para videos de cualquier largo. Que no se note solo se sabe escuchando.</p>
+  <div id="grupos"></div>
+  <section class="eleccion" aria-labelledby="t-eleccion">
+    <h2 id="t-eleccion">Tu elección</h2>
+    <ul class="resumen" id="resumen"></ul>
+    <p class="aviso" id="cambios" role="status"></p>
+    <div class="acciones">
+      <button type="button" id="descargar">Descargar elegidas.json</button>
+      <button type="button" id="copiar">Copiar JSON</button>
+      <button type="button" id="deshacer">Deshacer cambios</button>
+      <span class="aviso" id="estado-copia" role="status"></span>
+    </div>
+    <p class="aviso">Para que los montajes la usen, guarda el archivo descargado en
+      <code>dist/estudio/musica/elegidas.json</code> (reemplaza el que está) o corre
+      <code>python3 tools/video/musica/elegir.py --aplicar ~/Downloads/elegidas.json</code>.</p>
+    <details><summary>Ver el JSON</summary><pre id="json"></pre></details>
+  </section>
+</main>
+<script>
+const DATOS = /*DATOS*/null;
+const ELEGIDAS = /*ELEGIDAS*/null;
+const ENTRADAS = /*ENTRADAS*/null;
+const CLAVE = 'cocardo-musica-eleccion';
+const GRUPOS = {
+  tema: ['Tema', 'Cumbia de telenovela alegre, de heladería. Se corta en bucle.'],
+  drama: ['Drama', 'Cama de tensión para los cliffhangers.'],
+  victoria: ['Victoria', 'Fiesta corta para cuando se gana.'],
+  calma: ['Calma', 'Fondo suave para los ASMR.'],
+};
+const base = ELEGIDAS || {};
+// eleccion = { grupo: id }. Parte de elegidas.json; lo que cambies aquí se recuerda en este navegador mientras
+// elegidas.json no cambie (si se vuelve a elegir, manda el archivo nuevo).
+let eleccion = {};
+const deBase = () => {
+  const r = {};
+  for (const g of Object.keys(GRUPOS)) if (base[g]) r[g] = base[g].id;
+  return r;
+};
+eleccion = deBase();
+try {
+  const guardado = JSON.parse(localStorage.getItem(CLAVE) || 'null');
+  if (guardado && guardado.base === base.generado && guardado.ids) {
+    for (const [g, id] of Object.entries(guardado.ids)) if (ENTRADAS && ENTRADAS[id]) eleccion[g] = id;
+  }
+} catch (e) { /* sin almacenamiento: queda en memoria */ }
+
+const el = (tag, props = {}, ...hijos) => {
+  const n = Object.assign(document.createElement(tag), props);
+  for (const h of hijos) if (h != null) n.append(h);
+  return n;
+};
+const seg = (s) => (s == null ? '—' : s.toFixed(2).replace('.', ',') + ' s');
+const num = (v, d = 1) => (v == null ? '—' : Number(v).toFixed(d).replace('.', ','));
+const pistaDe = (id) => DATOS.pistas.find((p) => p.id === id);
+
+// La entrada de elegidas.json de un grupo según lo elegido aquí (la arma elegir.py; aquí solo se copia)
+function entradaDe(g) {
+  const id = eleccion[g];
+  if (!id) return null;
+  if (base[g] && base[g].id === id) return base[g];
+  return Object.assign({}, ENTRADAS[id], base[g] ? { comparadas: base[g].comparadas } : {});
+}
+function archivoElegidas() {
+  const r = { nota: base.nota, generado: base.generado };
+  for (const g of Object.keys(GRUPOS)) { const e = entradaDe(g); if (e) r[g] = e; }
+  return r;
+}
+
+function tarjeta(p) {
+  const ok = p.ok;
+  const b = p.bucle;
+  const puntos = base[p.grupo] && base[p.grupo].comparadas ? base[p.grupo].comparadas[p.id] : null;
+  const chips = el('ul', { className: 'chips' },
+    el('li', { textContent: `${num(p.bpm_medido)} bpm (pedido ${p.bpm_pedido})` }),
+    el('li', { textContent: `dura ${seg(p.duracion)}` }),
+    p.tonalidad ? el('li', { textContent: p.tonalidad }) : null,
+    el('li', { textContent: p.voz && !p.voz.tiene_voz ? 'sin voz' : 'con voz' }),
+    el('li', { textContent: b ? `bucle ${seg(b.inicio)} → ${seg(b.fin)} (${b.compases} compases)` : 'sin bucle' }),
+    el('li', { textContent: `${num(p.lufs)} LUFS · pico ${num(p.pico_real_db)} dBTP` }));
+  const boton = el('button', { type: 'button', textContent: 'Elegir esta' });
+  const marca = el('span', { className: 'marca' });
+  const caja = el('article', { className: 'pista' },
+    el('div', { className: 'cabeza' }, el('strong', { textContent: p.id }),
+      el('span', { className: 'estado ' + (ok ? 'ok' : 'mal'), textContent: ok ? 'pasa la revisión' : 'revisar' }),
+      marca,
+      puntos == null ? null : el('span', { className: 'puntaje',
+        textContent: typeof puntos === 'number' ? `puntaje ${num(puntos, 2)}` : puntos })),
+    el('p', { className: 'desc', textContent: p.descripcion }),
+    chips,
+    ok ? null : el('p', { className: 'fallos', textContent: p.fallos.join(' · ') }),
+    p.avisos && p.avisos.length ? el('p', { className: 'avisos', textContent: 'Ojo: ' + p.avisos.join(' · ') }) : null,
+    el('p', { className: 'rotulo', textContent: 'Pista completa' }),
+    el('audio', { controls: true, preload: 'none', src: p.archivo }),
+    b ? el('p', { className: 'rotulo', textContent: 'Bucle ×3' }) : null,
+    b ? el('audio', { controls: true, preload: 'none', src: b.archivo }) : null,
+    el('details', {}, el('summary', { textContent: 'Detalles' }),
+      el('p', { textContent: `Texto para el modelo: ${p.estilo}` }),
+      el('p', { textContent: `Semilla ${p.semilla} · ${p.modelo || ''} · ${num(p.segundos_gpu)} s de GPU` }),
+      el('p', { textContent: `Voz: la pista de voz separada suena a ${p.voz ? num(p.voz.voz_db) : '—'} dB de la ` +
+        `mezcla (cantada ≈ −12, limpia < −30); whisper reconoce ${p.voz ? p.voz.palabras_seguras : '—'} palabras` +
+        (p.voz && p.voz.texto ? ` («${p.voz.texto.slice(0, 80)}»)` : '') }),
+      b ? el('p', { textContent: `Costura: parecido ${num(b.distancia, 3)} (0 = idéntico, ≈ 1,1 = sin relación), ` +
+        `golpe ${num(b.golpe_costura, 2)} (≈ 1 o menos no salta)` }) : null,
+      ENTRADAS && ENTRADAS[p.id] && ENTRADAS[p.id].desglose.length
+        ? el('p', { textContent: 'Puntaje (menos es mejor): ' + ENTRADAS[p.id].desglose.join(' · ') }) : null),
+    el('div', { className: 'acciones' }, boton));
+  const pintar = () => {
+    const si = eleccion[p.grupo] === p.id;
+    boton.setAttribute('aria-pressed', si ? 'true' : 'false');
+    boton.textContent = si ? 'Elegida' : 'Elegir esta';
+    caja.classList.toggle('elegida', si);
+    const e = si ? entradaDe(p.grupo) : null;
+    marca.hidden = !si;
+    marca.textContent = !e ? '' : e.a_mano ? 'elegida a mano' : 'elegida por las medidas';
+  };
+  boton.addEventListener('click', () => { eleccion[p.grupo] = p.id; guardar(); });
+  caja._pintar = pintar;
+  pintar();
+  return caja;
+}
+
+const tarjetas = [];
+function guardar() {
+  const original = deBase();
+  const cambios = Object.keys(GRUPOS).filter((g) => eleccion[g] && eleccion[g] !== original[g]);
+  try {
+    if (cambios.length) localStorage.setItem(CLAVE, JSON.stringify({ base: base.generado, ids: eleccion }));
+    else localStorage.removeItem(CLAVE);
+  } catch (e) { /* sin almacenamiento: queda en memoria */ }
+  tarjetas.forEach((t) => t._pintar());
+  const resumen = document.getElementById('resumen');
+  resumen.replaceChildren(...Object.keys(GRUPOS).filter((g) => eleccion[g]).map((g) => {
+    const e = entradaDe(g);
+    return el('li', { textContent: `${GRUPOS[g][0]}: ${e.id} (${e.a_mano ? 'a mano' : 'por las medidas'})` });
+  }));
+  document.getElementById('cambios').textContent = cambios.length
+    ? `Cambiaste ${cambios.length === 1 ? '1 grupo' : cambios.length + ' grupos'}: descarga el archivo para que cuente.`
+    : 'Sin cambios: es lo que ya dice elegidas.json.';
+  document.getElementById('json').textContent = JSON.stringify(archivoElegidas(), null, 1);
+}
+
+const raiz = document.getElementById('grupos');
+if (!DATOS || !ELEGIDAS || !ENTRADAS) {
+  raiz.append(el('p', { textContent: 'Faltan los datos: corre tools/video/musica/elegir.py.' }));
+  document.querySelector('.eleccion').hidden = true;
+} else {
+  for (const g of Object.keys(GRUPOS)) {
+    const pistas = DATOS.pistas.filter((p) => p.grupo === g);
+    if (!pistas.length) continue;
+    const rejilla = el('div', { className: 'rejilla' });
+    pistas.forEach((p) => { const t = tarjeta(p); tarjetas.push(t); rejilla.append(t); });
+    const titulo = el('h2', { id: 't-' + g, textContent: GRUPOS[g][0] });
+    const seccion = el('section', {}, titulo, el('p', { className: 'grupo-nota', textContent: GRUPOS[g][1] }), rejilla);
+    seccion.setAttribute('aria-labelledby', 't-' + g);
+    raiz.append(seccion);
+  }
+  guardar();
+}
+// Un solo audio a la vez
+document.addEventListener('play', (ev) => {
+  document.querySelectorAll('audio').forEach((a) => { if (a !== ev.target) a.pause(); });
+}, true);
+document.getElementById('deshacer').addEventListener('click', () => { eleccion = deBase(); guardar(); });
+document.getElementById('descargar').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(archivoElegidas(), null, 1) + '\n'], { type: 'application/json' });
+  const a = el('a', { href: URL.createObjectURL(blob), download: 'elegidas.json' });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+document.getElementById('copiar').addEventListener('click', async () => {
+  const txt = JSON.stringify(archivoElegidas(), null, 1);
+  const aviso = document.getElementById('estado-copia');
+  try { await navigator.clipboard.writeText(txt); aviso.textContent = 'Copiado.'; }
+  catch (e) { aviso.textContent = 'No se pudo copiar: abre «Ver el JSON» y cópialo a mano.'; }
+});
+</script>
+</body>
+</html>

@@ -9,5 +9,8 @@
     "sim": "node tools/sim.js",
     "build": "node tools/build-single.cjs && node tools/build-single.cjs --fragment"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
 }

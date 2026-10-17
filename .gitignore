@@ -8,3 +8,4 @@ clips/
 redes/.env
 redes/respaldos/
 .wrangler/
+__pycache__/

@@ -1,0 +1,197 @@
+{
+ "id": "D02-2",
+ "nivel": 13,
+ "nombre": "Prima al rescate",
+ "semilla": 45,
+ "politica": "0.25",
+ "prefijo": 23,
+ "tomas": {
+  "pierde": "D02-2-pierde",
+  "gana": "D02-2-gana"
+ },
+ "var": {
+  "pierde": "13:45:0.25:pierde:0",
+  "gana": "13:45:0.25:gana:0"
+ },
+ "indices": {
+  "pierde": 0,
+  "gana": 0
+ },
+ "ganadoras_en_tablero": 1,
+ "metas": [
+  {
+   "tipo": "rescue",
+   "nombre": "Fresa",
+   "antes": 1
+  },
+  {
+   "tipo": "ice",
+   "nombre": "Hielo",
+   "antes": 2
+  }
+ ],
+ "falta": {
+  "meta": 1,
+  "n": 1,
+  "unidad": "hielo",
+  "genero": "m",
+  "texto": "¡FALTÓ UN HIELO!"
+ },
+ "frase_ganadoras": "La ÚNICA que ganaba",
+ "villanos": [
+  "cocardo"
+ ],
+ "pierde": {
+  "a": {
+   "r": 3,
+   "c": 3
+  },
+  "b": {
+   "r": 4,
+   "c": 3
+  },
+  "cascadas": 4,
+  "combo": false,
+  "piezas": 40,
+  "especiales": [
+   "bomba"
+  ],
+  "rescates": [
+   "fresa"
+  ],
+  "villano": 0,
+  "gana": false,
+  "faltan": 1,
+  "metas_por_cascada": [
+   [
+    1,
+    2
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ]
+  ],
+  "piezas_por_cascada": [
+   19,
+   32,
+   37,
+   40
+  ],
+  "quedan": [
+   {
+    "tipo": "ice",
+    "r": 7,
+    "c": 0
+   }
+  ]
+ },
+ "gana": {
+  "a": {
+   "r": 6,
+   "c": 2
+  },
+  "b": {
+   "r": 7,
+   "c": 2
+  },
+  "cascadas": 12,
+  "combo": false,
+  "piezas": 129,
+  "especiales": [
+   "ph",
+   "pv",
+   "ph",
+   "bomba",
+   "bomba"
+  ],
+  "rescates": [
+   "fresa"
+  ],
+  "villano": 0,
+  "gana": true,
+  "faltan": 0,
+  "metas_por_cascada": [
+   [
+    1,
+    2
+   ],
+   [
+    1,
+    2
+   ],
+   [
+    1,
+    2
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    0
+   ],
+   [
+    0,
+    0
+   ],
+   [
+    0,
+    0
+   ],
+   [
+    0,
+    0
+   ]
+  ],
+  "piezas_por_cascada": [
+   15,
+   28,
+   41,
+   61,
+   69,
+   72,
+   76,
+   87,
+   104,
+   116,
+   126,
+   129
+  ],
+  "quedan": []
+ },
+ "cta": "EMPIEZA GRATIS"
+}
