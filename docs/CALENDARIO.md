@@ -217,10 +217,10 @@ produce nada.
 
 ## 5. Antes del capítulo 7: la semana 0 (18 al 24 de octubre)
 
-1. **Subir las reglas de Firestore ampliadas** (ya cambiadas en `firebase/firestore.rules`: 120 niveles, 360 estrellas):
-   `cd firebase && firebase deploy --only firestore:rules` (`docs/FIREBASE.md` §4). Las reglas **no** viajan con
-   `git push`; sin esto, el perfil de quien pase del nivel 30 con cuenta se rechaza y su progreso deja de subir.
-   Comprobar en la consola de Firebase que la versión vigente es la nueva.
+1. **Subir las reglas de Firestore ampliadas** (120 niveles, 360 estrellas). **Hecho el 17 de octubre de 2026** con
+   `cd firebase && npx --yes firebase-tools@15 deploy --only firestore:rules -P graceful-system-406208` (no hay
+   `.firebaserc`, así que el proyecto va con `-P`; `docs/FIREBASE.md` §4). Las reglas **no** viajan con `git push`:
+   si vuelven a cambiar (solo al subir `MAX_LEVELS`), repetir el comando antes de abrir el capítulo que lo necesite.
 2. **Activar GA4** (`ga4` en `js/cloud-config.js`; hoy está vacío) y registrar como dimensiones personalizadas de evento
    `level`, `chapter`, `won`, `attempt`, `state` y `built`: sin eso las exploraciones de GA4 no filtran por parámetro y
    ninguna regla por nivel se puede calcular. Añadir `?utm_source=tiktok&utm_medium=bio` (y `instagram`) a los enlaces
