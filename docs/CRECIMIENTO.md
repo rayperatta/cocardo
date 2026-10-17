@@ -84,6 +84,12 @@ abandona en un nivel, bájale 2 movimientos de dificultad con `tools/sim.js`), `
 **Estado (16-oct-2026, 21:42 UTC): cocardo.app ya está comprado** en Cloudflare Registrar, con los servidores
 de nombres de Cloudflare (`cass` y `lloyd`). Queda pendiente rescatehelado.com como redirección, si quieres.
 
+**Estado (17-oct-2026): el juego se sirve desde Cloudflare**, no desde GitHub Pages: un Worker de archivos estáticos
+(`cocardo-sitio`) en la ruta `cocardo.app/*` y otro (`cocardo-www`) que redirige `www`; el DNS no cambió (sigue
+apuntando a GitHub con proxy, que queda como respaldo del origen). Motivo: las condiciones de GitHub Pages no admiten
+sitios con ventas, y el Worker de pagos necesita servidor. Publicación: `tools/deploy-cloudflare.sh` (ver README).
+Las instrucciones de GitHub Pages de abajo quedan como referencia histórica.
+
 **Conectarlo sin tocar la consola de Cloudflare:** `tools/setup-cloudflare-dns.sh` crea (o corrige) los registros
 A/AAAA del apex y el CNAME de `www` hacia GitHub Pages, sin proxy, con un token de API de Cloudflare
 (My Profile → API Tokens → Create Token → plantilla «Edit zone DNS», zona `cocardo.app`) en la variable

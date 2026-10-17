@@ -1,0 +1,10 @@
+# Cocardo: ¡Rescate Helado! — www.cocardo.app → cocardo.app (antes lo redirigía GitHub Pages).
+# Worker mínimo en la ruta www.cocardo.app/*; solo se invoca para quien entra por www.
+name = "cocardo-www"
+main = "www-worker.js"
+compatibility_date = "2025-10-01"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "www.cocardo.app/*", zone_name = "cocardo.app" },
+]

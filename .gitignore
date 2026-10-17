@@ -7,3 +7,4 @@ playwright-report/
 clips/
 redes/.env
 redes/respaldos/
+.wrangler/

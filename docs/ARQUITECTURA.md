@@ -9,8 +9,8 @@ este archivo en las interfaces y `DISENO.md` en las reglas de juego. `docs/PERSO
 ## 0. Ground rules
 
 - Static site. No build step to play: `index.html` + `css/*.css` + `js/**/*.js`, loaded with classic `<script>` tags
-  (no ES modules, no `fetch` of local files, no external JS libraries). Must work from `file://`, GitHub Pages and a
-  sandboxed iframe (Claude artifact). Only external resource allowed: Google Fonts stylesheet (with system fallbacks).
+  (no ES modules, no `fetch` of local files, no external JS libraries). Must work from `file://`, a static host (Cloudflare Workers static assets in
+  production, GitHub Pages as fallback) and a sandboxed iframe (Claude artifact). Only external resource allowed: Google Fonts stylesheet (with system fallbacks).
   **Exceptions (§14-§16), all lazy and optional:** `Cocardo.Cloud` injects the Firebase *compat* SDK from gstatic
   only when configured, served over http(s), not framed, and only on user action (or to restore a previous session);
   `Cocardo.Track` loads `gtag.js` only when a GA4 id is configured; `Cocardo.Clip` may use a temporary `<a download>`

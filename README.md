@@ -51,11 +51,14 @@ que descongela a las víctimas mientras la historia avanza igual que en la serie
 - **Local:** abre `index.html` con doble clic. No necesita servidor.
 - **Un solo archivo:** `node tools/build-single.cjs` genera `dist/cocardo.html` con todo adentro, para
   compartirlo o subirlo a cualquier hosting.
-- **GitHub Pages:** en el repositorio, ve a *Settings → Pages*. En *Build and deployment* elige
-  *Deploy from a branch*, selecciona la rama del juego y la carpeta `/ (root)`, y guarda. En un par de minutos
-  queda en `https://<usuario>.github.io/cocardo/`. Dominio propio, cuentas y plan de lanzamiento:
-  `docs/CRECIMIENTO.md` y `docs/FIREBASE.md`.
-- **Landing:** `landing.html` es la página de presentación (para Google, prensa y creadores; `/landing/` redirige ahí). El enlace de la
+- **Publicar (cocardo.app):** el juego se sirve desde **Cloudflare** como Worker de archivos estáticos (`cocardo-sitio`, ruta
+  `cocardo.app/*`); GitHub es solo el repositorio. Cada vez que cambie el juego: sube `VERSION` en `sw.js`, `git push`
+  y `CLOUDFLARE_API_TOKEN=… tools/deploy-cloudflare.sh` (arma `dist/site/` solo con los archivos públicos y despliega;
+  `--check` comprueba el sitio sin desplegar). Qué hay detrás: `tools/cloudflare/`. GitHub Pages sigue activo como
+  respaldo del origen, pero sus condiciones de uso no permiten sitios con ventas: desactívalo antes de cobrar.
+  Dominio propio, cuentas y plan de lanzamiento: `docs/CRECIMIENTO.md`, `docs/FIREBASE.md` y `docs/CALENDARIO.md`.
+- **Landing:** `landing.html` es la página de presentación, publicada en `https://cocardo.app/landing` (para Google,
+  prensa y creadores; `/landing/` y `/landing.html` redirigen ahí). El enlace de la
   bio de TikTok/Instagram conviene que vaya directo a `index.html` (un toque y ya está jugando);
   `index.html?go=daily` abre el Reto Diario.
 
@@ -95,7 +98,8 @@ manifest.webmanifest    app instalable; sw.js: juego sin conexión; icons/: íco
 firebase/               reglas de seguridad de Firestore (firestore.rules) y configuración del proyecto
 docs/                   diseño, arquitectura, personajes, investigación, Firebase y plan de crecimiento
 tests/                  pruebas del motor, niveles, reto diario, progreso y prueba de punta a punta
-tools/                  simulador de niveles, empaquetador, capturas, íconos, bot que graba videos y vistas previas
+tools/                  simulador de niveles, empaquetador, capturas, íconos, bot que graba videos, vistas previas y
+                        publicación en Cloudflare (deploy-cloudflare.sh, cloudflare/)
 redes/                  Postiz con Docker para publicar los videos en las redes (ver redes/README.md)
 ```
 

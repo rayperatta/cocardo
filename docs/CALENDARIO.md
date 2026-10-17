@@ -68,9 +68,11 @@ vuelve a pintar; `today(null)` vuelve a hoy), `Cocardo.debug.roadmap()` da los c
 `Cocardo.debug.openCount()` el último nivel jugable y `Cocardo.debug.showRoadmap(7)` abre la ficha.
 
 **Para cambiar una fecha:** edita `opens` del capítulo en `js/core/roadmap.js` (o en `Levels.chapters` si ya está
-construido), corre `node --test tests/roadmap.test.js` y `node tools/calendario.js`, sube `VERSION` en `sw.js` y publica
-(`git push` a `main`). El service worker es «red primero»: quien abra el juego con internet ve el cambio en esa misma
-sesión; la app instalada sin red lo ve en la siguiente apertura con conexión.
+construido), corre `node --test tests/roadmap.test.js` y `node tools/calendario.js`, sube `VERSION` en `sw.js` y publica:
+`git push` a `main` (repositorio) y `CLOUDFLARE_API_TOKEN=… tools/deploy-cloudflare.sh` (desde el 17 de octubre de 2026 el
+juego se sirve desde Cloudflare como Worker de archivos estáticos; GitHub es solo el repositorio). El service worker es
+«red primero» y `sw.js` se sirve sin caché: quien abra el juego con internet ve el cambio en esa misma sesión; la app
+instalada sin red lo ve en la siguiente apertura con conexión.
 
 ## 2. Calendario base
 
@@ -180,8 +182,9 @@ Con D = viernes de apertura:
    `VERSION` en `sw.js` (una versión menor por capítulo: `cocardo-v1.3.0` para el 7) y `CORE` si hubo archivos nuevos.
    Fila nueva en `docs/DISENO.md` §7 y en la tabla de §2. Si cambió `MAX_LEVELS` (no hasta el 25): reglas de Firestore
    **antes** del push.
-8. **D−3: despliegue oculto.** `git push origin main`; GitHub Pages tarda 1-2 min; purgar la caché de Cloudflare de los
-   `.js` si `www` sigue con proxy. En ventana privada en https://cocardo.app: el mapa dice «Se abre el viernes…», el
+8. **D−3: despliegue oculto.** `git push origin main` y `tools/deploy-cloudflare.sh` (publica en segundos y comprueba el
+   sitio; el script falla si algo interno quedó público o si las rutas de login y pagos no responden). En ventana
+   privada en https://cocardo.app: el mapa dice «Se abre el viernes…», el
    nivel 31 no abre, la ficha muestra teaser, días que faltan y los botones «Reto de hoy» y «Avisar» (compartir la fecha); con la
    fecha adelantada (DevTools → Sensors → Override date, o `debug.today`) abre y la historia corre. En el teléfono con la
    app instalada, cerrar y abrir dos veces para que el service worker tome la versión. **Solo a partir de aquí** se
@@ -336,7 +339,7 @@ de esta temporada no se publican en redes hasta que empiece, y en el mapa no nom
 | Riesgo | Mitigación |
 |---|---|
 | Reglas de Firestore sin subir el 30 de octubre: los perfiles con `levels > 30` o `stars > 90` se rechazan en silencio y el ranking se congela para los mejores. | Paso 1 de §5, esta semana. `tools/calendario.js` avisa si el tope de las reglas no coincide. |
-| Caché vieja el día del estreno: una PWA instalada sin abrir en días puede tener un `levels.js` sin el capítulo y ver «¡ya casi!». | Despliegue oculto ≥ 3 días antes, `VERSION` nueva, purga de Cloudflare, botón «Actualizar» en la ficha del estado retrasado. |
+| Caché vieja el día del estreno: una PWA instalada sin abrir en días puede tener un `levels.js` sin el capítulo y ver «¡ya casi!». | Despliegue oculto ≥ 3 días antes, `VERSION` nueva (`sw.js` se sirve sin caché y el resto con 10 min), botón «Actualizar» en la ficha del estado retrasado. |
 | Fecha incumplida. | Día exacto solo con el capítulo desplegado; colchón de un capítulo; +7 días y volver a mes; video de 10 s el mismo día. |
 | Agotamiento de una sola persona. | Cadencia que baja sola (regla 8), pausa de fiestas ya calendarizada, una mecánica de motor por temporada, cero personajes nuevos. |
 | Balance a ciegas (GA4 solo trae ganado/perdido). | Reglas 1, 2 y 6 con muestra mínima; comparar siempre con la curva del bot guardada en la bitácora; añadir `attempt` (intentos acumulados) a `level_start`/`level_end` cuando haga falta medir la cola larga. |

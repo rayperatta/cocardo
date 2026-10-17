@@ -1,0 +1,19 @@
+# Cocardo: ¡Rescate Helado! — el juego servido desde Cloudflare como Worker de archivos estáticos.
+# Sin script (solo assets): las peticiones a archivos estáticos no cuentan como invocaciones del Worker y son gratis.
+# La ruta cocardo.app/* corre en el borde antes de llegar al origen (el DNS sigue apuntando a GitHub Pages, con proxy):
+# las rutas más específicas de la zona siguen mandando: cocardo.app/__/* → cocardo-auth-proxy (login de Google) y
+# cocardo.app/api/* → cocardo-pagos. Para deshacer la migración basta borrar la ruta de este Worker.
+# Despliegue: tools/deploy-cloudflare.sh (arma dist/site con tools/cloudflare/build-site.cjs y llama a wrangler).
+name = "cocardo-sitio"
+compatibility_date = "2025-10-01"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "cocardo.app/*", zone_name = "cocardo.app" },
+]
+
+[assets]
+directory = "../../dist/site"
+# auto-trailing-slash: / sirve index.html y /landing.html pasa a /landing (307). Con «none» la raíz / da 404: no usarlo.
+html_handling = "auto-trailing-slash"
+not_found_handling = "none"
