@@ -31,6 +31,14 @@ check() {
   c=$(code "https://$DOMAIN/landing?check=$RANDOM"); echo "  /landing → $c"; [ "$c" = "200" ] || fail=1
   c=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "https://$DOMAIN/landing.html"); echo "  /landing.html → $c (debe ser 307 a /landing)"; case "$c" in 307*"/landing") ;; *) fail=1;; esac
   c=$(code "https://$DOMAIN/?go=daily"); echo "  /?go=daily → $c"; [ "$c" = "200" ] || fail=1
+  # páginas legales que mira la revisión de dominio de Paddle: 200, públicas y sin marcadores {{…}} (docs/PAGOS.md §6.2)
+  for p in legal/terminos legal/privacidad legal/reembolsos; do
+    c=$(code "https://$DOMAIN/$p?check=$RANDOM"); echo "  /$p → $c"; [ "$c" = "200" ] || fail=1
+  done
+  if curl -sS -H 'Cache-Control: no-cache' "https://$DOMAIN/landing?check=$RANDOM" "https://$DOMAIN/legal/terminos?check=$RANDOM" \
+      "https://$DOMAIN/legal/privacidad?check=$RANDOM" "https://$DOMAIN/legal/reembolsos?check=$RANDOM" | grep -q '{{[A-Z_]*}}'; then
+    echo "  ✗ la landing o las páginas legales tienen marcadores {{…}} sin rellenar (tools/legal-datos.cjs)"; fail=1
+  fi
   echo "  /sw.js → $(code "https://$DOMAIN/sw.js?check=$RANDOM") · $(hdr "https://$DOMAIN/sw.js" cache-control)"
   echo "  VERSION publicada: $(curl -sS -H 'Cache-Control: no-cache' "https://$DOMAIN/sw.js?check=$RANDOM" | grep -o "cocardo-v[0-9.]*" | head -1)"
   for p in docs/CALENDARIO.md tools/sim.js tests/helpers.js firebase/firestore.rules README.md package.json; do

@@ -83,6 +83,19 @@ test('Roadmap: textos para el mapa (nunca una fecha vencida como promesa)', () =
   assert.equal(Roadmap.daysUntil('x', TODAY), null);
 });
 
+test('Roadmap: expectedText (ficha de pago) dice «Previsto para…», nunca «Se abre…», y nada si ya abrió o se retrasó', () => {
+  assert.equal(Roadmap.expectedText('2026-10-30', false, TODAY), 'Previsto para el viernes 30 de octubre');
+  assert.equal(Roadmap.expectedText('2026-10-30', true, 20261024), 'Previsto para el viernes 30 de octubre', 'a menos de una semana, con fecha completa');
+  assert.equal(Roadmap.expectedText('2026-10-30', true, 20261029), 'Previsto para mañana');
+  assert.equal(Roadmap.expectedText('2026-10-30', true, 20261030), '', 'construido y en su día: ya está abierto');
+  assert.equal(Roadmap.expectedText('2026-10-30', false, 20261031), '', 'fecha pasada sin niveles (retrasado): sin fecha');
+  assert.equal(Roadmap.expectedText('2026-12', false, TODAY), 'Previsto para diciembre');
+  assert.equal(Roadmap.expectedText('2027-01-08', false, 20261230), 'Previsto para el viernes 8 de enero de 2027');
+  assert.equal(Roadmap.expectedText('2027', false, TODAY), 'Previsto para 2027');
+  assert.equal(Roadmap.expectedText(undefined, false, TODAY), '');
+  assert.doesNotMatch(fs.readFileSync(require.resolve('../js/core/roadmap.js'), 'utf8'), /se promete/, 'el contrato no habla de promesas (Términos §5)');
+});
+
 test('Roadmap: capítulos planeados contiguos tras los construidos, 5 niveles, textos cortos y fechas que no retroceden', () => {
   const built = Levels.chapters;
   const lastBuilt = built[built.length - 1];

@@ -1,7 +1,7 @@
 {
   "name": "Cocardo: ¡Rescate Helado!",
   "short_name": "Cocardo",
-  "description": "Juego gratis tipo junta 3 de la frutinovela viral: descongela a las frutas de la heladería de Cocardo.",
+  "description": "Una frutinovela tipo junta 3, gratis para empezar: descongela a las frutas de la heladería de Cocardo.",
   "lang": "es",
   "start_url": "./?source=pwa",
   "scope": "./",

@@ -137,6 +137,8 @@ svg { display: block; }
 #screen-game { background: linear-gradient(180deg, #ffe0ec 0%, #ffd3e3 55%, #ffc1d8 100%); }
 
 .noscript { margin: 40vh auto 0; text-align: center; font-size: 20px; }
+.noscript p { margin: 0 16px 12px; }
+.noscript p + p { font-size: 15px; }
 
 /* ---------- botones de caramelo ---------- */
 
@@ -536,6 +538,13 @@ svg { display: block; }
   text-align: center;
 }
 .disclaimer.in-card { margin: 16px 0 0; background: rgba(43, 22, 48, .08); color: var(--ink); }
+/* enlaces legales: Precio · Términos · Privacidad · Reembolsos · Livro de Reclamações (Portada) y · Contacto (Ajustes) */
+.legal-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 2px; }
+.legal-links a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+.disclaimer .legal-links { margin-top: 2px; }
+.disclaimer .legal-links a { display: inline-block; padding: 2px; }
+.settings-legal { margin: 18px 0 0; font-family: var(--font-body); font-size: 14px; line-height: 1.2; color: var(--drama); }
+.settings-legal a { display: inline-block; padding: 8px 4px; }
 .title-out .title-main { animation: titleOut .26s ease-in both; }
 @keyframes titleOut { to { opacity: 0; transform: scale(1.08); } }
 
@@ -2152,3 +2161,152 @@ body.reduced-motion .flash.flash-on { animation: none; }
 .rec-dot { position: fixed; z-index: 60; top: calc(8px + var(--sat)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(43, 22, 48, .78); color: #fff; font-family: var(--font-display); font-size: 13px; pointer-events: none; }
 .rec-dot i { width: 10px; height: 10px; border-radius: 50%; background: var(--cherry); animation: pulse 1s ease-in-out infinite; }
 @media (max-width: 360px) { .avatar-grid { grid-template-columns: repeat(4, 1fr); } .account-chip { font-size: 15px; } }
+
+/* ===================================================================== */
+/*                JUEGO COMPLETO (Cocardo.Pay; solo con venta)            */
+/* ===================================================================== */
+
+/* mapa: niveles del juego completo abiertos por fecha. Una sola insignia en el sitio del candado: corona de tinta
+   sobre disco dorado (ni la estrella de los puntos ni el calendario morado de los capítulos con fecha) */
+.node-paid-badge {
+  position: absolute;
+  right: -6px; bottom: -6px;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  border: 2.5px solid var(--ink);
+  box-shadow: 0 2px 0 var(--ink), 0 0 8px rgba(255, 201, 60, .7);
+  z-index: 4;
+}
+.node-paid-badge svg { width: 18px; height: 18px; }
+.node-boss .node-paid-badge { right: -2px; bottom: 4px; }
+/* nivel actual que solo espera el juego completo: sin pulso ni anillo (tampoco lleva la manita) */
+.node-current.node-paid .node-disc { animation: none; }
+.node-current.node-paid::after { display: none; }
+/* rótulo del primer capítulo del juego completo (no mueve el rótulo): tinta y oro, legible sobre rótulos dorados */
+.zone-paid-tag {
+  position: absolute;
+  top: -22px; left: -12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 4px 6px;
+  border: 2.5px solid var(--gold);
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 3px 0 rgba(43, 22, 48, .45);
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .3px;
+  line-height: 1.1;
+  text-shadow: none;
+  white-space: nowrap;
+  transform: rotate(-4deg);
+}
+.zone-paid-tag svg { width: 14px; height: 14px; flex: 0 0 auto; }
+
+/* ficha «Desbloquea el juego completo» */
+.paywall-card { padding-top: 36px; }
+.paywall-card a.btn { text-decoration: none; }
+.pw-hero { position: relative; width: 88px; height: 88px; margin: 0 auto 6px; }
+.pw-face {
+  display: block;
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: radial-gradient(circle at 40% 30%, #fff 0 10%, #ffe08a 60%, var(--gold));
+  box-shadow: 0 4px 0 var(--ink);
+  overflow: hidden;
+}
+.pw-face svg { width: 120%; height: 120%; margin: -6% 0 0 -10%; }
+.pw-crown { position: absolute; right: -16px; top: -10px; width: 40px; height: 40px; filter: drop-shadow(0 2px 0 rgba(43, 22, 48, .4)); animation: wobble 1.8s ease-in-out infinite; }
+.pw-crown svg { width: 100%; height: 100%; }
+.pw-view-error .pw-face { background: radial-gradient(circle at 40% 30%, #fff 0 10%, #d9f1ff 60%, var(--ice-deep)); }
+.pw-title { margin: 2px 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 25px; line-height: 1.08; color: var(--drama); }
+.pw-title:focus { outline: none; }   /* recibe el foco al abrir (tabindex=-1): no es un control */
+.pw-status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.pw-nowrap { white-space: nowrap; }
+.pw-text { margin: 0 0 6px; font-size: 15px; font-weight: 700; line-height: 1.35; }
+.pw-text.pw-sub { font-size: 14px; color: var(--drama-2); }
+.pw-list {
+  margin: 10px 0 2px;
+  padding: 6px 12px;
+  list-style: none;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 0 var(--ink);
+  text-align: left;
+}
+.pw-list li { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; font-size: 14px; font-weight: 800; line-height: 1.25; }
+.pw-list li + li { border-top: 2px dashed rgba(43, 22, 48, .14); }
+.pw-list small { display: block; margin-top: 1px; font-size: 12px; font-weight: 700; color: var(--drama-2); }
+.pw-ok { flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); background: var(--ok); color: #fff; }
+.pw-ok svg { width: 13px; height: 13px; }
+.paywall-card .account-note.warn { margin-top: 10px; text-align: left; }
+/* «1,99 € · pago único, sin suscripción» sobre «Comprar el juego completo»: una línea desde el principio (sin precio dice solo
+   «Pago único, sin suscripción»), así los botones no se mueven cuando llega el precio; si Paddle no da el precio local,
+   el de lista con las dos monedas (dos líneas) */
+.pw-price-line { min-height: 1.35em; margin: 10px 0 0; font-size: 14px; font-weight: 800; line-height: 1.35; color: var(--drama-2); }
+.pw-price-line b { color: var(--ink); font-weight: 900; }
+.paywall-card .pw-price-line + .btn-col { margin-top: 6px; }
+.pw-fine { margin: 10px 0 0; font-size: 12px; font-weight: 700; line-height: 1.3; opacity: .72; }
+.pw-steps { margin: 6px 0 8px; padding: 8px 12px 8px 30px; border: 3px solid var(--ink); border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--ink); text-align: left; font-size: 14px; font-weight: 800; line-height: 1.3; }
+.pw-steps li + li { margin-top: 4px; }
+.pw-note { margin: 0; font-size: 12.5px; font-weight: 800; line-height: 1.3; color: var(--drama-2); text-align: left; }
+.pw-error a, .pay-help a { color: inherit; font-weight: 900; text-decoration: underline; }
+.pw-form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.pw-form .nick-input { font-size: 18px; min-height: 48px; }
+.pw-error { min-height: 18px; margin: 0; font-size: 13px; font-weight: 800; color: var(--cherry-dark); }
+.pw-form .btn-col { margin-top: 4px; }
+.pw-send { white-space: normal; }
+.pw-spin { width: 72px; height: 72px; margin: 4px auto 8px; display: grid; place-items: center; color: var(--ice-deep); animation: spin 2.4s linear infinite; }
+.pw-spin svg { width: 64px; height: 64px; }
+.pw-view-done .pw-title, .pw-view-external .pw-title { color: var(--drama-2); }
+
+/* tarjeta en Ajustes */
+.pay-card { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 16px !important; }
+.pay-card .account-name b { white-space: normal; font-size: 20px; }
+.pay-card .account-note { text-align: left; }
+.pay-card .btn-col { margin-top: 0; }
+.pay-ico {
+  flex: 0 0 56px;
+  width: 56px; height: 56px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: radial-gradient(circle at 40% 30%, #fff 0 10%, #ffe08a 60%, var(--gold));
+}
+.pay-ico svg { width: 34px; height: 34px; }
+.pay-done .pay-ico { box-shadow: 0 0 0 4px var(--gold), 0 0 14px rgba(255, 201, 60, .8); }
+.pay-ico { color: var(--ink); }
+.pay-help { font-size: 12px; text-align: left; }
+
+/* «¿Cerrar la sesión?» con el juego completo en el apodo */
+.signout-card .account-note.warn { text-align: left; }
+.signout-card .btn-col { width: 100%; }
+/* cuadro para copiar a mano (enlace de pago) */
+.copy-hint { margin: 0 0 4px; font-size: 13px; font-weight: 800; line-height: 1.3; color: var(--drama-2); }
+
+/* teléfonos bajos: sin la cara, la ficha cabe sin desplazar */
+@media (max-height: 700px) {
+  .pw-view-offer .pw-hero { display: none; }
+  .pw-view-offer .pw-list { margin-top: 6px; }
+  .pw-view-offer .pw-list li { padding: 3px 0; }
+  .pw-view-offer .pw-fine { margin-top: 8px; line-height: 1.25; }   /* 4 renglones (Términos, Paddle, precio, menores) en 360x560 */
+}
+@media (max-width: 374px) {
+  .pw-title { font-size: 22px; }
+  .pw-text { font-size: 14px; }
+  .pw-list li { font-size: 13px; }
+  .zone-paid-tag { left: -8px; font-size: 11px; }
+}
+/* teléfonos bajos (375x667, 360x560…; va después de max-height: 760px): el pie de la Portada lleva un renglón de
+   enlaces legales y el héroe le cede ese lugar */
+@media (max-height: 760px) and (orientation: portrait) { .title-hero { --hero: min(50vw, 190px, 25vh); } }
+@media (max-height: 600px) and (orientation: portrait) { .title-hero { --hero: min(50vw, 190px, 22vh); } }

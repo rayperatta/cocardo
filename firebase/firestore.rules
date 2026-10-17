@@ -7,6 +7,10 @@ rules_version = '2';
 //   users/{uid}/private/save    progreso completo (solo el dueño)
 //   nicknames/{nickKey}         { uid }  reserva del apodo (único, sin acentos ni mayúsculas)
 //   daily/{YYYYMMDD}/scores/{uid}   intento oficial del Reto Diario (solo se crea una vez)
+//   entitlements/{uid}          compra del juego completo { premium, order, source, at } (la lee solo el dueño)
+//   orders/{txnId}              pedidos de Paddle { uid, status, priceId, occurredAt, moves, updatedAt } (nadie)
+//   Las dos últimas las escribe solo el Worker cocardo-pagos con su cuenta de servicio (ese acceso lo controla IAM,
+//   no estas reglas); ningún navegador puede escribirlas. Ver docs/PAGOS.md.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -68,6 +72,18 @@ service cloud.firestore {
         && isInt(request.resource.data.num, 0, 1000000)
         && request.resource.data.at == request.time;
       allow update, delete: if false;
+    }
+
+    // compra del juego completo: el juego escucha la suya para quitar el tope de niveles. La compra no va en el
+    // guardado ni en users/{uid}: allí escribe el navegador y Progress.merge se queda con el máximo
+    match /entitlements/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;   // solo el Worker (webhook de Paddle o «Ya pagué»)
+    }
+
+    // pedidos de Paddle por transacción (txn_…): solo el Worker los lee y los escribe
+    match /orders/{id} {
+      allow read, write: if false;
     }
 
     match /{document=**} {

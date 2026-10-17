@@ -26,7 +26,8 @@ Las fuentes y el detalle están en §7.
 - **Colchón:** cuando abre el capítulo N, el N+1 ya debe estar construido (balanceado y con pruebas en verde) y, de
   preferencia, desplegado oculto con su `opens`. Una semana mala consume colchón, no rompe fechas.
 - **Antes del 30 de octubre hay cuatro cosas que hacer una sola vez** (§5): subir las reglas de Firestore ampliadas,
-  activar GA4, publicar esta versión del juego y construir el capítulo 7 con el procedimiento de §4.
+  preparar la medición (GA4 solo con aviso de consentimiento: §5 paso 2), publicar esta versión del juego y construir el
+  capítulo 7 con el procedimiento de §4.
 
 ## 1. Cómo funciona en el juego
 
@@ -117,8 +118,9 @@ Precisión de las fechas, por política:
 Se aplican **cada lunes, en 30 minutos y en este orden**; la primera que se dispare decide. Fuentes: GA4 (eventos
 `level_start`, `level_end` con `level`, `won`, `moves_used`, `moves_left`; `daily_end`; `share`; `clip`; `referral`;
 `roadmap_tap`; informe de retención por cohortes) y Firestore (`users` con `levels`, `stars`, `finished`, `updatedAt`;
-`daily/{día}/scores`). Si GA4 no está activo (`ga4` vacío en `js/cloud-config.js`), activarlo es la primera tarea: sin
-eventos ninguna regla se puede aplicar y ningún capítulo pasa a día exacto.
+`daily/{día}/scores`). Si GA4 no está activo (`ga4` vacío en `js/cloud-config.js`), activarlo es la primera tarea, pero
+**antes** van el aviso de consentimiento en el juego y la actualización de Privacidad §8 (§5 paso 2): sin eventos
+ninguna regla se puede aplicar y ningún capítulo pasa a día exacto.
 
 | # | Regla | Métrica | Umbral | Acción |
 |---|---|---|---|---|
@@ -195,8 +197,8 @@ Con D = viernes de apertura:
 10. **D−2 y D−1: redes.** Miércoles 19-21 h de Ciudad de México: video «ya tiene fecha» con el mapa y la zona en obra,
     comentario fijado con el enlace de la bio. Jueves: historia o teaser «a medianoche, tu hora, se abre el capítulo N»
     con la escena `cliff` del capítulo anterior; nunca una hora concreta, nunca spoilers del nuevo. Dejar programado en
-    Postiz (`redes/`) el video de estreno. Texto de cada post: gancho + pregunta + «Juego de fans, no oficial» + 4-6
-    etiquetas (`docs/VIDEOS.md` §6).
+    Postiz (`redes/`) el video de estreno. Texto de cada post: gancho + pregunta + «gratis para empezar en cocardo.app»
+    + 4-6 etiquetas (`docs/VIDEOS.md` §6). Lo mismo que dice el sitio: nunca «gratis» a secas ni «juego de fans».
 11. **D, viernes: estreno.** No hay nada que desplegar: abre solo a la medianoche local. A primera hora, abrir el juego en
     un teléfono real y confirmar que GA4 recibe `level_start` con `level = 31`. 13-14 h de Ciudad de México (19-20 h en
     Lisboa; toda América ya pasó la medianoche): video de estreno en TikTok. Mirar GA4 en tiempo real una hora. Sábado:
@@ -224,7 +226,12 @@ produce nada.
    `cd firebase && npx --yes firebase-tools@15 deploy --only firestore:rules -P graceful-system-406208` (no hay
    `.firebaserc`, así que el proyecto va con `-P`; `docs/FIREBASE.md` §4). Las reglas **no** viajan con `git push`:
    si vuelven a cambiar (solo al subir `MAX_LEVELS`), repetir el comando antes de abrir el capítulo que lo necesite.
-2. **Activar GA4** (`ga4` en `js/cloud-config.js`; hoy está vacío) y registrar como dimensiones personalizadas de evento
+2. **Activar GA4**, en este orden: (a) un aviso de consentimiento en el juego y en la landing (GA4 pone cookies: en la
+   UE no se pueden poner sin permiso; ePrivacy art. 5.3, Lei 41/2004) que deje `Cocardo.Track` apagado hasta que el
+   jugador acepte; (b) actualizar `legal/privacidad.html` §8 y la ficha de datos, con su fecha; (c) quitar la
+   comprobación de `ga4` de `tools/cloudflare/build-site.cjs` (`configProblems`), que hoy no publica con un id; (d)
+   poner el id en `ga4` de `js/cloud-config.js` (hoy está vacío). Una alternativa sin cookies (p. ej. Cloudflare Web
+   Analytics) evita el aviso, pero igual hay que contarla en Privacidad. Después, registrar como dimensiones personalizadas de evento
    `level`, `chapter`, `won`, `attempt`, `state` y `built`: sin eso las exploraciones de GA4 no filtran por parámetro y
    ninguna regla por nivel se puede calcular. Añadir `?utm_source=tiktok&utm_medium=bio` (y `instagram`) a los enlaces
    de la bio. `level_start` y `level_end` ya mandan `attempt` (intentos seguidos del mismo nivel en la sesión) y `chapter`.
@@ -343,7 +350,7 @@ de esta temporada no se publican en redes hasta que empiece, y en el mapa no nom
 | Fecha incumplida. | Día exacto solo con el capítulo desplegado; colchón de un capítulo; +7 días y volver a mes; video de 10 s el mismo día. |
 | Agotamiento de una sola persona. | Cadencia que baja sola (regla 8), pausa de fiestas ya calendarizada, una mecánica de motor por temporada, cero personajes nuevos. |
 | Balance a ciegas (GA4 solo trae ganado/perdido). | Reglas 1, 2 y 6 con muestra mínima; comparar siempre con la curva del bot guardada en la bitácora; añadir `attempt` (intentos acumulados) a `level_start`/`level_end` cuando haga falta medir la cola larga. |
-| Canon y tono: la temporada 2 no es la serie. | Rótulo «Historia original del juego de fans · no oficial» en la ficha y en los videos; nunca «Parte 14»; ángulo de rescate; arte y sonido propios. |
+| Canon y tono: la temporada 2 es historia nueva. | Rótulo «Historia original del juego» en la ficha y en los videos (sin «juego de fans» ni «no oficial»: lo mismo que el sitio); nunca «Parte 14»; ángulo de rescate; arte y sonido propios. |
 | Cinta de contenido sin fin. | La temporada 4 es condicional; la 3 tiene un final digno; la regla 5 define cómo se anuncia una pausa sin perder la cara. |
 
 **Fuentes consultadas (octubre de 2026).** Cadencias: Candy Crush Saga (30-60 niveles cada miércoles; pocketgamer.com,

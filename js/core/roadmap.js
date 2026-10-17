@@ -8,8 +8,10 @@
      sus nodos fantasma, nombre, teaser y fecha prevista. Al construir un capítulo se copia su entrada a
      Levels.chapters (con `opens`); si queda también aquí no pasa nada: la entrada de Levels manda.
 
-   `opens` admite tres precisiones: 'YYYY-MM-DD' (día exacto: se promete), 'YYYY-MM' (mes previsto) y 'YYYY'
-   (año previsto). Solo se promete día exacto cuando el capítulo ya está construido o a menos de 6 semanas.
+   `opens` admite tres precisiones: 'YYYY-MM-DD' (día previsto), 'YYYY-MM' (mes previsto) y 'YYYY' (año previsto).
+   Solo se pone día exacto cuando el capítulo ya está construido o a menos de 6 semanas. Ninguna fecha es una
+   promesa: los Términos (§5) dicen que son orientativas, y donde se vende el juego completo (la ficha de pago) se
+   muestran con expectedText() («Previsto para…»), no con whenText().
    La fecha se compara con la fecha LOCAL del jugador (clave YYYYMMDD, igual que el Reto Diario): el capítulo
    abre a la medianoche local de cada quien, sin depender de la red. Módulo puro: sin Date ni Math.random. */
 (function () {
@@ -41,7 +43,7 @@
     };
   }
 
-  // ---------- capítulos en construcción (continuación propia del juego, no de la serie) ----------
+  // ---------- capítulos en construcción (historia nueva del juego, después de la temporada 1) ----------
   // Nombre ≤ 26 caracteres (rótulo del mapa), teaser ≤ 70 (sin spoilers de temporadas anteriores). Fechas: docs/CALENDARIO.md §2.
   // La zona debe caer en un fondo que Art.background sepa pintar (zoneKey en js/art.js: cherry, congela, pina/oficina/mansion,
   // trastienda/callejon, noche/calle/comisaria/policia; lo demás es la heladería). Historia: docs/CALENDARIO.md §6.
@@ -166,6 +168,23 @@
     return 'Previsto para ' + split(p.first).y;
   }
 
+  // Fecha prevista para la ficha de pago (donde se vende el juego completo): siempre «Previsto para…», nunca «Se abre…».
+  // Vacío si ya está abierto, si la fecha pasó sin niveles (retrasado) o si no tiene fecha.
+  function expectedText(opens, built, today) {
+    var p = parseOpens(opens);
+    var st = stateFor(opens, built, today);
+    if (!p || st === 'abierto' || st === 'retrasado') return '';
+    var sameYear = split(p.first).y === split(today).y;
+    if (p.precision === 'dia') {
+      var n = daysBetween(today, p.first);
+      if (n === 0) return 'Previsto para hoy';
+      if (n === 1) return 'Previsto para mañana';
+      return 'Previsto para el ' + dayText(p.first, !sameYear);
+    }
+    if (p.precision === 'mes') return 'Previsto para ' + MONTHS[split(p.first).m - 1] + (sameYear ? '' : ' de ' + split(p.first).y);
+    return 'Previsto para ' + split(p.first).y;
+  }
+
   function daysText(n) {
     if (n == null) return '';
     if (n <= 0) return '¡hoy!';
@@ -243,6 +262,7 @@
     parseOpens: parseOpens,
     stateFor: stateFor,
     whenText: whenText,
+    expectedText: expectedText,
     daysUntil: daysUntil,
     daysText: daysText,
     dayText: dayText,

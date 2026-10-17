@@ -4,26 +4,28 @@
 <meta charset="utf-8">
 <title>Cocardo: ¡Rescate Helado!</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="description" content="Juego gratis tipo «junta 3»: descongela a las frutas de la heladería de Cocardo. Reto Diario, ranking con amigos, 30 niveles de la frutinovela viral La Nieve de Lima y nuevos capítulos con fecha de estreno. Juega en tu celular, sin instalar nada.">
+<meta name="description" content="Juego tipo «junta 3», gratis para empezar: descongela a las frutas de la heladería de Cocardo. Niveles 1 al 10 y Reto Diario gratis; juego completo por US$1,99, pago único. Ranking con amigos y 30 niveles con la historia de La Nieve de Lima. Juega en tu celular, sin instalar nada.">
 <meta name="theme-color" content="#ff6fa5">
 <meta name="color-scheme" content="light">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://cocardo.app/">
+<link rel="terms-of-service" href="https://cocardo.app/legal/terminos">
+<link rel="privacy-policy" href="https://cocardo.app/legal/privacidad">
 <!-- vista previa al compartir el enlace (WhatsApp, TikTok, Instagram, X, Discord) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Cocardo: ¡Rescate Helado!">
-<meta property="og:title" content="Cocardo: ¡Rescate Helado! — el juego de la frutinovela">
-<meta property="og:description" content="Cocardo congeló a Lima. ¿La rescatas tú? Junta 3 frutas, supera el Reto Diario y compite con tus amigos. Gratis, sin instalar.">
+<meta property="og:title" content="Cocardo: ¡Rescate Helado! — la frutinovela que se juega">
+<meta property="og:description" content="Cocardo congeló a Lima. ¿La rescatas tú? Junta 3 frutas, supera el Reto Diario y compite con tus amigos. Gratis para empezar, sin instalar.">
 <meta property="og:url" content="https://cocardo.app/">
-<meta property="og:image" content="https://cocardo.app/icons/og.png">
+<meta property="og:image" content="https://cocardo.app/icons/og-2.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Cocardo sonriendo frente a su vitrina de helados, con el logo del juego">
 <meta property="og:locale" content="es_LA">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Cocardo: ¡Rescate Helado!">
-<meta name="twitter:description" content="Cocardo congeló a Lima. ¿La rescatas tú? Juego gratis tipo junta 3 de la frutinovela viral.">
-<meta name="twitter:image" content="https://cocardo.app/icons/og.png">
+<meta name="twitter:description" content="Cocardo congeló a Lima. ¿La rescatas tú? Una frutinovela tipo junta 3, gratis para empezar.">
+<meta name="twitter:image" content="https://cocardo.app/icons/og-2.png">
 <!-- app instalable (PWA) -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
@@ -39,7 +41,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/game.css">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Cocardo: ¡Rescate Helado!","url":"https://cocardo.app/","image":"https://cocardo.app/icons/og.png","description":"Juego de fans gratuito tipo junta 3 inspirado en la frutinovela viral La Nieve de Lima: descongela a las frutas de la heladería de Cocardo.","genre":["Puzzle","Match-3"],"gamePlatform":["Web browser","Mobile"],"applicationCategory":"Game","operatingSystem":"Any","inLanguage":"es","isFamilyFriendly":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"VideoGame","name":"Cocardo: ¡Rescate Helado!","url":"https://cocardo.app/","image":"https://cocardo.app/icons/og-2.png","description":"Juego tipo junta 3 con la historia de La Nieve de Lima, una frutinovela de helados: descongela a las frutas de la heladería de Cocardo. Gratis para empezar (niveles 1 al 10 y Reto Diario); juego completo con un pago único.","author":{"@type":"Person","name":"Prince Ray Peratta Espinoza"},"publisher":{"@type":"Person","name":"Prince Ray Peratta Espinoza"},"genre":["Puzzle","Match-3"],"gamePlatform":["Web browser","Mobile"],"applicationCategory":"Game","operatingSystem":"Any","inLanguage":"es","isFamilyFriendly":true,"offers":[{"@type":"Offer","name":"Gratis para empezar: niveles 1 al 10 y Reto Diario","price":"0","priceCurrency":"USD","url":"https://cocardo.app/landing#precio"},{"@type":"Offer","name":"Juego completo (pago único, impuestos incluidos)","price":"1.99","priceCurrency":"USD","url":"https://cocardo.app/landing#precio"}]}
 </script>
 </head>
 <body>
@@ -60,7 +62,9 @@
   <div id="overlays"></div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <div id="flash" class="flash" aria-hidden="true"></div>
-  <noscript><p class="noscript">Este juego necesita JavaScript para funcionar.</p></noscript>
+  <noscript><div class="noscript"><p>Este juego necesita JavaScript para funcionar.</p>
+    <p>Cocardo: ¡Rescate Helado! es un juego de Prince Ray Peratta Espinoza. Gratis para empezar (niveles 1 al 10 y Reto Diario); juego completo por US$1,99 (1,99 € en la zona euro), pago único.</p>
+    <p><a href="landing#precio">Precio</a> · <a href="legal/terminos">Términos</a> · <a href="legal/privacidad">Privacidad</a> · <a href="legal/reembolsos">Reembolsos</a> · <a href="mailto:soporte@cocardo.app">Contacto</a> · <a href="https://www.livroreclamacoes.pt/">Livro de Reclamações</a></p></div></noscript>
 </div>
 <script src="js/core/rng.js"></script>
 <script src="js/core/engine.js"></script>
@@ -79,6 +83,7 @@
 <script src="js/cloud-config.js"></script>
 <script src="js/cloud.js"></script>
 <script src="js/analytics.js"></script>
+<script src="js/pay.js"></script>
 <script src="js/clip.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>

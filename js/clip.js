@@ -109,7 +109,7 @@
     // marca de agua
     g.fillStyle = 'rgba(255,246,234,.95)';
     g.font = '800 30px "Nunito", system-ui, sans-serif';
-    g.fillText(String(hud.footer || 'Cocardo: ¡Rescate Helado! · juego de fans'), W / 2, H - 92, W - 60);
+    g.fillText(String(hud.footer || 'Cocardo: ¡Rescate Helado!'), W / 2, H - 92, W - 60);
     g.fillStyle = '#ffc93c';
     g.font = '36px "Lilita One", sans-serif';
     g.fillText(String(hud.cta || '¿Puedes tú?'), W / 2, H - 44);

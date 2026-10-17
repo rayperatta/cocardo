@@ -19,6 +19,8 @@
   var state = 'off';                 // off | idle | loading | ready | error
   var fb = null, auth = null, db = null;
   var user = null;                   // { uid, name, photo, anon }
+  var authSeen = false;              // Firebase ya dijo si había sesión (primer onAuthStateChanged)
+  var anonLeft = null;               // { uid, token } sesión con apodo que se dejó al entrar con un Google que ya existía
   var profile = null;                // { nick, nickKey, avatar, stars, levels, rescued, bestStreak, finished }
   var profileReady = false;          // ya se consultó el perfil del usuario actual (null = aún sin apodo)
   var loadPromise = null;
@@ -100,7 +102,7 @@
         auth.onAuthStateChanged(onAuth, function (e) { lastError = e; emit(); });
         // vuelta de un inicio de sesión por redirección (ver popupFallback); sin redirección pendiente no hace nada
         auth.getRedirectResult().catch(function (e) {
-          if (e && e.code === 'auth/credential-already-in-use' && e.credential) return auth.signInWithCredential(e.credential);
+          if (e && e.code === 'auth/credential-already-in-use' && e.credential) return leaveAnon(auth.currentUser, e.credential);
           lastError = e;
           emit();
         });
@@ -118,9 +120,11 @@
     return loadPromise;
   }
 
+  function fromFirebase(u) { return { uid: u.uid, name: u.displayName || '', photo: u.photoURL || '', anon: !!u.isAnonymous }; }
   function onAuth(u) {
+    authSeen = true;
     if (u) {
-      user = { uid: u.uid, name: u.displayName || '', photo: u.photoURL || '', anon: !!u.isAnonymous };
+      user = fromFirebase(u);
       lastError = null;
       profileReady = false;
       flag(true);
@@ -164,17 +168,11 @@
     });
   }
 
-  // Apodo sugerido a partir del nombre de Google («María José Pérez» → «MariaJose»)
+  // Apodo sugerido: neutro («Heladero» + 3 cifras al azar), nunca a partir del nombre de Google. El ranking es público
+  // (cualquiera puede leer users/{uid}) y la Política de privacidad promete que el nombre de Google no se muestra
   function suggestNick() {
-    var P = Cocardo.Progress;
-    var base = (user && user.name) ? user.name : '';
-    try { base = base.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch (e) { /* nada */ }
-    base = base.replace(/[^A-Za-z0-9 ]/g, '').trim().split(/\s+/).slice(0, 2).join('');
-    if (!base) base = 'Heladero';
-    base = base.slice(0, 14);
-    if (base.length < 3) base = 'Fan' + base;
-    var v = P ? P.validNick(base) : { ok: true };
-    return v.ok ? base : 'Heladero';
+    var n = Math.floor(Math.random() * 900) + 100;
+    return 'Heladero' + n;
   }
 
   function saveProfile(o) {
@@ -228,6 +226,19 @@
     }
     throw e;
   }
+  // Se deja la sesión con apodo para entrar con una cuenta de Google que ya existía (Firebase cambia de uid). Con la
+  // venta encendida se guarda antes su token: Cocardo.Pay se lo pasa al Worker para traer la compra (takeAnonToken)
+  function leaveAnon(anon, cred) {
+    var keep = anon && anon.isAnonymous && Cocardo.Pay && Cocardo.Pay.on && Cocardo.Pay.on();
+    var tok = keep ? anon.getIdToken().then(function (t) { anonLeft = { uid: anon.uid, token: t }; }, function () { anonLeft = null; }) : Promise.resolve();
+    return tok.then(function () { return auth.signInWithCredential(cred); });
+  }
+  // Token de la sesión con apodo uid que se acaba de dejar ('' si no hay); se entrega una sola vez
+  function takeAnonToken(uid) {
+    var h = anonLeft;
+    anonLeft = null;
+    return h && h.uid === uid ? h.token : '';
+  }
   // Entrar con Google. Si la sesión actual es anónima (apodo sin cuenta) se vincula: el progreso y el apodo
   // se conservan; si esa cuenta de Google ya existía, se entra con ella y el progreso local se junta al suyo.
   function signIn() {
@@ -235,8 +246,11 @@
       var p = provider();
       var cur = auth.currentUser;
       if (cur && cur.isAnonymous) {
-        return cur.linkWithPopup(p).catch(function (e) {
-          if (e && e.code === 'auth/credential-already-in-use' && e.credential) return auth.signInWithCredential(e.credential);
+        return cur.linkWithPopup(p).then(function () {
+          // mismo uid, pero ya no es anónima (vincular no avisa por onAuthStateChanged)
+          if (auth.currentUser && user && auth.currentUser.uid === user.uid) { user = fromFirebase(auth.currentUser); emit(); }
+        }, function (e) {
+          if (e && e.code === 'auth/credential-already-in-use' && e.credential) return leaveAnon(cur, e.credential);
           return popupFallback(e, p, true);
         });
       }
@@ -411,6 +425,41 @@
     });
   }
 
+  /* ---------- escucha en vivo, sesión y token (los usa Cocardo.Pay; también authKnown y takeAnonToken) ---------- */
+
+  // Escucha un documento: cb({ exists, fromCache, data }) en cada cambio, también los de metadatos (el primer aviso
+  // puede venir de la caché local y luego llega el del servidor con fromCache = false). Devuelve la función que
+  // deja de escuchar. onError(e): tras un error Firestore ya no avisa más.
+  function watchDoc(path, cb, onError) {
+    var off = null, stopped = false;
+    load().then(function () {
+      if (stopped) return;
+      off = db.doc(path).onSnapshot({ includeMetadataChanges: true }, function (snap) {
+        try {
+          cb({ exists: !!snap.exists, fromCache: !!(snap.metadata && snap.metadata.fromCache), data: snap.exists ? snap.data() : null });
+        } catch (e) { console.error('[Cocardo.Cloud.watchDoc]', e); }
+      }, function (e) { if (onError) onError(e); });
+    }).catch(function (e) { if (onError) onError(e); });
+    return function () { stopped = true; if (off) { off(); off = null; } };
+  }
+  // uid de la sesión ('' si no hay) cuando Firebase ya sabe si había una (restaurada o no): así no se crea una
+  // anónima encima de una cuenta que todavía se está restaurando
+  function authReady() {
+    return load().then(function () {
+      return new Promise(function (res) {
+        var off = auth.onAuthStateChanged(function (u) {
+          res(u ? u.uid : '');
+          setTimeout(function () { off(); }, 0);
+        }, function () { res(''); });
+      });
+    });
+  }
+  // Token de identidad del usuario actual (Authorization: Bearer … para el Worker de pagos)
+  function idToken(force) {
+    if (!auth || !auth.currentUser) return Promise.reject(new Error('sin-usuario'));
+    return auth.currentUser.getIdToken(!!force);
+  }
+
   /* ---------- arranque ---------- */
 
   function init() {
@@ -443,5 +492,10 @@
     submitDaily: submitDaily,
     dailyTop: dailyTop,
     topPlayers: topPlayers,
+    watchDoc: watchDoc,
+    authReady: authReady,
+    authKnown: function () { return authSeen; },
+    idToken: idToken,
+    takeAnonToken: takeAnonToken,
   };
 })();

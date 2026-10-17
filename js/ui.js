@@ -162,7 +162,8 @@
     try { n = R.openCount(chapters(), todayKey()) | 0; } catch (e) { n = count; }
     return Math.max(0, Math.min(count, n));
   }
-  function playable(id) { return id >= 1 && id <= openCount(); }
+  // Se puede empezar hoy: construido, abierto por fecha y, con la venta encendida, gratis (1..FREE) o comprado
+  function playable(id) { return id >= 1 && id <= openCount() && payAllowed(id); }
   // Tope de niveles del guardado (stars/best): hasta ahí puede avanzar `unlocked` aunque el capítulo no exista aún
   function maxLevels() { var R = roadmap(); return (R && R.MAX_LEVELS) || levelCount(); }
   function nextOpening() {
@@ -170,6 +171,94 @@
     if (!R) return null;
     try { return R.nextOpening(chapters(), todayKey()); } catch (e) { return null; }
   }
+
+  /* ---------- juego completo (Cocardo.Pay, js/pay.js; docs/PAGOS.md) ---------- */
+
+  // Sin js/pay.js o con la venta apagada (pay.on:false) nada cambia: allowed() es true y no hay candado ni ficha.
+  function pay() { return Cocardo.Pay || null; }
+  function payOn() { var P = pay(); try { return !!(P && typeof P.on === 'function' && P.on()); } catch (e) { return false; } }
+  function payFree() { var P = pay(); var n = P ? Number(P.FREE) : NaN; return isFinite(n) ? n : 10; }
+  function payAllowed(id) {
+    var P = pay();
+    if (!P || typeof P.allowed !== 'function') return true;
+    try { return id <= payFree() || !!P.allowed(id); } catch (e) { return true; }
+  }
+  var PAY_OFF = { on: false, premium: false, legacy: false, account: false, pending: false, slow: false, external: false, busy: false, leftBehind: false, error: '', price: '', event: '' };
+  function payState() {
+    var P = pay();
+    if (!P || typeof P.state !== 'function') return PAY_OFF;
+    try { return P.state() || PAY_OFF; } catch (e) { return PAY_OFF; }
+  }
+  function payPremium() { return !!payState().premium; }
+  function payBusy() { return !!payState().busy; }
+  // ¿Esta cuenta espera el aviso del servidor? Un pago abierto desde el enlace ?_ptxn (external, p. ej. en Safari) es
+  // de la cuenta que lo creó (la de TikTok): aquí nunca llega, así que no hay «Procesando tu pago…» que mostrar
+  function payWaiting(st) { st = st || payState(); return !!(st.pending && !st.external); }
+  // Precio para mostrar: el local de Paddle. El de respaldo de Pay ('US$1,99 · 1,99 €', dos monedas) no se muestra:
+  // podría no ser el total de su país y ya dice «Verás el precio final antes de pagar»
+  function payPriceText(t) { return typeof t === 'string' && t && t.indexOf('·') < 0 ? t : ''; }
+  // Ayuda con una compra que el juego no resuelve solo (p. ej. «Ya pagué» llegó al límite de traslados): el correo
+  // de CloudConfig.pay.support o, si está vacío, el de soporte (CloudConfig.legal.email); si ninguno es un correo
+  // (p. ej. mientras siga el marcador de tools/legal-datos.cjs), la ayuda al comprador de Paddle (paddle.net), que vende el juego
+  function paySupport() {
+    var c = (Cocardo.CloudConfig && Cocardo.CloudConfig.pay) || {};
+    var m = String(c.support || legalCfg().email || '').trim();
+    if (m.length <= 254 && /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(m)) return { text: m, href: 'mailto:' + m, mail: true };
+    return { text: 'paddle.net', href: 'https://paddle.net/', mail: false };
+  }
+  function paySupportLink() {
+    var s = paySupport();
+    return '<a href="' + esc(s.href) + '"' + (s.mail ? '' : ' target="_blank" rel="noopener"') + '>' + esc(s.text) + '</a>';
+  }
+  // Quién vende el juego (CloudConfig.legal: { name, email }, los rellena tools/legal-datos.cjs)
+  function legalCfg() { return (Cocardo.CloudConfig && Cocardo.CloudConfig.legal) || {}; }
+  // Páginas del sitio fuera del juego (legal/terminos, landing#precio…): relativas en http(s), como las sirve
+  // Cloudflare (/legal/terminos sirve legal/terminos.html); desde file:// o el archivo único, las de siteUrl
+  function siteHref(p) {
+    var base = '';
+    try {
+      if (!/^https?:$/.test(location.protocol)) base = String((Cocardo.CloudConfig && Cocardo.CloudConfig.siteUrl) || 'https://cocardo.app/').replace(/\/*$/, '/');
+    } catch (e) { base = 'https://cocardo.app/'; }
+    return base + p;
+  }
+  // Dominio del juego para la imagen que se comparte («cocardo.app»)
+  function siteHost() {
+    var u = String((Cocardo.CloudConfig && Cocardo.CloudConfig.siteUrl) || '');
+    return u.replace(/^https?:\/\//, '').replace(/\/.*$/, '') || 'cocardo.app';
+  }
+  // Renglón de enlaces legales (Portada y Ajustes): se abren en otra pestaña. contact: añade «Contacto» (mailto) si
+  // hay un correo de soporte; price: añade «Precio» (la sección de precios de la landing). Siempre termina con el
+  // Livro de Reclamações
+  var LIVRO_URL = 'https://www.livroreclamacoes.pt/';
+  function legalLinksHtml(o) {
+    o = o || {};
+    var a = function (href, text) { return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(text) + '</a>'; };
+    var out = [];
+    if (o.price) out.push(a(siteHref('landing#precio'), 'Precio'));
+    out.push(a(siteHref('legal/terminos'), 'Términos'), a(siteHref('legal/privacidad'), 'Privacidad'), a(siteHref('legal/reembolsos'), 'Reembolsos'));
+    var s = paySupport();
+    if (o.contact && s.mail) out.push('<a href="' + esc(s.href) + '">Contacto</a>');
+    // Livro de Reclamações Eletrónico: visible en el sitio (DL 156/2005, con la redacción del DL 74/2017)
+    out.push(a(LIVRO_URL, 'Livro de Reclamações'));
+    return out.join('<span aria-hidden="true"> · </span>');
+  }
+  function legalName() { return String(legalCfg().name || '').trim(); }
+  // «© 2026 <nombre legal>» (vacío si no hay nombre)
+  function ownerText() { return legalName() ? '© 2026 ' + legalName() : ''; }
+  // Corona del «juego completo» (mapa, ficha y Ajustes): distinta de las estrellas de puntos y del candado de progreso.
+  // outline: relleno dorado con contorno de tinta (sobre fondos claros); si no, del color del texto (currentColor)
+  function crownIcon(size, outline) {
+    var s = size || 18;
+    var paint = outline ? 'fill="#ffc93c" stroke="#2b1630" stroke-width="1.5" stroke-linejoin="round"' : 'fill="currentColor"';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" aria-hidden="true" focusable="false">' +
+      '<path ' + paint + ' d="M3.4 8.2L8 12.2L12 4.8L16 12.2L20.6 8.2L18.8 18.2H5.2Z"/>' +
+      '<rect ' + paint + ' x="5" y="19.3" width="14" height="2.6" rx="1.3"/>' +
+      '<circle ' + paint + ' cx="3.4" cy="7.6" r="1.8"/><circle ' + paint + ' cx="12" cy="4" r="1.8"/><circle ' + paint + ' cx="20.6" cy="7.6" r="1.8"/></svg>';
+  }
+  // ¿Lo único que falta para empezar ese nivel es el juego completo? (construido, abierto por fecha, id > FREE, sin compra)
+  function payBlocked(id) { return id > payFree() && id >= 1 && id <= openCount() && !payAllowed(id); }
+  // El mapa marca los niveles del juego completo (solo con la venta encendida y sin compra)
+  function payGate() { return payOn() && !payPremium(); }
 
   // Respaldo por si Cocardo.Levels no cargó: mismos nombres, zonas y colores que js/core/levels.js
   var DEFAULT_CHAPTERS = [
@@ -265,6 +354,8 @@
     if (name !== 'daily') stopDailyTimer();
     if (renderers[name]) renderers[name]();
     if (name === 'map' && queuedScenes.length) later(flushQueuedScenes, 0);
+    // el editor de apodo que esperaba a un pago (solo con la venta encendida): de vuelta al mapa, si nada lo tapa
+    if (name === 'map' && nickDeferred) later(recheckNick, 700);
     if (name === 'game') {
       requestAnimationFrame(function () { gameCall('resize'); });
     }
@@ -408,12 +499,31 @@
     if (current === 'settings') renderSettings();
     else if (current === 'daily') renderDaily();
     if (snap.user && snap.profile) cloudSubmitDaily(keyOf(dateParts(0)));
-    // primera vez con cuenta y sin apodo: se pide uno (una sola vez por sesión)
-    if (snap.user && snap.profileReady && !snap.profile && !askedNick && !isOpen('profile')) {
-      askedNick = true;
-      showProfileEditor(true);
-    }
+    lastCloudSnap = snap;
+    maybeAskNick(snap);
     if (snap.error && snap.error !== lastCloudError) { lastCloudError = snap.error; toast(snap.error, 4500); }
+    // la cuenta decide la compra (Cocardo.Pay): si cambió, el mapa quita o pone los candados del juego completo
+    payViews(true);
+  }
+  // Primera vez con cuenta y sin apodo: se pide uno (una sola vez por sesión). Mientras hay un pago abierto o un
+  // «Ya pagué» en curso (Pay.state().busy; comprar sin sesión entra con apodo) no se abre encima: se vuelve a
+  // mirar en el Pay.onChange en que busy pasa a false (onPayChange).
+  var lastCloudSnap = null, nickDeferred = false;
+  function maybeAskNick(snap) {
+    if (!snap || !(snap.user && snap.profileReady && !snap.profile) || askedNick || isOpen('profile')) return;
+    // tampoco encima de la ficha del juego completo («Ya pagué», «¡Gracias!»…): se vuelve a mirar al cerrarla
+    if (payBusy() || paywallOpen()) { nickDeferred = true; return; }
+    askedNick = true;
+    showProfileEditor(true);
+  }
+  // El editor de apodo que esperaba al pago se abre cuando ya no hay pago en curso ni ficha abierta, y nada más
+  // ocupa la pantalla: ni otra capa (intro del nivel, historia…) ni el tablero. Si no, sigue esperando: lo vuelven a
+  // mirar el Pay.onChange en que busy pasa a false, el cierre de la ficha, el final de comprar y show('map').
+  function recheckNick() {
+    if (!nickDeferred || payBusy() || paywallOpen()) return;
+    if (current === 'game' || stack.length) return;
+    nickDeferred = false;
+    maybeAskNick(lastCloudSnap);
   }
 
   function accountChipHtml() {
@@ -501,7 +611,9 @@
     return o;
   }
 
-  // Apodo y avatar (first = recién creada la cuenta, sin apodo todavía)
+  // Apodo y avatar (first = recién creada la cuenta, sin apodo todavía). El apodo sugerido nunca sale del nombre de
+  // Google (Cloud.suggestNick): el ranking es público y la Política de privacidad dice que no se muestra
+  var NICK_HINT = 'Así te verán en el ranking (es público): no uses tu nombre real.';
   function showProfileEditor(first) {
     var c = cloud();
     if (!c || !cloudUser()) { showAccount(); return; }
@@ -520,7 +632,7 @@
         '<h2 class="card-title">' + (first ? '¡Elige tu apodo!' : 'Tu apodo y avatar') + '</h2>' +
         '<div class="nick-field"><label for="nick-input">Apodo (3 a 16 letras)</label>' +
           '<input id="nick-input" class="nick-input" type="text" maxlength="16" autocomplete="nickname" autocapitalize="off" spellcheck="false" value="' + esc(nick) + '">' +
-          '<small class="nick-hint js-hint">Así te verán en el ranking.</small></div>' +
+          '<small class="nick-hint js-hint">' + NICK_HINT + '</small></div>' +
         '<div class="avatar-grid" role="group" aria-label="Avatar">' + grid + '</div>' +
         '<div class="btn-col"><button class="btn btn-pink btn-big" data-act="save">' + icon('check', 24) + ' Guardar</button>' +
           (first ? '<button class="btn btn-white btn-sm" data-act="close">Después</button>' : '') + '</div>' +
@@ -531,7 +643,7 @@
     var hint = $('.js-hint', o);
     function check() {
       var v = Cocardo.Progress.validNick(input.value);
-      hint.textContent = v.ok ? 'Así te verán en el ranking.' : v.reason;
+      hint.textContent = v.ok ? NICK_HINT : v.reason;
       hint.classList.toggle('bad', !v.ok);
       return v;
     }
@@ -612,7 +724,52 @@
   function doSignOut() {
     var c = cloud();
     if (!c) return;
-    c.signOut().then(function () { track('sign_out', {}); toast('Sesión cerrada. Tu progreso sigue en este aparato.', 3000); });
+    // sesión con apodo que tiene el juego completo: antes de cerrarla se avisa (docs/PAGOS.md §8)
+    var u = cloudUser();
+    if (u && u.anon && payOn() && payState().account) { confirmSignOutPaid(); return; }
+    signOutNow(false);
+  }
+  // paidAnon: se cerró la sesión con apodo que tenía la compra. Cocardo.Pay avisa 'left-behind' durante el
+  // signOut (hay un solo toast): el aviso final repite lo de «Ya pagué» en vez de decir solo que el progreso sigue
+  function signOutNow(paidAnon) {
+    var c = cloud();
+    if (!c) return;
+    c.signOut().then(function () {
+      track('sign_out', {});
+      if (paidAnon || payState().leftBehind) toast('Sesión cerrada. Tu juego completo quedó en el apodo: recupéralo con «Ya pagué» y el número de factura.', 5000);
+      else toast('Sesión cerrada. Tu progreso sigue en este aparato.', 3000);
+    });
+  }
+  // «¿Cerrar la sesión?»: la compra es de ese apodo (sesión anónima); al salir, este aparato vuelve a los niveles
+  // gratis y solo vuelve con «Ya pagué». Vincular con Google la conserva (Cocardo.Pay la trae si cambia de cuenta)
+  function confirmSignOutPaid() {
+    var c = cloud();
+    if (isOpen('signout')) closeOverlay('signout', true);
+    var nick = cloudNick();
+    var canLink = !!(c && c.inAppBrowser && !c.inAppBrowser());
+    var o = openOverlay('signout',
+      '<div class="card pop account-card signout-card">' +
+        '<h2 class="card-title" id="signout-title">¿Cerrar la sesión?</h2>' +
+        '<p class="account-note warn" id="signout-desc">Tu juego completo está guardado en ' + (nick ? 'el apodo «' + esc(nick) + '»' : 'este apodo') +
+          '. Si cierras la sesión, este aparato vuelve a los niveles gratis y solo lo recuperas con «Ya pagué» (el número de factura del correo de Paddle).' +
+          (canLink ? ' Si vinculas tu Google, lo conservas.' : '') + '</p>' +
+        '<div class="btn-col">' +
+          '<button class="btn btn-pink" data-act="cancel" data-autofocus>Seguir con mi apodo</button>' +
+          (canLink ? '<button class="btn btn-google btn-sm" data-act="google">' + icon('google', 20) + ' Vincular con Google</button>' : '') +
+          '<button class="btn btn-white btn-sm" data-act="logout">' + icon('logout', 20) + ' Cerrar sesión igual</button>' +
+        '</div>' +
+      '</div>',
+    { label: '¿Cerrar la sesión?', guard: true, onEsc: function () { closeOverlay('signout'); } });
+    o.setAttribute('aria-describedby', 'signout-desc');
+    o.addEventListener('click', function (ev) {
+      var t = ev.target.closest('[data-act]');
+      if (!t) { if (ev.target === o) closeOverlay(o); return; }
+      var act = t.getAttribute('data-act');
+      closeOverlay(o, true);
+      if (act === 'logout') signOutNow(true);
+      else if (act === 'google') doSignIn();
+    });
+    return o;
   }
 
   // Tarjeta de cuenta en Ajustes
@@ -949,7 +1106,7 @@
       g.font = '60px ' + FONT;
       g.fillText('¿Puedes tú?', SHARE_W / 2, 1770);
       g.font = '700 32px ' + BODY;
-      g.fillText('Juego de fans · Cocardo: ¡Rescate Helado!', SHARE_W / 2, 1860);
+      g.fillText('Cocardo: ¡Rescate Helado! · ' + siteHost(), SHARE_W / 2, 1860);
       return new Promise(function (res) {
         try { cv.toBlob(function (b) { res(b); }, 'image/png'); } catch (e) { res(null); }
       });
@@ -970,13 +1127,17 @@
     } catch (e) { return false; }
   }
 
-  function showCopyBox(text) {
+  // opts: { title, label (del cuadro de texto), hint, rows }; por defecto, texto para compartir
+  function showCopyBox(text, opts) {
+    opts = opts || {};
+    var title = opts.title || 'Cópialo y compártelo';
     if (isOpen('copy')) closeOverlay('copy', true);
     var o = openOverlay('copy', '<div class="card pop copy-card">' +
-      '<h2 class="card-title">Cópialo y compártelo</h2>' +
-      '<textarea class="copy-text" readonly rows="7" aria-label="Texto para compartir"></textarea>' +
+      '<h2 class="card-title">' + esc(title) + '</h2>' +
+      (opts.hint ? '<p class="copy-hint">' + esc(opts.hint) + '</p>' : '') +
+      '<textarea class="copy-text" readonly rows="' + ((opts.rows | 0) || 7) + '" aria-label="' + esc(opts.label || 'Texto para compartir') + '"></textarea>' +
       '<div class="btn-row"><button class="btn btn-pink" data-act="ok" data-autofocus>Listo</button></div></div>',
-    { label: 'Cópialo y compártelo', onEsc: function () { closeOverlay('copy'); } });
+    { label: title, onEsc: function () { closeOverlay('copy'); } });
     var ta = $('textarea', o);
     ta.value = text;
     try { ta.focus(); ta.select(); ta.setSelectionRange(0, text.length); } catch (e) { /* nada */ }
@@ -1163,7 +1324,9 @@
           '<p class="title-tag">Una frutinovela de helados</p>' +
           '<button class="title-start" data-autofocus><span>Toca para empezar</span></button>' +
         '</div>' +
-        '<footer class="disclaimer">Juego de fans, no oficial. Inspirado en la frutinovela viral <i>La Nieve de Lima</i> (@frutitaenlatada).</footer>' +
+        // quién vende el juego y los enlaces legales a la vista desde la primera pantalla (revisión de dominio de Paddle)
+        '<footer class="disclaimer">' + (ownerText() ? '<span class="owner">' + esc(ownerText()) + '</span>' : '') +
+          '<span class="legal-links">' + legalLinksHtml({ price: true }) + '</span></footer>' +
       '</div>';
     sec.addEventListener('click', function (ev) {
       if (ev.target.closest && ev.target.closest('[data-act="account"]')) { ev.stopPropagation(); showAccount(); return; }
@@ -1293,6 +1456,19 @@
     if (t.hasAttribute('data-level')) {
       var id = +t.getAttribute('data-level');
       if (!playable(id)) {
+        if (payBlocked(id)) {
+          // construido y abierto por fecha, pero del juego completo: la ficha de pago si ya se llegó jugando a ese
+          // nivel, o si el nivel al que se llegó también es del juego completo (tras comprar se sigue con ese:
+          // comprar no salta niveles). Si aún quedan niveles gratis por superar, el aviso de progreso: pagar no le
+          // dejaría empezar ese nivel todavía
+          var reach = Math.min(data().unlocked, openCount());
+          if (id <= data().unlocked) { showPaywall({ from: 'map', level: id }); return; }
+          if (payBlocked(reach)) { showPaywall({ from: 'map', level: reach }); return; }
+          play('invalid');
+          shakeNode(t);
+          toast('¡Primero supera el nivel ' + (data().unlocked) + '!');
+          return;
+        }
         // capítulo construido con fecha por llegar: la ficha dice cuándo se abre
         play('invalid');
         shakeNode(t);
@@ -1374,6 +1550,13 @@
     // mundo
     var R = roadmap();
     var html = '';
+    // venta encendida y sin compra: el primer capítulo después de los niveles gratis lleva la etiqueta «Juego completo
+    // desde aquí» y los niveles abiertos por fecha desde el FREE+1 una corona (en lugar del candado de progreso)
+    var gate = payGate();
+    var free = payFree();
+    mapGate = gate;
+    var paidFirst = 0;
+    if (gate) geo.zones.forEach(function (z) { var f = z.ch.levels && z.ch.levels[0]; if (!paidFirst && f > free) paidFirst = z.ch.id; });
     geo.zones.forEach(function (z) {
       var ch = z.ch;
       var first = ch.levels && ch.levels[0];
@@ -1387,12 +1570,14 @@
       var when = (ghost || dated) && ch.when ? '<span class="zone-when">' + icon(dated ? 'calendar' : 'cone', 14) + '<span>' + esc(ch.when) + '</span></span>' : '';
       var btn = ghost || dated;
       var tag = btn ? 'button' : 'div';
-      var attrs = btn ? ' type="button" data-chapter="' + ch.id + '" aria-label="' + esc(num + ', ' + ch.name + ', ' + (ch.when || 'en construcción')) + '"' : '';
-      html += '<div class="zone zone-ch' + esc(ch.id) + (ghost ? ' zone-planned zone-' + esc(ch.state || 'construccion') : (isShopZone(ch.zone) ? ' zone-shop' : '')) + (dated ? ' zone-dated' : '') + (locked && !ghost ? ' zone-locked' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
+      var paidZone = gate && first > free;
+      var attrs = btn ? ' type="button" data-chapter="' + ch.id + '" aria-label="' + esc(num + ', ' + ch.name + ', ' + (ch.when || 'en construcción') + (paidZone ? ', juego completo' : '')) + '"' : '';
+      html += '<div class="zone zone-ch' + esc(ch.id) + (ghost ? ' zone-planned zone-' + esc(ch.state || 'construccion') : (isShopZone(ch.zone) ? ' zone-shop' : '')) + (dated ? ' zone-dated' : '') + (locked && !ghost ? ' zone-locked' : '') + (paidZone ? ' zone-paid' : '') + '" style="top:' + z.top + 'px;height:' + z.h + 'px;--zc:' + esc(ch.color || '#ff6fa5') + '">' +
         '<div class="zone-bg">' + (ghost ? '' : zoneBg(ch.zone || ch.id)) + '</div>' +
         (ghost && z.idx === geo.zones.length - 1 ? '<div class="zone-fog" aria-hidden="true"></div>' : '') +
         '<' + tag + ' class="zone-head' + (btn ? ' zone-head-btn' : '') + '" style="top:' + (z.headTop + 34) + 'px"' + attrs + '><span class="zone-num">' + esc(num) + '</span><b class="zone-name">' + esc(ch.name) + '</b>' +
-        (sub ? '<small class="zone-sub">' + esc(sub) + '</small>' : '') + when + (locked && !ghost ? '<span class="zone-lock">' + icon('lock', 18) + '</span>' : '') + '</' + tag + '>' +
+        (sub ? '<small class="zone-sub">' + esc(sub) + '</small>' : '') + when + (locked && !ghost ? '<span class="zone-lock">' + icon('lock', 18) + '</span>' : '') +
+        (paidZone && ch.id === paidFirst ? '<span class="zone-paid-tag">' + crownIcon(14) + '<span>Juego completo desde aquí</span></span>' : '') + '</' + tag + '>' +
         '</div>';
     });
     geo.zones.forEach(function (z) {
@@ -1415,15 +1600,18 @@
       var locked = dated || n.id > d.unlocked;
       var isCur = n.id === cur && !(n.id === openN && doneAll) && !dated;
       var boss = isFinale(n.id);
-      var cls = 'node' + (boss ? ' node-boss' : '') + (locked ? ' node-locked' : '') + (dated ? ' node-dated' : '') + (stars ? ' node-done' : '') + (isCur ? ' node-current' : '');
-      var label = 'Nivel ' + n.id + (lv.name ? ', ' + lv.name : '') + (locked ? (dated ? ', ' + (n.ch.when || 'próximamente') : ', bloqueado') : (stars ? ', ' + stars + (stars === 1 ? ' estrella' : ' estrellas') : ''));
+      var paid = gate && n.id > free && !dated;
+      var cls = 'node' + (boss ? ' node-boss' : '') + (locked ? ' node-locked' : '') + (dated ? ' node-dated' : '') + (paid ? ' node-paid' : '') + (stars ? ' node-done' : '') + (isCur ? ' node-current' : '');
+      var label = 'Nivel ' + n.id + (lv.name ? ', ' + lv.name : '') + (locked ? (dated ? ', ' + (n.ch.when || 'próximamente') : ', bloqueado') : (stars ? ', ' + stars + (stars === 1 ? ' estrella' : ' estrellas') : '')) + (paid ? ', juego completo' : '');
       html += '<button class="' + cls + '" data-level="' + n.id + '" style="left:' + (n.xf * 100) + '%;top:' + n.y + 'px;--zc:' + zc + '" aria-label="' + esc(label) + '">' +
         (locked ? '' : '<span class="node-stars">' + starsHtml(stars) + '</span>') +
         '<span class="node-disc">' +
           (boss ? '<span class="node-face">' + portrait(bossFace(n.id), locked ? 'normal' : 'burlon') + '</span>' : '') +
           '<span class="node-num">' + n.id + '</span>' +
         '</span>' +
-        (locked ? '<span class="node-lock">' + icon(dated ? 'calendar' : 'lock', dated ? 16 : 18) + '</span>' : '') +
+        // una sola insignia: la corona del juego completo reemplaza al candado de progreso (el disco ya se ve cerrado)
+        (locked && !paid ? '<span class="node-lock">' + icon(dated ? 'calendar' : 'lock', dated ? 16 : 18) + '</span>' : '') +
+        (paid ? '<span class="node-paid-badge" aria-hidden="true">' + crownIcon(18) + '</span>' : '') +
         (lv.hard ? '<span class="node-drama">¡Drama!</span>' : '') +
         '</button>';
       // burbuja de rescate junto al nivel que libera a alguien
@@ -1437,7 +1625,9 @@
         });
       }
     });
-    if (!(doneAll && cur === openN)) {
+    // sin manita sobre un nivel actual que solo espera el juego completo (no se insiste con la compra; su pulso
+    // también se apaga: .node-current.node-paid en css/style.css)
+    if (!(doneAll && cur === openN) && !(gate && payBlocked(cur))) {
       // manita que señala el nivel actual (del lado contrario a las burbujas de rescate)
       var cn = geo.byId[cur];
       if (cn) {
@@ -1955,6 +2145,8 @@
       var cs = chapterStateOf(id);
       if (current !== 'map') show('map');
       if (cs && cs.state !== 'abierto') showRoadmap(cs.id);
+      // la ficha de pago la abren el mapa, el «Continuará» y la Victoria (con su origen); aquí solo se avisa
+      else if (payBlocked(id)) toast('El nivel ' + id + ' es del juego completo');
       else toast('Este nivel aún se está congelando…');
       return;
     }
@@ -2456,9 +2648,17 @@
       if (act === 'next') {
         var cliffy = pend.some(function (p) { return p && (p.cliff || p.ending); });
         if (cliffy || id >= count) {
-          // fin de capítulo: escenas y mapa con el rótulo del capítulo nuevo
+          // fin de capítulo: escenas y mapa con el rótulo del capítulo nuevo (o la ficha de pago, ver afterScenes)
           show('map');
           playScenes(pend, function () { afterScenes(id, pend); }, id);
+        } else if (payBlocked(id + 1)) {
+          // el siguiente nivel solo espera el juego completo: escenas pendientes -> mapa con la ficha de pago
+          show('map');
+          playScenes(pend, function () {
+            if (current !== 'map') show('map');
+            scrollMapTo(id + 1, true);
+            showPaywall({ from: 'victory', level: id + 1 });
+          }, id);
         } else {
           // sin pasar por el mapa: escena posterior (si hay) -> siguiente nivel
           playScenes(pend, function () { openLevel(id + 1, { direct: true }); }, id);
@@ -2473,6 +2673,8 @@
     var count = openCount();
     var hadCliff = pend.some(function (p) { return p && (p.cliff || p.ending); });
     var nextId = Math.min(count, id + 1);
+    // tras el «Continuará» del último nivel gratis, sin el juego completo: la ficha de pago en vez del capítulo nuevo
+    var payNext = hadCliff && id < count && payBlocked(id + 1);
     if (hadCliff && id < count) {
       // el rótulo del capítulo nuevo ya lo anuncia: sin el aviso «¡Capítulo N abierto!» encima
       var cs = chapterStateOf(nextId);
@@ -2482,7 +2684,11 @@
     if (current !== 'map') show('map');
     else renderMap();
     if (queuedScenes.length) later(flushQueuedScenes, 300);
-    if (hadCliff && id < count) {
+    if (payNext) {
+      // «Ahora no» deja el mapa a la vista, con el nivel siguiente y su estrella dorada
+      later(function () { scrollMapTo(nextId, true); }, 120);
+      later(function () { if (current === 'map' && !stack.length) showPaywall({ from: 'cliff', level: id + 1 }); }, 450);
+    } else if (hadCliff && id < count) {
       var ch = chapterOf(nextId);
       if (ch) later(function () { chapterBanner(ch); }, 200);
       later(function () { scrollMapTo(nextId, true); }, 120);
@@ -2556,7 +2762,7 @@
         '<div class="ribbon ribbon-drama"><span>' + esc(ribbon) + '</span></div>' +
         '<div class="rm-tape" aria-hidden="true"></div>' +
         '<p class="rm-chapter">' + esc('Capítulo ' + ch.id + (ch.season && ch.seasonName ? ' · Temporada ' + ch.season + ': ' + ch.seasonName : '')) + '</p>' +
-        (ch.season > 1 ? '<p class="rm-fan">Historia original del juego de fans · no oficial</p>' : '') +
+        (ch.season > 1 ? '<p class="rm-fan">Historia nueva, escrita para el juego</p>' : '') +
         '<div class="rm-head"><span class="rm-face">' + portrait(face[0], face[1]) + '</span>' +
           '<div class="rm-txt"><h2 class="rm-name">' + esc(ch.name) + '</h2>' + (ch.teaser ? '<p class="rm-teaser">' + esc(ch.teaser) + '</p>' : '') + '</div></div>' +
         '<div class="rm-when"><span class="rm-ico">' + icon(scheduled ? 'calendar' : 'cone', 30) + '</span>' +
@@ -2923,6 +3129,511 @@
   }
 
   /* ===================================================================== */
+  /*                   JUEGO COMPLETO: FICHA DE PAGO (Pay)                  */
+  /* ===================================================================== */
+
+  // Ficha «Juego completo» (Cocardo.Pay, docs/PAGOS.md). Solo con la venta encendida.
+  // opts: { from: 'map' | 'cliff' | 'victory' | 'settings' | 'link' | 'debug', level: nivel que se quería empezar
+  // (tras comprar se sigue con él), view: 'offer' (por defecto) | 'restore' («Ya pagué») | 'external' }.
+  // Vistas: offer, restore, link («Pagar en Safari/Chrome»), busy (pago de Paddle abierto o «Procesando tu pago…»),
+  // done, error, external. Los cambios de estado llegan por Pay.onChange (onPaywallEvent). Nunca se abre desde la
+  // Derrota, sin cuentas regresivas ni urgencias: «Ahora no» siempre a la vista. El foco nunca empieza en un botón que
+  // compra (el título lo recibe) y, recién abierta, «Desbloquear» no responde: el Espacio o el Enter con que se pasaba
+  // la historia no pueden empezar una compra.
+  var pw = null;          // ficha abierta: { el, from, level, view, action, acting, msg, url, price, openedAt, celebrate, said }
+  var pwPrice = '';       // precio local que dio Pay.price() en esta sesión ('' = todavía nada, o el de respaldo)
+  var PW_BUY_GUARD_MS = 700;
+
+  function lcFirst(s) { s = String(s || ''); return s.charAt(0).toLowerCase() + s.slice(1); }
+  function cloudInApp() { var c = cloud(); try { return !!(c && c.inAppBrowser && c.inAppBrowser()); } catch (e) { return false; } }
+  function paywallOpen() { return !!(pw && pw.el && isOpen(pw.el)); }
+  function payTrack(name, params) {
+    var P = pay();
+    if (P && typeof P.track === 'function') { try { P.track(name, params); } catch (e) { /* nada */ } }
+    else track(name, params);
+  }
+
+  function showPaywall(opts) {
+    opts = opts || {};
+    var P = pay();
+    if (!P || !payOn()) return null;
+    var st = payState();
+    var view = opts.view || 'offer';
+    if (view !== 'external' && st.premium) { toast('¡Ya tienes el juego completo!'); return null; }
+    if (view === 'offer' && (payWaiting(st) || st.busy)) view = 'busy';
+    if (isOpen('paywall')) closeOverlay('paywall', true);
+    var mine = { el: null, from: String(opts.from || ''), level: opts.level | 0, view: '', action: '', acting: false, msg: '', url: '', price: pwPrice, priceFailed: false, openedAt: now(), celebrate: false, said: '' };
+    pw = mine;
+    var o = openOverlay('paywall',
+      '<div class="card pop paywall-card">' +
+        '<button class="close-btn" data-act="close" aria-label="Cerrar">' + icon('close', 22) + '</button>' +
+        '<div class="ribbon ribbon-gold"><span>Juego completo</span></div>' +
+        '<p class="pw-status" role="status" aria-live="polite"></p>' +
+        '<div class="pw-body"></div>' +
+      '</div>',
+    { label: 'Juego completo', guard: true, onEsc: function () {
+      // desde «Ya pagué» o el enlace, Esc vuelve a la oferta como «Volver» (no tira lo escrito ni cierra la ficha)
+      if (pw === mine && (mine.view === 'restore' || mine.view === 'link')) pwRender('offer');
+      else closeOverlay(o);
+    } });
+    mine.el = o;
+    // el diálogo se nombra y se describe con el título y el texto de la vista que se ve
+    o.setAttribute('aria-labelledby', 'pw-title');
+    o.setAttribute('aria-describedby', 'pw-desc');
+    var entry = stack[findEntry(o)];
+    entry.cleanup = function () {
+      if (pw === mine) pw = null;
+      // el editor de apodo esperaba a que se cerrara la ficha (se mira después de lo que abra el cierre, p. ej. el nivel)
+      later(recheckNick, 0);
+    };
+    o.addEventListener('click', onPaywallClick);
+    o.addEventListener('submit', onPaywallSubmit);
+    pwRender(view);
+    if (view !== 'external') {
+      payTrack('paywall_view', { level: mine.level, from: mine.from });
+      // precio local con impuestos (Paddle.PricePreview); si falla, Pay da el de respaldo y no se muestra
+      try { P.price().then(pwSetPrice, function () { if (pw === mine) pwSetPrice(''); }); } catch (e) { pwSetPrice(''); }
+    }
+    return o;
+  }
+
+  // Renglón sobre «Comprar el juego completo». Mientras se pide el precio local (Paddle.PricePreview) dice «Pago único,
+  // sin suscripción» (una línea, para que los botones no salten al llegar); con el local, ese precio; si Paddle no lo
+  // da (Pay devuelve su respaldo de dos monedas, o falla), el de lista: siempre se ve cuánto cuesta antes de pagar
+  var PW_LIST_PRICE = 'US$1,99 (1,99 € en la zona euro), impuestos incluidos';
+  function pwPriceLine(p, failed) {
+    if (p) return '<b>' + esc(p) + '</b> · pago único, sin suscripción';
+    return failed ? '<b>' + esc(PW_LIST_PRICE) + '</b> · pago único' : 'Pago único, sin suscripción';
+  }
+  function pwSetPrice(t) {
+    t = payPriceText(t);
+    if (t) pwPrice = t;
+    if (!paywallOpen()) return;
+    pw.price = t;
+    pw.priceFailed = !t;
+    var s = $('.js-pw-price', pw.el);
+    if (s) s.innerHTML = pwPriceLine(t, !t);
+  }
+
+  // Nivel con el que se sigue tras comprar: el que se quería empezar, si ya se puede
+  function pwNextLevel() {
+    var l = pw ? pw.level : 0;
+    return l && playable(l) && l <= data().unlocked ? l : 0;
+  }
+
+  // Qué trae el juego completo: los niveles después de los gratis que ya se pueden jugar (construidos y abiertos por
+  // fecha; un capítulo construido antes de su estreno no cuenta hasta que se abre) y el próximo estreno (sin spoilers)
+  function paywallPitch() {
+    var F = payFree(), open = openCount();
+    var paid = [], n = 0;
+    chapters().forEach(function (ch) {
+      var k = (ch.levels || []).filter(function (id) { return id > F && id <= open; }).length;
+      if (k) { paid.push(ch); n += k; }
+    });
+    var items = [];
+    if (paid.length) {
+      var a = paid[0].id, b = paid[paid.length - 1].id;
+      items.push({ t: (a === b ? 'Capítulo ' + a : 'Capítulos ' + a + ' al ' + b) + ' · ' + n + ' niveles más' });
+    }
+    // la fecha del próximo capítulo, como prevista (Roadmap.expectedText): aquí se vende, y los Términos (§5) dicen
+    // que las fechas son orientativas; «Se abre el…» queda para el mapa
+    var nx = nextOpening(), R = roadmap(), exp = '';
+    try { exp = nx && R && R.expectedText ? R.expectedText(nx.opens, nx.built, todayKey()) : ''; } catch (e) { exp = ''; }
+    items.push({ t: 'Capítulos nuevos, sin pagar otra vez', s: exp ? 'Próximo: capítulo ' + nx.id + ' · ' + lcFirst(exp) : '' });
+    items.push({ t: 'El Reto Diario sigue gratis para todos' });
+    return items;
+  }
+
+  function pwHero(mood, crown) {
+    return '<div class="pw-hero" aria-hidden="true"><span class="pw-face">' + portrait('lima', mood || 'feliz') + '</span>' +
+      (crown ? '<span class="pw-crown">' + crownIcon(40, true) + '</span>' : '') + '</div>';
+  }
+  // Título de cada vista (#pw-title nombra el diálogo). focus: el foco empieza aquí y no en un botón
+  function pwTitle(text, focus) {
+    return '<h2 class="pw-title" id="pw-title" tabindex="-1"' + (focus ? ' data-autofocus' : '') + '>' + esc(text) + '</h2>';
+  }
+  // Mensaje de error con el contacto de ayuda como enlace (si lo menciona)
+  function pwErrorHtml(msg) {
+    var h = esc(msg || '');
+    var t = esc(paySupport().text);
+    var i = t ? h.indexOf(t) : -1;
+    return i < 0 ? h : h.slice(0, i) + paySupportLink() + h.slice(i + t.length);
+  }
+
+  function pwHtml(view) {
+    var st = payState();
+    var F = payFree();
+    if (view === 'restore') {
+      return pwTitle('Ya pagué', false) +
+        '<p class="pw-text" id="pw-desc">Escribe el número de factura del recibo de Paddle (te llegó por correo; se ve así: <span class="pw-nowrap">325-10566</span>) y el correo con el que pagaste.</p>' +
+        '<form class="pw-form" novalidate>' +
+          '<div class="nick-field"><label for="pw-invoice">Número de factura</label>' +
+            '<input id="pw-invoice" class="nick-input" name="invoice" type="text" maxlength="64" autocomplete="off" autocapitalize="off" spellcheck="false" data-autofocus></div>' +
+          '<div class="nick-field"><label for="pw-email">Correo de la compra</label>' +
+            '<input id="pw-email" class="nick-input" name="email" type="email" inputmode="email" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false"></div>' +
+          '<p class="pw-error" role="alert">' + pwErrorHtml(pw.msg) + '</p>' +
+          // traslado: la compra deja de valer en la cuenta o el aparato que la tenía (MAX_MOVES en el Worker)
+          '<p class="pw-note">La compra pasa a esta cuenta y deja de valer en la anterior. Solo se puede mover unas pocas veces.</p>' +
+          '<div class="btn-col"><button type="submit" class="btn btn-pink btn-big pw-send">' + icon('check', 24) + ' Recuperar compra</button>' +
+            '<div class="btn-row"><button type="button" class="btn btn-white btn-sm" data-act="offer">Volver</button></div></div>' +
+        '</form>';
+    }
+    if (view === 'link') {
+      // dentro de TikTok/Instagram: «Abrir en el navegador» del menú abriría esta página sin el pago y un enlace
+      // abriría el pago en el mismo navegador de la app (sin Apple Pay ni Google Pay): solo copiar y pegar
+      var nick = cloudNick();
+      return pwTitle('Paga en Safari o Chrome', false) +
+        '<ol class="pw-steps" id="pw-desc"><li>Toca «Copiar enlace».</li><li>Abre Safari o Chrome.</li>' +
+          '<li>Pega el enlace en la barra de direcciones y paga ahí (también con Apple Pay o Google Pay).</li></ol>' +
+        '<p class="pw-text pw-sub">La compra llega a este mismo juego' + (nick ? ', a «' + esc(nick) + '»' : '') + ': cuando termines, vuelve aquí y se abre sola. El enlace es solo tuyo: no lo compartas.</p>' +
+        '<div class="btn-col">' +
+          '<button class="btn btn-pink btn-big" data-act="copy-link" data-autofocus>' + icon('share', 24) + ' Copiar enlace</button>' +
+          '<div class="btn-row"><button class="btn btn-white btn-sm" data-act="offer">Volver</button></div>' +
+        '</div>';
+    }
+    if (view === 'busy') {
+      // el título dice lo que pasa: pago de Paddle abierto (todavía no se pagó), confirmando la compra, activando…
+      var waiting = payWaiting(st);
+      var title = 'Procesando tu pago…', sub, back = false;
+      if (waiting && st.slow) sub = 'Está tardando más de lo normal. Si ya pagaste, tu compra llega sola en unos minutos; también puedes usar «Ya pagué» con el número de factura del correo de Paddle.';
+      else if (pw.action === 'already') { title = 'Activando el juego completo…'; sub = 'Esta cuenta ya tenía el juego completo: lo estamos activando.'; }
+      else if (waiting && pw.action === 'restore') { title = '¡Encontramos tu compra!'; sub = 'La estamos pasando a esta cuenta…'; }
+      else if (waiting) sub = 'Ya casi: estamos confirmando tu compra. Puedes cerrar esta ventana; el juego completo se abre solo.';
+      else if (pw.action === 'buy') { title = 'Completa el pago en la ventana de Paddle'; sub = 'Si no ves la ventana de pago, vuelve e inténtalo otra vez.'; back = true; }
+      else { title = 'Un momento…'; sub = 'Estamos revisando tu compra.'; }
+      return '<div class="pw-spin" aria-hidden="true">' + icon('snowflake', 64) + '</div>' +
+        pwTitle(title, false) +
+        '<p class="pw-text" id="pw-desc">' + esc(sub) + '</p>' +
+        '<div class="btn-col"><div class="btn-row">' +
+          (waiting && st.slow ? '<button class="btn btn-white btn-sm" data-act="restore">Ya pagué</button>' : '') +
+          (back ? '<button class="btn btn-white btn-sm" data-act="offer">Volver</button>' : '') +
+          '<button class="btn btn-white btn-sm" data-act="close" data-autofocus>Cerrar</button>' +
+        '</div></div>';
+    }
+    if (view === 'done') {
+      var next = pwNextLevel();
+      return pwHero('feliz', true) +
+        pwTitle('¡Gracias! Ya tienes el juego completo', false) +
+        '<p class="pw-text" id="pw-desc">' + (next ? 'Sigue con el nivel ' + next + '. ¡Las frutas te esperan!' : 'Todos los capítulos son tuyos, también los que vienen.') + '</p>' +
+        '<div class="btn-col"><button class="btn btn-pink btn-big" data-act="continue" data-autofocus>' + (next ? icon('play', 24) + ' ¡A jugar!' : '¡Genial!') + '</button></div>';
+    }
+    if (view === 'error') {
+      return pwHero('asustado', false) +
+        pwTitle('Ups, no se pudo', true) +
+        '<p class="pw-text" id="pw-desc">' + esc(pw.msg || 'Algo falló con el pago. Inténtalo otra vez.') + '</p>' +
+        '<div class="btn-col"><button class="btn btn-pink btn-big" data-act="retry">' + icon('retry', 24) + ' Reintentar</button>' +
+          '<div class="btn-row"><button class="btn btn-white btn-sm" data-act="close">Ahora no</button></div></div>';
+    }
+    if (view === 'external') {
+      return pwHero('feliz', true) +
+        pwTitle('¡Gracias por tu compra!', false) +
+        '<p class="pw-text" id="pw-desc">El juego completo llega a la cuenta con la que empezaste a pagar. Vuelve a la app donde estabas (TikTok, Instagram…) y sigue jugando ahí.</p>' +
+        '<p class="pw-text pw-sub">No hace falta volver a pagar: aquí, en el navegador, el juego sigue con los niveles gratis.</p>' +
+        '<div class="btn-col"><button class="btn btn-pink btn-big" data-act="close" data-autofocus>Entendido</button></div>';
+    }
+    // offer
+    var inApp = cloudInApp();
+    var linkPaid = !!(st.external && st.pending);   // en este navegador se pagó con el enlace de otra app
+    return pwHero('feliz', true) +
+      // textos descriptivos, sin imperativos de compra («Desbloquea…»): el juego atrae a menores (Directiva 2005/29/CE,
+      // anexo I, n.º 28)
+      pwTitle('Del nivel ' + (F + 1) + ' en adelante', true) +
+      '<p class="pw-text" id="pw-desc">Los niveles 1 al ' + F + ' son gratis. El resto es el juego completo, con un pago único:</p>' +
+      '<ul class="pw-list">' + paywallPitch().map(function (it) {
+        return '<li><span class="pw-ok" aria-hidden="true">' + icon('check', 14) + '</span><span>' + esc(it.t) + (it.s ? '<small>' + esc(it.s) + '</small>' : '') + '</span></li>';
+      }).join('') + '</ul>' +
+      (linkPaid ? '<p class="account-note warn">Ya pagaste con el enlace: el juego completo llega a la app donde empezaste (TikTok, Instagram…). No hace falta volver a pagar aquí.</p>' : '') +
+      (st.leftBehind ? '<p class="account-note warn">Tu compra quedó en la sesión con apodo que dejaste: usa «Ya pagué» con el número de factura del correo de Paddle.</p>' : '') +
+      '<p class="pw-price-line js-pw-price">' + pwPriceLine(pw.price, pw.priceFailed) + '</p>' +
+      '<div class="btn-col">' +
+        '<button class="btn btn-pink btn-big pw-buy" data-act="buy">Comprar el juego completo</button>' +
+        (inApp ? '<button class="btn btn-gold" data-act="external">' + icon('share', 22) + ' Pagar en Safari/Chrome</button>' : '') +
+        '<div class="btn-row"><button class="btn btn-white btn-sm" data-act="restore">Ya pagué</button>' +
+          '<button class="btn btn-white btn-sm" data-act="close">Ahora no</button></div>' +
+      '</div>' +
+      // antes de pagar: aceptar Términos y Reembolsos, y quién cobra (Paddle, revendedor). Los enlaces abren otra pestaña
+      '<p class="pw-fine">Al comprar aceptas los <a href="' + esc(siteHref('legal/terminos')) + '" target="_blank" rel="noopener">Términos</a> y la ' +
+        '<a href="' + esc(siteHref('legal/reembolsos')) + '" target="_blank" rel="noopener">Política de reembolsos</a>. ' +
+        'Cobra Paddle.com (revendedor y Merchant of Record), que te muestra el precio final antes de pagar. Las compras de menores necesitan permiso de su madre, padre o tutor.</p>';
+  }
+
+  function pwRender(view, msg) {
+    if (!pw || !pw.el) return;
+    var prevView = pw.view;
+    pw.view = view;
+    if (msg != null) pw.msg = msg;
+    var card = $('.paywall-card', pw.el);
+    if (prevView) card.classList.remove('pw-view-' + prevView);
+    card.classList.add('pw-view-' + view);
+    $('.pw-body', pw.el).innerHTML = pwHtml(view);
+    if (view !== 'done') {
+      var old = $('.sprinkles', pw.el);
+      if (old) old.remove();
+      pw.celebrate = false;
+    } else if (prevView !== 'done') {
+      // «¡Gracias!»: confeti y sonido de ganar. Con el pago de Paddle todavía abierto encima (busy hasta que el
+      // comprador lo cierra) esperan a que se cierre (onPaywallEvent). No sigue solo con el nivel: «¡A jugar!»
+      pw.celebrate = true;
+      if (!payBusy()) pwCelebrate();
+    }
+    focusFirst(pw.el);
+    pwAnnounce(!!prevView);
+  }
+
+  // Lectores de pantalla: el cuerpo se reemplaza entero, así que el cambio se dice en la región role=status de la
+  // ficha (título y texto de la vista). Al abrirla no: el foco ya lee el título
+  function pwAnnounce(speak) {
+    var mine = pw;
+    var s = $('.pw-status', mine.el);
+    var t = $('#pw-title', mine.el), d = $('#pw-desc', mine.el);
+    var text = [t && t.textContent, d && d.textContent].filter(Boolean).join('. ');
+    if (!s || text === mine.said) return;
+    mine.said = text;
+    if (!speak) return;
+    s.textContent = '';
+    later(function () { if (pw === mine && s.isConnected) s.textContent = text; }, 80);
+  }
+
+  function pwCelebrate() {
+    if (!pw || !pw.celebrate || pw.view !== 'done') return;
+    pw.celebrate = false;
+    var sp = '';
+    for (var i = 0; i < 18; i++) sp += '<i style="--x:' + ((i * 53) % 100) + '%;--d:' + (1.6 + (i % 5) * 0.35) + 's;--delay:' + ((i * 0.13) % 1.4).toFixed(2) + 's;--c:' + ['#ff6fa5', '#ffc93c', '#bff3e1', '#4aa8e0', '#d61f4b', '#fff'][i % 6] + ';--rot:' + (i * 47 % 180) + 'deg"></i>';
+    var old = $('.sprinkles', pw.el);
+    if (old) old.remove();
+    pw.el.insertBefore(el('<div class="sprinkles" aria-hidden="true">' + sp + '</div>'), pw.el.firstChild);
+    play('win');
+    focusFirst(pw.el);
+  }
+
+  function pwBusyButton(btn, label) {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.textContent = label;
+  }
+
+  // «Comprar el juego completo»: Pay.buy abre el pago de Paddle encima del juego (sin sesión entra con apodo)
+  function pwBuy(btn) {
+    var P = pay();
+    if (!P || !paywallOpen() || pw.acting) return;
+    var mine = pw;
+    mine.action = 'buy';
+    mine.acting = true;
+    pwBusyButton(btn, 'Abriendo el pago…');
+    P.buy({ level: mine.level || undefined }).then(function (res) {
+      mine.acting = false;
+      recheckNick();   // si la ficha ya se cerró: comprar terminó y Pay no siempre avisa cuando busy vuelve a false
+      if (pw !== mine || !paywallOpen() || mine.view === 'done') return;
+      res = res || {};
+      if (res.ok) {
+        if (res.already) mine.action = 'already';
+        if (!payPremium()) pwRender('busy');
+      } else if (res.reason !== 'off') pwRender('error', res.reason || '');
+    });
+  }
+
+  // «Pagar en Safari/Chrome» (navegador de TikTok, Instagram…): Pay.buy sin abrir el pago, solo crea la transacción
+  // y da su enlace (…/?_ptxn=txn_…) para copiarlo y pegarlo fuera. La compra queda en esta cuenta.
+  function pwExternal(btn) {
+    var P = pay();
+    if (!P || !paywallOpen() || pw.acting) return;
+    var mine = pw;
+    mine.action = 'external';
+    mine.acting = true;
+    pwBusyButton(btn, 'Preparando el enlace…');
+    P.buy({ level: mine.level || undefined, overlay: false }).then(function (res) {
+      mine.acting = false;
+      recheckNick();   // buy({ overlay:false }) termina sin aviso de Pay
+      if (pw !== mine || !paywallOpen() || mine.view === 'done') return;
+      res = res || {};
+      if (res.ok && res.already) { mine.action = 'already'; if (!payPremium()) pwRender('busy'); return; }
+      var url = res.url || (typeof P.externalUrl === 'function' ? P.externalUrl() : '');
+      if (res.ok && url) { mine.url = url; pwRender('link'); return; }
+      if (res.reason !== 'off') pwRender('error', res.reason || 'No se pudo preparar el enlace de pago. Inténtalo otra vez.');
+    });
+  }
+
+  // Mensaje de «Ya pagué» a partir del código del Worker (invalid | pending | limit) o del texto de Cocardo.Pay.
+  // Todos terminan en punto
+  function restoreMessage(reason) {
+    var r = String(reason == null ? '' : reason).trim();
+    if (r === 'invalid' || /no encontramos/i.test(r)) return 'No encontramos esa compra. Revisa el número de factura y el correo.';
+    if (r === 'pending' || /se está procesando/i.test(r)) return 'Tu pago todavía se está procesando. Prueba otra vez en unos minutos.';
+    if (r === 'limit' || /demasiadas veces/i.test(r)) {
+      var s = paySupport();
+      return 'Esta compra ya cambió de cuenta demasiadas veces. ' + (s.mail ? 'Escríbenos a ' : 'Pide ayuda en ') + s.text + ' con tu número de factura.';
+    }
+    // sin nube u otro dominio: Cocardo.Pay lo dice para comprar, y aquí se vino a recuperar una compra
+    if (/^Para comprar /.test(r)) r = 'Para recuperar tu compra ' + r.slice('Para comprar '.length);
+    if (!r) return 'Algo falló. Inténtalo otra vez.';
+    return /[.!?…]$/.test(r) ? r : r + '.';
+  }
+
+  // «Ya pagué»: factura + correo -> Pay.restore (el Worker lo verifica con Paddle y mueve la compra a esta cuenta)
+  function pwRestore(form) {
+    var P = pay();
+    if (!P || !paywallOpen() || pw.acting) return;
+    var mine = pw;
+    var btn = $('.pw-send', form);
+    var err = $('.pw-error', form);
+    var label = btn ? btn.innerHTML : '';
+    if (err) err.textContent = '';
+    mine.action = 'restore';
+    mine.acting = true;
+    pwBusyButton(btn, 'Buscando tu compra…');
+    P.restore(form.elements.invoice.value, form.elements.email.value).then(function (res) {
+      mine.acting = false;
+      recheckNick();
+      if (pw !== mine || !paywallOpen()) return;
+      res = res || {};
+      if (res.ok) { if (mine.view === 'restore') pwRender(payPremium() ? 'done' : 'busy'); return; }
+      if (mine.view !== 'restore') return;
+      if (btn) { btn.disabled = false; btn.innerHTML = label; }
+      mine.msg = restoreMessage(res.reason);
+      if (err) err.innerHTML = pwErrorHtml(mine.msg);
+      play('invalid');
+    });
+  }
+
+  function copyLink(url) {
+    if (!url) return;
+    // si el portapapeles falla, el cuadro para copiar a mano dice que es el enlace de pago (no algo para compartir)
+    var box = { title: 'Copia el enlace de pago', label: 'Enlace de pago', hint: 'Pégalo en Safari o Chrome. No lo compartas: la compra va a tu cuenta.', rows: 3 };
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && policyAllows('clipboard-write')) {
+        navigator.clipboard.writeText(url).then(function () { toast('¡Enlace copiado! Pégalo en Safari o Chrome', 3500); }, function () { showCopyBox(url, box); });
+        return;
+      }
+    } catch (e) { /* abajo: el cuadro para copiar a mano */ }
+    showCopyBox(url, box);
+  }
+
+  // Tras comprar: se cierra la ficha y se sigue con el nivel que estaba cerrado (si lo hay)
+  function pwContinue() {
+    if (!pw) return;
+    var lvl = pwNextLevel(), from = pw.from;
+    closeOverlay(pw.el, true);
+    if (lvl) openLevel(lvl, { direct: from === 'victory' });
+  }
+
+  function onPaywallClick(ev) {
+    if (!pw) return;
+    var o = pw.el;
+    var t = ev.target.closest('[data-act]');
+    // tocar fuera no tira lo escrito en «Ya pagué» ni el enlace de pago
+    if (!t) { if (ev.target === o && pw.view !== 'restore' && pw.view !== 'link') closeOverlay(o); return; }
+    var act = t.getAttribute('data-act');
+    // recién abierta (sola, tras el «Continuará» o la Victoria) los botones que compran todavía no responden
+    if ((act === 'buy' || act === 'external') && now() - pw.openedAt < PW_BUY_GUARD_MS) return;
+    if (act === 'close') closeOverlay(o);
+    else if (act === 'buy') pwBuy(t);
+    else if (act === 'external') pwExternal(t);
+    else if (act === 'retry') { if (pw.action === 'external') pwExternal(t); else pwBuy(t); }
+    else if (act === 'restore') pwRender('restore', '');
+    else if (act === 'offer') pwRender('offer');
+    else if (act === 'copy-link') copyLink(pw.url);
+    else if (act === 'continue') pwContinue();
+  }
+  function onPaywallSubmit(ev) {
+    ev.preventDefault();
+    var f = ev.target;
+    if (f && f.classList && f.classList.contains('pw-form')) pwRestore(f);
+  }
+
+  // La ficha abierta sigue al pago: completed/slow/restored -> «Procesando…», premium -> «¡Gracias!» (el confeti
+  // cuando se cierra el pago de Paddle), cancel -> la oferta. Los errores de comprar y de «Ya pagué» los muestra la
+  // propia acción (pwBuy, pwExternal, pwRestore).
+  function onPaywallEvent(st) {
+    var ev = st.event;
+    if (st.premium) {
+      if (pw.view !== 'done') pwRender('done');
+      else if (!st.busy) pwCelebrate();
+      return;
+    }
+    if (ev === 'price') { pwSetPrice(st.price); return; }
+    if (pw.view === 'external') return;
+    if (ev === 'completed') { pwRender(st.external ? 'external' : 'busy'); return; }
+    if (ev === 'cancel') { if (pw.view === 'busy' || pw.view === 'error') pwRender('offer'); return; }
+    if (ev === 'already') { pw.action = 'already'; pwRender('busy'); return; }
+    if (ev === 'restored') { pwRender('busy'); return; }
+    if (ev === 'slow' && pw.view === 'busy' && !st.external) { pwRender('busy'); return; }
+    if (ev === 'left-behind' && pw.view === 'offer') pwRender('offer');
+  }
+
+  // Con la ficha cerrada: avisos cortos (la compra llegó, sigue procesando, quedó en la sesión con apodo…)
+  function payNotice(st, prev) {
+    if (!st.on) return;
+    var ev = st.event;
+    // 'premium': llegó la compra de esta cuenta (tras pagar, o la primera vez en este aparato). Entrar con una cuenta
+    // que ya la tenía en la copia local avisa 'account' y no se celebra otra vez
+    if (st.premium && (ev === 'premium' || ev === 'debug') && !(prev && prev.premium)) {
+      toast(prev && prev.pending ? '¡Gracias! Ya tienes el juego completo' : 'Juego completo activado', 3500);
+      play('booster');
+      return;
+    }
+    if (ev === 'completed') {
+      // pago abierto desde el enlace «Pagar en Safari/Chrome»: la compra es de la cuenta que lo creó
+      if (st.external) showPaywall({ from: 'link', view: 'external' });
+      else toast('Procesando tu pago…', 3000);
+    } else if (ev === 'slow') {
+      // la compra hecha con el enlace va a otra cuenta: aquí no hay nada que siga procesándose
+      if (!st.external) toast('Tu pago se sigue procesando: llega solo en unos minutos', 4000);
+    } else if (ev === 'left-behind') toast('Tu compra quedó en la sesión con apodo: usa «Ya pagué» con el número de factura', 5000);
+    else if (ev === 'error' && st.error) toast(st.error, 4500);
+  }
+
+  // Lo que depende de la compra se vuelve a pintar solo si lo que se ve cambiaría (no en cada aviso, p. ej. el del
+  // precio): el mapa si cambia el candado con que se dibujó (mapGate, lo anota renderMap) y Ajustes si cambia la
+  // tarjeta (settingsSig, lo anota renderSettings). Con la venta apagada nunca cambian. Devuelve el estado anterior.
+  var payLast = null, mapGate = null, settingsSig = '';
+  function paySig(st) { return st.on ? [st.premium, st.legacy, st.account, payWaiting(st), !!(st.external && st.pending), st.leftBehind].join('|') : ''; }
+  function payViews(fromCloud, st) {
+    st = st || payState();
+    var prev = payLast;
+    payLast = { premium: !!st.premium, pending: payWaiting(st) };
+    if (current === 'map' && mapGate !== null && !!(st.on && !st.premium) !== mapGate) renderMap();
+    // onCloudChange ya vuelve a pintar Ajustes
+    if (!fromCloud && current === 'settings' && paySig(st) !== settingsSig) renderSettings();
+    return prev;
+  }
+
+  // Cocardo.Pay.onChange (solo avisa con la venta encendida, o con debug.premium)
+  function onPayChange(st) {
+    st = st || payState();
+    var prev = payViews(false, st);
+    if (paywallOpen()) onPaywallEvent(st);
+    else payNotice(st, prev);
+    // el editor de apodo esperaba a que terminara el pago o el «Ya pagué» (y a que se cierre la ficha)
+    if (nickDeferred && !st.busy) recheckNick();
+  }
+
+  // Tarjeta «Juego completo» en Ajustes (solo con la venta encendida)
+  function payCardHtml() {
+    if (!payOn()) return '';
+    var st = payState();
+    function head(title, sub) {
+      return '<div class="account-head"><span class="pay-ico">' + crownIcon(34) + '</span>' +
+        '<span class="account-name"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></span></div>';
+    }
+    var help = '<p class="account-note pay-help">¿Problemas con una compra? ' + (paySupport().mail ? 'Escríbenos a ' : 'Ayuda en ') + paySupportLink() + '</p>';
+    if (st.premium) {
+      var legacy = st.legacy && !st.account;
+      return '<div class="card settings-card pay-card pay-done">' +
+        head('Tienes el juego completo', legacy ? 'Incluido en este aparato: ya jugabas antes de la venta' : 'Todos los capítulos, también los que vienen') +
+        (legacy ? '' : help) + '</div>';
+    }
+    return '<div class="card settings-card pay-card">' +
+      head('Juego completo', 'Niveles 1 al ' + payFree() + ' gratis · un pago único para todo lo demás') +
+      (payWaiting(st) ? '<p class="account-note">Procesando tu pago… el juego completo se abre solo en cuanto llegue.</p>' : '') +
+      (st.external && st.pending ? '<p class="account-note">Ya pagaste con el enlace: el juego completo llega a la app donde empezaste. No hace falta volver a pagar aquí.</p>' : '') +
+      (st.leftBehind ? '<p class="account-note warn">Tu compra quedó en la sesión con apodo que dejaste: usa «Ya pagué» con el número de factura.</p>' : '') +
+      '<div class="btn-col"><button class="btn btn-gold" data-act="pay-unlock">' + crownIcon(22, true) + ' Ver el juego completo</button>' +
+        '<button class="btn btn-white btn-sm" data-act="pay-restore">Ya pagué</button></div>' +
+      help +
+      '</div>';
+  }
+
+  /* ===================================================================== */
   /*                                AJUSTES                                */
   /* ===================================================================== */
 
@@ -2968,9 +3679,11 @@
     var s = data().settings;
     clearTimeout(wipeArmed);
     wipeArmed = 0;
+    settingsSig = paySig(payState());
     sec.innerHTML = '<div class="col sub-col settings-col">' + subbar('Ajustes', 'settings') +
       '<div class="sub-body">' +
         accountCardHtml() +
+        payCardHtml() +
         '<div class="card settings-card">' +
           toggleHtml('sound', 'Sonido', s.sound, 'Efectos del juego') +
           toggleHtml('music', 'Música', s.music, 'Cumbia heladera') +
@@ -2983,7 +3696,9 @@
           '<button class="btn btn-cherry wipe-btn" data-act="wipe">Borrar progreso</button>' +
           '<small>Se borran estrellas, rescates, potenciadores y rachas. No se puede deshacer.</small>' +
         '</div>' +
-        '<footer class="disclaimer in-card">Juego de fans, no oficial. Inspirado en la frutinovela viral <i>La Nieve de Lima</i> (@frutitaenlatada).' +
+        '<nav class="legal-links settings-legal" aria-label="Información legal">' + legalLinksHtml({ contact: true }) + '</nav>' +
+        '<footer class="disclaimer in-card">' +
+          (legalName() ? esc(ownerText()) + '. <i>Cocardo: ¡Rescate Helado!</i> es un juego de ' + esc(legalName()) + ': arte, música y código propios.' : '<i>Cocardo: ¡Rescate Helado!</i>: arte, música y código propios.') +
         (Cocardo.Save.isForeign && Cocardo.Save.isForeign()
           ? '<br><b>Ojo:</b> hay un guardado de una versión más nueva del juego. Esta copia no lo toca: lo que juegues aquí no se guarda.'
           : (Cocardo.Save.isPersistent && !Cocardo.Save.isPersistent() ? '<br><b>Ojo:</b> este navegador no deja guardar; tu progreso dura hasta cerrar la página.' : '')) + '</footer>' +
@@ -3002,6 +3717,8 @@
         else if (act === 'profile') showProfileEditor(false);
         else if (act === 'sync') doSync();
         else if (act === 'logout') doSignOut();
+        else if (act === 'pay-unlock') showPaywall({ from: 'settings' });
+        else if (act === 'pay-restore') showPaywall({ from: 'settings', view: 'restore' });
       });
     }
   }
@@ -3119,6 +3836,9 @@
     if (fl) fl.addEventListener('animationend', function () { fl.className = 'flash'; });
     var c = cloud();
     if (c && c.onChange) c.onChange(onCloudChange);
+    // juego completo: con la venta apagada Pay no avisa nunca (salvo debug.premium)
+    var P = pay();
+    if (P && typeof P.onChange === 'function') { payViews(false); P.onChange(onPayChange); }
     readQuery();
   }
 
@@ -3218,6 +3938,15 @@
       roadmap: chapterStates,
       openCount: openCount,
       showRoadmap: showRoadmap,
+      // juego completo (con la venta encendida, #debug solo existe en desarrollo): premium(true | false | null)
+      // fuerza la compra (null = lo real); paywall({ from, level, view }) abre la ficha; playable(id) es el candado
+      premium: function (v) {
+        var P = pay();
+        if (!P || typeof P._setPremiumForDebug !== 'function') return false;
+        return P._setPremiumForDebug(v === undefined ? true : v);
+      },
+      paywall: function (o) { return !!showPaywall(o || { from: 'debug' }); },
+      playable: playable,
       overlays: function () { return stack.map(function (e) { return e.name; }); },
       save: function () { return data(); },
       daily: function () { var i = dailyInfo(); return { key: i.key, num: i.num, levelId: i.level && i.level.id }; },
@@ -3243,6 +3972,8 @@
     _session: function () { return session; },
     _shareImage: buildShareImage,
     _recordCampaignWin: recordCampaignWin,
+    _pay: { playable: playable, blocked: payBlocked, restoreMessage: restoreMessage, pitch: paywallPitch, priceText: payPriceText, priceLine: pwPriceLine, waiting: payWaiting, support: paySupport },
+    showPaywall: showPaywall,
     showAccount: showAccount,
     showProfileEditor: showProfileEditor,
     showRoadmap: showRoadmap,

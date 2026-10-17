@@ -4,9 +4,9 @@ Minijuego web de puzzle (match-3, al estilo de Candy Crush y Royal Match) inspir
 **La Nieve de Lima**, la de Cocardo y su heladería *Coco's Scoops*. Funciona en teléfonos y computadoras,
 sin instalar nada.
 
-> Juego de fans, no oficial. Los personajes, nombres y frases vienen de la serie original de 13 partes de
-> **@frutitaenlatada** (la cuenta original **@frutasalocadas** fue suspendida). Todo el arte del juego está
-> redibujado en vectores; no usa imágenes ni audio de los videos.
+> Gratis para empezar: los niveles 1 al 10 y el Reto Diario no cuestan nada; el **juego completo** (del nivel 11 en
+> adelante) es un pago único de US$1,99 / 1,99 €, vendido con Paddle como revendedor (`docs/PAGOS.md`). Todo el arte
+> del juego está dibujado en vectores; no usa imágenes ni audio de los videos.
 
 ## De qué se trata
 
@@ -54,11 +54,16 @@ que descongela a las víctimas mientras la historia avanza igual que en la serie
 - **Publicar (cocardo.app):** el juego se sirve desde **Cloudflare** como Worker de archivos estáticos (`cocardo-sitio`, ruta
   `cocardo.app/*`); GitHub es solo el repositorio. Cada vez que cambie el juego: sube `VERSION` en `sw.js`, `git push`
   y `CLOUDFLARE_API_TOKEN=… tools/deploy-cloudflare.sh` (arma `dist/site/` solo con los archivos públicos y despliega;
-  `--check` comprueba el sitio sin desplegar). Qué hay detrás: `tools/cloudflare/`. GitHub Pages sigue activo como
+  `--check` comprueba el sitio sin desplegar). Qué hay detrás: `tools/cloudflare/`. No publica mientras queden los
+  marcadores de datos del vendedor (`{{NOMBRE_LEGAL}}`, `{{EMAIL_SOPORTE}}`, `{{DIRECCION_POSTAL}}`, `{{NIF}}`) en las
+  páginas: se rellenan una vez con `NOMBRE_LEGAL='…' EMAIL_SOPORTE='…' DIRECCION_POSTAL='…' NIF='…' node
+  tools/legal-datos.cjs --write` (sin `--write` dice dónde están; `docs/PAGOS.md` §6.2). Tampoco publica con un id de
+  GA4 en `js/cloud-config.js` mientras no haya aviso de consentimiento. GitHub Pages sigue activo como
   respaldo del origen, pero sus condiciones de uso no permiten sitios con ventas: desactívalo antes de cobrar.
   Dominio propio, cuentas y plan de lanzamiento: `docs/CRECIMIENTO.md`, `docs/FIREBASE.md` y `docs/CALENDARIO.md`.
 - **Landing:** `landing.html` es la página de presentación, publicada en `https://cocardo.app/landing` (para Google,
-  prensa y creadores; `/landing/` y `/landing.html` redirigen ahí). El enlace de la
+  prensa y creadores; `/landing/` y `/landing.html` redirigen ahí), con la sección de precio (`#precio`). Las páginas
+  legales están en `legal/` y se publican como `/legal/terminos`, `/legal/privacidad` y `/legal/reembolsos`. El enlace de la
   bio de TikTok/Instagram conviene que vaya directo a `index.html` (un toque y ya está jugando);
   `index.html?go=daily` abre el Reto Diario.
 
@@ -91,9 +96,11 @@ js/game.js              pantalla de juego: HUD, controles, animaciones, tutorial
 js/cloud-config.js      configuración de Firebase, GA4, dominio y redes (rellenar)
 js/cloud.js             cuenta de Google / apodo, progreso en la nube y rankings (Firebase, carga diferida)
 js/analytics.js         eventos a Google Analytics 4 (opcional)
+js/pay.js               venta del juego completo con Paddle (candado desde el nivel 11; docs/PAGOS.md)
 js/clip.js              grabación de clips verticales 9:16 de la partida
 js/ui.js, js/main.js    navegación y pantallas (portada, mapa, historia, victoria, reto, álbum, ajustes, cuenta)
-landing.html            página de presentación (css/landing.css)
+landing.html            página de presentación con el precio (css/landing.css)
+legal/                  Términos, Privacidad y Reembolsos (HTML estático; datos del vendedor con tools/legal-datos.cjs)
 manifest.webmanifest    app instalable; sw.js: juego sin conexión; icons/: íconos e imagen de vista previa
 firebase/               reglas de seguridad de Firestore (firestore.rules) y configuración del proyecto
 docs/                   diseño, arquitectura, personajes, investigación, Firebase y plan de crecimiento
@@ -121,5 +128,6 @@ atajos de prueba.
 
 ## Créditos
 
-- Historia y personajes originales: la frutinovela *La Nieve de Lima* (Cocardo), de @frutitaenlatada.
-- Juego, arte vectorial, música y código: proyecto de fans, hecho con Claude Code.
+- *Cocardo: ¡Rescate Helado!* es un juego de su autor, que tiene todos los derechos del juego y de sus personajes
+  (ver `legal/terminos.html`), inspirado en la frutinovela *La Nieve de Lima*.
+- Juego, arte vectorial, música y código hechos con Claude Code.

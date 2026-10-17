@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 /* Genera los íconos y la imagen de vista previa (Open Graph) a partir del arte SVG del juego, con Chromium.
  * Uso: node tools/build-icons.cjs            -> icons/favicon.svg, icon-192.png, icon-512.png,
- *                                               icon-512-maskable.png, apple-touch-icon.png, og.png
- * Vuelve a correrlo si cambia el logo o el retrato de Cocardo. */
+ *                                               icon-512-maskable.png, apple-touch-icon.png, og-2.png
+ *      node tools/build-icons.cjs og-2.png   -> solo esos archivos (los nombres de la lista de abajo)
+ * Vuelve a correrlo si cambia el logo o el retrato de Cocardo.
+ * La vista previa se llama og-2.png (antes og.png, con textos que ya no valen): un nombre nuevo hace que WhatsApp,
+ * TikTok, X… vuelvan a pedirla. Si cambias su texto, cambia también el nombre (og-3.png…) en
+ * index.html y landing.html (og:image, twitter:image y JSON-LD). Su texto sigue las reglas del sitio: «gratis para
+ * empezar», nunca «gratis» a secas, y nada que ponga en duda de quién es el juego (tests/legal.test.js). */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -40,10 +45,9 @@ function loadPlaywright() {
   .og .logo { position: absolute; left: 56px; top: 54px; width: 620px; filter: drop-shadow(0 8px 0 rgba(43,22,48,.35)); }
   .og .logo svg { width: 100%; height: auto; }
   .og .tag { position: absolute; left: 66px; top: 372px; font-family: 'Yellowtail', cursive; font-size: 54px; color: #fff; text-shadow: 0 4px 0 #5b1e74; }
-  .og .cta { position: absolute; left: 66px; top: 470px; padding: 14px 34px; border: 4px solid #2b1630; border-radius: 999px; background: linear-gradient(180deg,#fff,#fff6ea 55%,#f6d8bd); font-family: 'Lilita One', sans-serif; font-size: 40px; color: #5b1e74; box-shadow: 0 7px 0 #2b1630; }
+  .og .cta { position: absolute; left: 66px; top: 470px; padding: 14px 34px; border: 4px solid #2b1630; border-radius: 999px; background: linear-gradient(180deg,#fff,#fff6ea 55%,#f6d8bd); font-family: 'Lilita One', sans-serif; font-size: 34px; color: #5b1e74; box-shadow: 0 7px 0 #2b1630; }
   .og .hero { position: absolute; right: 36px; bottom: -40px; width: 560px; height: 560px; filter: drop-shadow(0 10px 0 rgba(43,22,48,.3)); }
   .og .hero svg { width: 100%; height: 100%; }
-  .og .fan { position: absolute; right: 24px; top: 22px; padding: 6px 14px; border-radius: 999px; background: rgba(43,22,48,.75); color: #fff6ea; font-weight: 800; font-size: 18px; }
 </style></head><body>
 <div id="i512" class="tile rounded" style="width:512px;height:512px"><div class="dots"></div><div class="face"></div></div>
 <div id="imask" class="tile maskable" style="width:512px;height:512px"><div class="dots"></div><div class="face"></div></div>
@@ -51,8 +55,8 @@ function loadPlaywright() {
 <div id="i192" class="tile rounded" style="width:192px;height:192px"><div class="dots"></div><div class="face"></div></div>
 <div id="og" class="og"><div class="bg"></div><div class="veil"></div><div class="logo"></div>
   <div class="tag">Una frutinovela de helados</div>
-  <div class="cta">Juega gratis en tu celular</div>
-  <div class="hero"></div><div class="fan">Juego de fans, no oficial</div></div>
+  <div class="cta">Gratis para empezar en tu celular</div>
+  <div class="hero"></div></div>
 <script>${art}</script><script>${chars}</script>
 <script>
   var A = window.Cocardo.Art;
@@ -68,11 +72,15 @@ function loadPlaywright() {
   await page.setContent(html, { waitUntil: 'load' });
   await page.waitForTimeout(1200);
   await page.evaluate(() => document.fonts && document.fonts.ready);
-  const shots = [['#i512', 'icon-512.png'], ['#imask', 'icon-512-maskable.png'], ['#i180', 'apple-touch-icon.png'], ['#i192', 'icon-192.png'], ['#og', 'og.png']];
+  const only = process.argv.slice(2);
+  const want = (name) => !only.length || only.includes(name);
+  const shots = [['#i512', 'icon-512.png'], ['#imask', 'icon-512-maskable.png'], ['#i180', 'apple-touch-icon.png'], ['#i192', 'icon-192.png'], ['#og', 'og-2.png']];
   for (const [sel, name] of shots) {
-    await page.locator(sel).screenshot({ path: path.join(OUT, name), omitBackground: name !== 'og.png' && /512\.png|192/.test(name) });
+    if (!want(name)) continue;
+    await page.locator(sel).screenshot({ path: path.join(OUT, name), omitBackground: /512\.png|192/.test(name) });
     console.log('icons/' + name);
   }
+  if (!want('favicon.svg')) { await browser.close(); return; }
   // favicon.svg: el retrato sobre un círculo rosa (un solo archivo, sin dependencias)
   const faceSvg = await page.evaluate(() => window.Cocardo.Art.portrait('cocardo', 'feliz'));
   const inner = faceSvg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');

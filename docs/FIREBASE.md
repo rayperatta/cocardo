@@ -99,8 +99,9 @@ si no, el perfil del primer jugador que pase de 30 niveles o 90 estrellas se rec
 (`docs/CALENDARIO.md` §4 lo incluye en la lista de publicación de cada capítulo).
 
 Qué se guarda de cada persona: `uid` de Firebase, apodo, avatar (un personaje del juego), estrellas, niveles,
-rescates, racha y el progreso del juego. **No** se guarda el correo ni el nombre de Google. Si publicas el juego
-con cuentas, añade una línea de privacidad en `landing.html` o en el README diciendo esto.
+rescates, racha y el progreso del juego. **No** se guarda el correo ni el nombre de Google en Firestore (Firebase
+Authentication sí los tiene en el registro de la cuenta, como cualquier inicio de sesión con Google). Todo esto está
+explicado en la política de privacidad, `legal/privacidad.html`: si cambias qué se guarda, cámbiala también.
 
 ## 5. Probar
 
@@ -154,8 +155,12 @@ Las Cloud Functions necesitan el plan Blaze; con el tramo gratis el costo real e
 
 1. En <https://analytics.google.com> crea una propiedad GA4 y un flujo **Web** con tu dominio. Copia el
    **ID de medición** (`G-XXXXXXXXXX`).
-2. Pégalo en `js/cloud-config.js` → `ga4`. Listo: `js/analytics.js` carga `gtag.js` solo en http(s) y envía los
-   eventos. `landing.html` también lo usa (evento `landing_cta`).
+2. Pégalo en `js/cloud-config.js` → `ga4`. `js/analytics.js` carga `gtag.js` solo en http(s) y envía los
+   eventos. `landing.html` también lo usa (evento `landing_cta`). **Antes de encenderlo** hace falta un aviso de
+   consentimiento (GA4 usa cookies; en la UE no se pueden poner sin permiso) y actualizar `legal/privacidad.html` §8,
+   que hoy dice que no hay analítica (y Paddle no acepta vendedores que incumplan el RGPD: `docs/PAGOS.md` §6.2).
+   Mientras no exista ese aviso, `tools/cloudflare/build-site.cjs` no publica con un id en `ga4` (`docs/CALENDARIO.md`
+   §5, paso 2).
 3. Informes útiles: embudo `level_start → level_end` por nivel (dónde abandona la gente), `daily_end` por día
    (retención), `share` y `clip` (viralidad), `referral` (cuántos llegan por enlaces `?r=apodo`).
 
